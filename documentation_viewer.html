@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Library to convert Markdown to HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .prose { max-width: 80ch; }
+        .prose h1 { color: #111827; font-size: 2.25rem; font-weight: 700; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; margin-top: 1.5rem; margin-bottom: 1rem; }
+        .prose h2 { color: #1f2937; font-size: 1.875rem; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; margin-top: 2rem; margin-bottom: 1rem; }
+        .prose h3 { color: #374151; font-size: 1.5rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 1rem; }
+        .prose p, .prose li { color: #4b5563; line-height: 1.75; margin-bottom: 1.25rem; }
+        .prose strong { color: #111827; }
+        .prose code { color: #be123c; background-color: #f3f4f6; padding: 0.2em 0.4em; border-radius: 0.25rem; font-size: 0.9em; }
+        .prose a { color: #2563eb; font-weight: 500; }
+        .prose hr { margin-top: 2rem; margin-bottom: 2rem; }
+        .prose blockquote { border-left: 4px solid #d1d5db; padding-left: 1rem; color: #6b7280; }
+    </style>
+</head>
+<body class="bg-white flex flex-col h-screen">
+    <!-- Header -->
+    <header class="bg-gray-50 p-4 border-b border-gray-200 flex-shrink-0">
+        <div class="flex items-center space-x-8 max-w-7xl mx-auto">
+            <h1 class="text-xl font-bold text-gray-900">Gemini Agent Project</h1>
+            <nav>
+                <a href="/" class="text-gray-600 hover:text-gray-900">Back to Agent UI</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow overflow-y-auto py-12 px-4 flex justify-center">
+        <div id="content" class="prose">
+            <p>Loading documentation...</p>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const contentDiv = document.getElementById('content');
+            fetch('documentation.md')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok. Make sure documentation.md is in the same folder.');
+                    }
+                    return response.text();
+                })
+                .then(markdownText => {
+                    contentDiv.innerHTML = marked.parse(markdownText);
+                })
+                .catch(error => {
+                    contentDiv.innerHTML = `<p style="color: red;"><strong>Error:</strong> ${error.message}</p>`;
+                    console.error('Error fetching or parsing markdown:', error);
+                });
+        });
+    </script>
+
+</body>
+</html>
