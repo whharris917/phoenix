@@ -3,28 +3,50 @@ from flask_socketio import SocketIO
 from flask_cors import CORS
 import google.generativeai as genai
 import os
-import time
-import random
 import io
 import sys
 from contextlib import redirect_stdout
-import json # <-- THE MISSING IMPORT
+import json
+import logging
+import time
+import random
 
 # --- CONFIGURATION ---
 API_KEY = "AIzaSyALFegx2Gslr5a-xzx1sLWFOzB1EQ0xVZY"
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+
+# --- Setup Logging ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("agent.log"),
+        logging.StreamHandler()
+    ]
+)
 
 # --- GEMINI SETUP ---
-genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel(
-    model_name='gemini-2.5-pro',
-    system_instruction="""
-You are "Agent Control," an AI assistant that reasons and uses tools to answer user questions about local files and perform calculations.
-Your goal is to answer the user's question fully. To do this, you can use tools in a step-by-step manner.
-At each step, you will respond with a single JSON command to use one of your available tools. I will execute it and return the result to you as "TOOL_RESULT: ...".
-You will then use that result to decide on the next step, which could be using another tool or, if you have enough information, providing the final answer in plain text.
+try:
+    genai.configure(api_key=API_KEY)
+    model = genai.GenerativeModel(
+        model_name='gemini-2.5-pro',
+        system_instruction="""
+You are "Agent Control," an AI assistant that reasons and uses tools to answer user questions.
+
+Your goal is to answer the user's question fully and efficiently. At each step, you have a choice:
+
+1.  **Answer Directly**: If you can answer the user's query using your own internal knowledge or the conversation history without needing access to the local file system, then provide the answer directly in plain text.
+
+2.  **Use a Tool**: If you need to interact with the local file system to get information or perform an action, then respond with a single JSON command for one of the available tools. I will execute it and return the result to you as "TOOL_RESULT: ...".
+
+## Reasoning Strategy
+- When asked to perform a task that requires multiple steps (like writing, executing, and then saving a script), break it down into a sequence of tool calls.
+- **Example Strategy**: If asked to "write and run a script to do X and save it", your plan should be:
+    1. First, use the `execute_python_script` tool to run the code and get the result.
+    2. After you receive the successful execution result, use the `create_file` tool in the next step to save the script you just ran.
+    3. Finally, report the result of the execution to the user.
 
 ## Available Tools:
 1.  **Action: `read_file`**
@@ -36,7 +58,14 @@ You will then use that result to decide on the next step, which could be using a
 4.  **Action: `execute_python_script`**
     * JSON Format: {"action": "execute_python_script", "parameters": {"script_content": "<python_code>"}}
 """
-)
+    )
+    logging.info("Gemini API configured successfully.")
+except Exception as e:
+    logging.critical(f"FATAL: Failed to configure Gemini API. Is the API key valid? Error: {e}")
+    model = None
+
+# --- Dictionary to store chat sessions for each user ---
+chat_sessions = {}
 
 # --- TOOL AGENT LOGIC ---
 def get_safe_path(filename):
@@ -85,15 +114,15 @@ def execute_tool_command(command):
     except ValueError as e:
         return {"status": "security_error", "message": str(e)}
     except Exception as e:
+        logging.error(f"Error executing tool command: {e}")
         return {"status": "error", "message": f"Script error: {e}"}
 
 # --- ORCHESTRATOR LOGIC ---
-def execute_reasoning_loop(initial_prompt):
+def execute_reasoning_loop(chat, initial_prompt):
     try:
-        chat = model.start_chat(history=[])
         current_prompt = initial_prompt
         for i in range(5):
-            time.sleep(random.uniform(0.4, 0.8))
+            socketio.sleep(0)
             response = chat.send_message(current_prompt)
             response_text = response.text
             if "{" in response_text and "}" in response_text:
@@ -101,16 +130,19 @@ def execute_reasoning_loop(initial_prompt):
                 action = command_json.get("action")
                 socketio.emit('log_message', {'type': 'thought', 'data': f"I should use the '{action}' tool."})
                 socketio.emit('agent_action', {'type': 'Executing', 'data': command_json})
-                time.sleep(0.4)
+                
+                socketio.sleep(0.1)
                 tool_result = execute_tool_command(command_json)
+                
                 socketio.emit('agent_action', {'type': 'Result', 'data': tool_result})
                 current_prompt = f"TOOL_RESULT: {json.dumps(tool_result)}"
             else:
-                time.sleep(0.5)
+                socketio.sleep(0.1)
                 socketio.emit('log_message', {'type': 'final_answer', 'data': response_text})
                 return
     except Exception as e:
-        socketio.emit('log_message', {'type': 'error', 'data': f"An error occurred: {str(e)}"})
+        logging.exception("An error occurred in the reasoning loop.")
+        socketio.emit('log_message', {'type': 'error', 'data': f"An error occurred during reasoning: {str(e)}"})
 
 # --- SERVER ROUTES & EVENTS ---
 @app.route('/')
@@ -125,19 +157,45 @@ def serve_docs():
 def serve_markdown():
     return send_from_directory('.', 'documentation.md')
 
+# --- NEW: Re-added the /execute route for the UI ---
 @app.route('/execute', methods=['POST'])
 def handle_execute():
     command_data = request.json
     result = execute_tool_command(command_data)
     return jsonify(result)
 
+@socketio.on('connect')
+def handle_connect():
+    app.logger.info(f"Client connected: {request.sid}")
+    if model is None:
+        app.logger.error("Model not initialized. Cannot create chat session.")
+        socketio.emit('log_message', {'type': 'error', 'data': 'AI model is not available. Check server logs.'}, to=request.sid)
+        return
+
+    try:
+        chat_sessions[request.sid] = model.start_chat(history=[])
+        app.logger.info(f"Chat session created for {request.sid}")
+    except Exception as e:
+        app.logger.exception(f"Could not create chat session for {request.sid}.")
+        socketio.emit('log_message', {'type': 'error', 'data': f'Failed to initialize AI session. Check server logs for details.'}, to=request.sid)
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    app.logger.info(f"Client disconnected: {request.sid}")
+    chat_sessions.pop(request.sid, None)
+
 @socketio.on('start_task')
 def handle_start_task(data):
     prompt = data.get('prompt')
-    if prompt:
+    session_id = request.sid
+    chat = chat_sessions.get(session_id)
+    if prompt and chat:
         socketio.emit('log_message', {'type': 'system', 'data': 'Task received. Starting reasoning process...'})
-        socketio.start_background_task(execute_reasoning_loop, prompt)
+        socketio.start_background_task(execute_reasoning_loop, chat, prompt)
+    elif not chat:
+        app.logger.warning(f"Task from {session_id} rejected because no chat session exists.")
+        socketio.emit('log_message', {'type': 'error', 'data': 'No active AI session. Please refresh.'}, to=request.sid)
 
 if __name__ == '__main__':
-    print("Unified Agent Server is running on http://127.0.0.1:5001")
+    app.logger.info("Starting Unified Agent Server on http://127.0.0.1:5001")
     socketio.run(app, port=5001)

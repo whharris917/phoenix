@@ -1,0 +1,88 @@
+2025-07-07 13:09:01,634 - INFO - Gemini API configured successfully.
+2025-07-07 13:09:01,636 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-07 13:09:03,975 - INFO - Client connected: 0Dg8bCEab2oJaO9qAAAB
+2025-07-07 13:09:03,975 - INFO - Chat session created for 0Dg8bCEab2oJaO9qAAAB
+2025-07-07 13:09:14,859 - INFO - Client disconnected: 0Dg8bCEab2oJaO9qAAAB
+2025-07-07 13:09:15,056 - INFO - Client connected: A0wft8oTfgzsTtgmAAAD
+2025-07-07 13:09:15,056 - INFO - Chat session created for A0wft8oTfgzsTtgmAAAD
+2025-07-07 13:09:43,909 - INFO - Client disconnected: A0wft8oTfgzsTtgmAAAD
+2025-07-07 13:09:44,092 - INFO - Client connected: -FLKjThPsOnCNgrHAAAF
+2025-07-07 13:09:44,092 - INFO - Chat session created for -FLKjThPsOnCNgrHAAAF
+2025-07-07 13:14:44,071 - INFO - Client disconnected: -FLKjThPsOnCNgrHAAAF
+2025-07-07 13:14:48,756 - INFO - Gemini API configured successfully.
+2025-07-07 13:14:48,756 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-07 13:14:49,971 - INFO - Client connected: OmN_PX4fvxjtE5nkAAAB
+2025-07-07 13:14:49,972 - INFO - Chat session created for OmN_PX4fvxjtE5nkAAAB
+2025-07-07 13:14:52,018 - INFO - Client disconnected: OmN_PX4fvxjtE5nkAAAB
+2025-07-07 13:14:52,226 - INFO - Client connected: MCNb7smnb3Fgk62aAAAD
+2025-07-07 13:14:52,227 - INFO - Chat session created for MCNb7smnb3Fgk62aAAAD
+2025-07-07 13:14:53,984 - INFO - Client disconnected: MCNb7smnb3Fgk62aAAAD
+2025-07-07 13:14:54,167 - INFO - Client connected: cS_AlDOagY2z9QAdAAAF
+2025-07-07 13:14:54,168 - INFO - Chat session created for cS_AlDOagY2z9QAdAAAF
+2025-07-07 13:15:09,957 - INFO - Client disconnected: cS_AlDOagY2z9QAdAAAF
+2025-07-07 13:18:18,287 - INFO - Gemini API configured successfully.
+2025-07-07 13:18:18,289 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-07 13:18:19,956 - INFO - Client connected: S14-skJSJyeJq3zwAAAB
+2025-07-07 13:18:19,957 - INFO - Chat session created for S14-skJSJyeJq3zwAAAB
+2025-07-07 13:18:35,252 - INFO - Client disconnected: S14-skJSJyeJq3zwAAAB
+2025-07-07 13:18:35,610 - INFO - Client connected: CojaCwVF7U88pnEIAAAD
+2025-07-07 13:18:35,611 - INFO - Chat session created for CojaCwVF7U88pnEIAAAD
+2025-07-07 13:20:15,527 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\app.py", line 128, in execute_reasoning_loop
+    command_json = json.loads(response_text.strip().replace('```json', '').replace('```', ''))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2025-07-07 13:21:00,569 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\app.py", line 128, in execute_reasoning_loop
+    command_json = json.loads(response_text.strip().replace('```json', '').replace('```', ''))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2025-07-07 13:27:19,869 - INFO - Client disconnected: CojaCwVF7U88pnEIAAAD
+2025-07-07 13:29:52,418 - INFO - Gemini API configured successfully.
+2025-07-07 13:29:52,420 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-07 13:29:57,225 - INFO - Client connected: 3NR8ZAImSDzxI4_NAAAB
+2025-07-07 13:29:57,225 - INFO - Chat session created for 3NR8ZAImSDzxI4_NAAAB
+2025-07-07 13:32:54,662 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\app.py", line 129, in execute_reasoning_loop
+    command_json = json.loads(response_text.strip().replace('```json', '').replace('```', ''))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2025-07-07 13:38:13,902 - INFO - Client disconnected: 3NR8ZAImSDzxI4_NAAAB
+2025-07-07 13:38:21,136 - INFO - Gemini API configured successfully.
+2025-07-07 13:38:21,138 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-07 13:38:21,230 - INFO - Client connected: okAjs-3adyw_m8jXAAAB
+2025-07-07 13:38:21,231 - INFO - Chat session created for okAjs-3adyw_m8jXAAAB
+2025-07-07 13:38:36,161 - INFO - Client disconnected: okAjs-3adyw_m8jXAAAB
+2025-07-07 13:38:36,361 - INFO - Client connected: VmNIvnnkeSIAoNUNAAAD
+2025-07-07 13:38:36,361 - INFO - Chat session created for VmNIvnnkeSIAoNUNAAAD
+2025-07-07 13:43:11,179 - INFO - Client disconnected: VmNIvnnkeSIAoNUNAAAD
+2025-07-07 13:43:11,496 - INFO - Client connected: iDmJceb-D_IUf6awAAAF
+2025-07-07 13:43:11,497 - INFO - Chat session created for iDmJceb-D_IUf6awAAAF
+2025-07-07 13:56:05,757 - INFO - Client disconnected: iDmJceb-D_IUf6awAAAF
