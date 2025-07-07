@@ -16,3 +16,6 @@ env/
 .idea/
 .vscode/
 *.swp 
+
+# Other
+sandbox/
