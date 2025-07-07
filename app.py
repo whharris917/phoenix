@@ -11,8 +11,24 @@ import logging
 import time
 import random
 
+# --- NEW: Function to load API key from a file ---
+def load_api_key():
+    """Safely loads the API key from an untracked file."""
+    try:
+        # The path is constructed relative to the location of this script
+        key_path = os.path.join(os.path.dirname(__file__), 'private_data', 'Gemini_API_Key.txt')
+        with open(key_path, 'r') as f:
+            # Read the key and remove leading/trailing whitespace
+            return f.read().strip()
+    except FileNotFoundError:
+        logging.error("CRITICAL: API key file not found at 'private_data/Gemini_API_Key.txt'")
+        return None
+    except Exception as e:
+        logging.error(f"CRITICAL: An error occurred while reading the API key file: {e}")
+        return None
+
 # --- CONFIGURATION ---
-API_KEY = "AIzaSyALFegx2Gslr5a-xzx1sLWFOzB1EQ0xVZY"
+API_KEY = load_api_key() # Load the key using our new function
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
@@ -28,11 +44,13 @@ logging.basicConfig(
 )
 
 # --- GEMINI SETUP ---
-try:
-    genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel(
-        model_name='gemini-2.5-pro',
-        system_instruction="""
+model = None
+if API_KEY:
+    try:
+        genai.configure(api_key=API_KEY)
+        model = genai.GenerativeModel(
+            model_name='gemini-2.5-pro',
+            system_instruction="""
 You are "Agent Control," an AI assistant that reasons and uses tools to answer user questions.
 
 Your goal is to answer the user's question fully and efficiently. At each step, you have a choice:
@@ -58,11 +76,13 @@ Your goal is to answer the user's question fully and efficiently. At each step, 
 4.  **Action: `execute_python_script`**
     * JSON Format: {"action": "execute_python_script", "parameters": {"script_content": "<python_code>"}}
 """
-    )
-    logging.info("Gemini API configured successfully.")
-except Exception as e:
-    logging.critical(f"FATAL: Failed to configure Gemini API. Is the API key valid? Error: {e}")
-    model = None
+        )
+        logging.info("Gemini API configured successfully.")
+    except Exception as e:
+        logging.critical(f"FATAL: Failed to configure Gemini API with the provided key. Error: {e}")
+else:
+    logging.critical("FATAL: Gemini API key not loaded. The application cannot connect to the AI model.")
+
 
 # --- Dictionary to store chat sessions for each user ---
 chat_sessions = {}
@@ -157,7 +177,6 @@ def serve_docs():
 def serve_markdown():
     return send_from_directory('.', 'documentation.md')
 
-# --- NEW: Re-added the /execute route for the UI ---
 @app.route('/execute', methods=['POST'])
 def handle_execute():
     command_data = request.json
@@ -197,5 +216,8 @@ def handle_start_task(data):
         socketio.emit('log_message', {'type': 'error', 'data': 'No active AI session. Please refresh.'}, to=request.sid)
 
 if __name__ == '__main__':
-    app.logger.info("Starting Unified Agent Server on http://127.0.0.1:5001")
-    socketio.run(app, port=5001)
+    if not API_KEY:
+        app.logger.critical("Server startup failed: API key is missing.")
+    else:
+        app.logger.info("Starting Unified Agent Server on http://127.0.0.1:5001")
+        socketio.run(app, port=5001)

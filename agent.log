@@ -86,3 +86,19 @@ json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 2025-07-07 13:43:11,496 - INFO - Client connected: iDmJceb-D_IUf6awAAAF
 2025-07-07 13:43:11,497 - INFO - Chat session created for iDmJceb-D_IUf6awAAAF
 2025-07-07 13:56:05,757 - INFO - Client disconnected: iDmJceb-D_IUf6awAAAF
+2025-07-07 14:07:40,107 - INFO - Gemini API configured successfully.
+2025-07-07 14:07:40,109 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-07 14:07:45,004 - INFO - Client connected: k44b-zRxtnI6jLcaAAAB
+2025-07-07 14:07:45,006 - INFO - Chat session created for k44b-zRxtnI6jLcaAAAB
+2025-07-07 14:17:45,182 - INFO - Client disconnected: k44b-zRxtnI6jLcaAAAB
+2025-07-07 14:19:32,846 - INFO - Gemini API configured successfully.
+2025-07-07 14:19:32,848 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-07 14:19:32,964 - INFO - Client connected: gHmj3nry2FVQSeZvAAAB
+2025-07-07 14:19:32,964 - INFO - Chat session created for gHmj3nry2FVQSeZvAAAB
+2025-07-07 14:30:57,052 - INFO - Client disconnected: gHmj3nry2FVQSeZvAAAB
+2025-07-07 14:30:57,267 - INFO - Client connected: mgVwyBhA1ng8_iPzAAAD
+2025-07-07 14:30:57,267 - INFO - Chat session created for mgVwyBhA1ng8_iPzAAAD
+2025-07-07 14:31:01,255 - INFO - Client disconnected: mgVwyBhA1ng8_iPzAAAD
+2025-07-07 14:31:02,360 - INFO - Client connected: lxi1fEm1vWKqh9MOAAAF
+2025-07-07 14:31:02,360 - INFO - Chat session created for lxi1fEm1vWKqh9MOAAAF
+2025-07-07 14:35:40,442 - INFO - Client disconnected: lxi1fEm1vWKqh9MOAAAF
