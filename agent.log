@@ -306,3 +306,13 @@ json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 2025-07-08 18:43:54,151 - INFO - Client disconnected: RgsHUhZtESsUDtMbAAAP
 2025-07-08 18:43:54,620 - INFO - Client connected: 50z-FqnPPOx8bvbJAAAR
 2025-07-08 18:43:54,621 - INFO - Chat session created for 50z-FqnPPOx8bvbJAAAR
+2025-07-08 18:55:54,390 - INFO - Gemini API configured successfully.
+2025-07-08 18:55:54,391 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 18:55:55,568 - INFO - Client connected: Lo5rJp01pHG7N7XuAAAB
+2025-07-08 18:55:55,569 - INFO - Chat session created for Lo5rJp01pHG7N7XuAAAB
+2025-07-08 18:56:04,720 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\orchestrator.py", line 35, in execute_reasoning_loop
+    tool_result = execute_tool_command(command_json, session_id, chat_sessions, model)
+                                                                 ^^^^^^^^^^^^^
+NameError: name 'chat_sessions' is not defined
