@@ -211,3 +211,66 @@ json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 2025-07-08 16:16:14,280 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
 2025-07-08 16:16:14,741 - INFO - Client connected: YoPnWOcFegtuQEeBAAAC
 2025-07-08 16:16:14,742 - INFO - Chat session created for YoPnWOcFegtuQEeBAAAC
+2025-07-08 16:34:10,115 - INFO - Client disconnected: YoPnWOcFegtuQEeBAAAC
+2025-07-08 16:34:15,624 - INFO - Gemini API configured successfully.
+2025-07-08 16:34:15,626 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 16:34:15,944 - INFO - Client connected: k_8W0TkVeHEM7k8mAAAC
+2025-07-08 16:34:15,945 - INFO - Chat session created for k_8W0TkVeHEM7k8mAAAC
+2025-07-08 16:55:21,390 - INFO - Gemini API configured successfully.
+2025-07-08 16:55:21,407 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 16:55:21,609 - INFO - Client connected: MiCLyu9N-ZtT-T-FAAAB
+2025-07-08 16:55:21,609 - INFO - Chat session created for MiCLyu9N-ZtT-T-FAAAB
+2025-07-08 16:55:23,615 - INFO - Client disconnected: MiCLyu9N-ZtT-T-FAAAB
+2025-07-08 16:55:23,831 - INFO - Client connected: Mhrf8eICipFmqdSeAAAD
+2025-07-08 16:55:23,832 - INFO - Chat session created for Mhrf8eICipFmqdSeAAAD
+2025-07-08 17:17:29,545 - INFO - Client disconnected: Mhrf8eICipFmqdSeAAAD
+2025-07-08 17:17:34,506 - INFO - Gemini API configured successfully.
+2025-07-08 17:17:34,507 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 17:17:36,492 - INFO - Client connected: cWYbR2L0I4Ucw4XeAAAC
+2025-07-08 17:17:36,493 - INFO - Chat session created for cWYbR2L0I4Ucw4XeAAAC
+2025-07-08 17:17:38,718 - INFO - Client disconnected: cWYbR2L0I4Ucw4XeAAAC
+2025-07-08 17:17:38,896 - INFO - Client connected: V7B0Uk93vOqFLIUuAAAE
+2025-07-08 17:17:38,897 - INFO - Chat session created for V7B0Uk93vOqFLIUuAAAE
+2025-07-08 17:22:55,618 - INFO - Client disconnected: V7B0Uk93vOqFLIUuAAAE
+2025-07-08 17:22:55,783 - INFO - Client connected: MNBigx6WsJyeWOn3AAAG
+2025-07-08 17:22:55,784 - INFO - Chat session created for MNBigx6WsJyeWOn3AAAG
+2025-07-08 17:25:56,790 - INFO - Client connected: kTe2Z04BbTiF6cLyAAAI
+2025-07-08 17:25:56,790 - INFO - Chat session created for kTe2Z04BbTiF6cLyAAAI
+2025-07-08 17:25:56,790 - INFO - Client disconnected: MNBigx6WsJyeWOn3AAAG
+2025-07-08 17:32:46,928 - INFO - Gemini API configured successfully.
+2025-07-08 17:32:46,930 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 17:32:47,173 - INFO - Client connected: EuGRTxfSRZWKi0rhAAAB
+2025-07-08 17:32:47,173 - INFO - Chat session created for EuGRTxfSRZWKi0rhAAAB
+2025-07-08 17:32:48,527 - INFO - Client disconnected: EuGRTxfSRZWKi0rhAAAB
+2025-07-08 17:32:48,759 - INFO - Client connected: DP24fSDCk8409AU2AAAD
+2025-07-08 17:32:48,759 - INFO - Chat session created for DP24fSDCk8409AU2AAAD
+2025-07-08 17:35:14,030 - INFO - Client disconnected: DP24fSDCk8409AU2AAAD
+2025-07-08 17:35:14,207 - INFO - Client connected: KX7345V2Ln1aNdJSAAAF
+2025-07-08 17:35:14,208 - INFO - Chat session created for KX7345V2Ln1aNdJSAAAF
+2025-07-08 17:36:04,720 - ERROR - Error executing tool command: name 'open' is not defined
+2025-07-08 17:39:56,799 - INFO - Client disconnected: KX7345V2Ln1aNdJSAAAF
+2025-07-08 17:39:56,813 - INFO - Client connected: yhTz-FTruyO-6guWAAAI
+2025-07-08 17:39:56,814 - INFO - Chat session created for yhTz-FTruyO-6guWAAAI
+2025-07-08 17:46:00,361 - INFO - Client disconnected: yhTz-FTruyO-6guWAAAI
+2025-07-08 17:46:00,578 - INFO - Client connected: -CjZ1PhdTHJ5NQXFAAAK
+2025-07-08 17:46:00,578 - INFO - Chat session created for -CjZ1PhdTHJ5NQXFAAAK
+2025-07-08 17:47:49,049 - INFO - Gemini API configured successfully.
+2025-07-08 17:47:49,052 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 17:47:49,073 - INFO - Client connected: owhbiLrwjLLgOMYHAAAB
+2025-07-08 17:47:49,074 - INFO - Chat session created for owhbiLrwjLLgOMYHAAAB
+2025-07-08 17:47:51,229 - INFO - Client disconnected: owhbiLrwjLLgOMYHAAAB
+2025-07-08 17:47:51,491 - INFO - Client connected: afds5a89aW-70Cc9AAAD
+2025-07-08 17:47:51,491 - INFO - Chat session created for afds5a89aW-70Cc9AAAD
+2025-07-08 17:50:08,470 - INFO - Client connected: ki7vfkx0ZCxDNE97AAAF
+2025-07-08 17:50:08,471 - INFO - Chat session created for ki7vfkx0ZCxDNE97AAAF
+2025-07-08 17:50:08,472 - INFO - Client disconnected: afds5a89aW-70Cc9AAAD
+2025-07-08 17:53:17,823 - INFO - Gemini API configured successfully.
+2025-07-08 17:53:17,826 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 17:53:17,881 - INFO - Client connected: 8m60obvUqG86Vq6oAAAB
+2025-07-08 17:53:17,882 - INFO - Chat session created for 8m60obvUqG86Vq6oAAAB
+2025-07-08 17:53:23,576 - INFO - Client disconnected: 8m60obvUqG86Vq6oAAAB
+2025-07-08 17:53:23,803 - INFO - Client connected: eMpe3ZSZpafMR3DpAAAD
+2025-07-08 17:53:23,803 - INFO - Chat session created for eMpe3ZSZpafMR3DpAAAD
+2025-07-08 17:57:14,938 - INFO - Client disconnected: eMpe3ZSZpafMR3DpAAAD
+2025-07-08 17:57:21,158 - INFO - Client connected: KHLzO635LTtskt2tAAAF
+2025-07-08 17:57:21,158 - INFO - Chat session created for KHLzO635LTtskt2tAAAF

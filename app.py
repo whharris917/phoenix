@@ -10,6 +10,7 @@ import json
 import logging
 import time
 import random
+from eventlet.event import Event # <-- CORRECT, NON-BLOCKING EVENT
 
 # --- Function to load API key from a file ---
 def load_api_key():
@@ -73,8 +74,9 @@ else:
     logging.critical("FATAL: Gemini API key not loaded. The application cannot connect to the AI model.")
 
 
-# --- Dictionary to store chat sessions for each user ---
+# --- Dictionary to store chat sessions and confirmation events ---
 chat_sessions = {}
+confirmation_events = {}
 
 # --- TOOL AGENT LOGIC ---
 def get_safe_path(filename):
@@ -110,6 +112,14 @@ def execute_tool_command(command, session_id):
             sandbox_dir = get_safe_path('').rsplit(os.sep, 1)[0]
             files = [f for f in os.listdir(sandbox_dir) if os.path.isfile(os.path.join(sandbox_dir, f))]
             return {"status": "success", "message": "Listed files in sandbox.", "files": files}
+        elif action == 'delete_file':
+            filename = params.get('filename')
+            safe_path = get_safe_path(filename)
+            if os.path.exists(safe_path):
+                os.remove(safe_path)
+                return {"status": "success", "message": f"File '{filename}' deleted."}
+            else:
+                return {"status": "error", "message": f"File '{filename}' not found."}
         elif action == 'execute_python_script':
             script_content = params.get('script_content', '')
             restricted_globals = {"__builtins__": {"print": print, "range": range, "len": len, "str": str, "int": int, "float": float, "list": list, "dict": dict, "set": set, "abs": abs, "max": max, "min": min, "sum": sum}}
@@ -171,8 +181,7 @@ def execute_tool_command(command, session_id):
                 return {"status": "success", "message": f"Session '{session_name}' loaded."}
             except (FileNotFoundError, json.JSONDecodeError):
                 return {"status": "error", "message": "No saved sessions found."}
-
-        # --- NEW: Delete Session Tool ---
+        
         elif action == 'delete_session':
             session_name = params.get('session_name')
             try:
@@ -199,13 +208,27 @@ def execute_tool_command(command, session_id):
 def execute_reasoning_loop(chat, initial_prompt, session_id):
     try:
         current_prompt = initial_prompt
-        for i in range(5):
+        for i in range(10):
             socketio.sleep(0)
             response = chat.send_message(current_prompt)
             response_text = response.text
             if "{" in response_text and "}" in response_text:
                 command_json = json.loads(response_text.strip().replace('```json', '').replace('```', ''))
                 action = command_json.get("action")
+                
+                if action == 'request_confirmation':
+                    prompt_text = command_json.get('parameters', {}).get('prompt', 'Are you sure?')
+                    confirmation_event = Event() # <-- Use eventlet's Event
+                    confirmation_events[session_id] = confirmation_event
+                    
+                    socketio.emit('request_user_confirmation', {'prompt': prompt_text}, to=session_id)
+                    
+                    user_response = confirmation_event.wait() # This will now yield correctly
+                    
+                    confirmation_events.pop(session_id, None)
+                    current_prompt = f"USER_CONFIRMATION: '{user_response}'"
+                    continue
+
                 socketio.emit('log_message', {'type': 'thought', 'data': f"I should use the '{action}' tool."})
                 socketio.emit('agent_action', {'type': 'Executing', 'data': command_json})
                 
@@ -274,6 +297,14 @@ def handle_sandbox_refresh():
 def handle_session_list_request():
     result = execute_tool_command({'action': 'list_sessions'}, None)
     socketio.emit('session_list_update', result, to=request.sid)
+
+@socketio.on('user_confirmation')
+def handle_user_confirmation(data):
+    session_id = request.sid
+    event = confirmation_events.get(session_id)
+    if event:
+        # Use eventlet's send method instead of setting a property
+        event.send(data.get('response'))
 
 if __name__ == '__main__':
     if not API_KEY:
