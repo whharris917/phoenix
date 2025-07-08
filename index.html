@@ -30,8 +30,8 @@
             margin-bottom: 0.5rem;
         }
         .log-entry-user {
-            background-color: #2563EB; /* blue-600 */
-            border-left: 3px solid #1D4ED8; /* blue-800 */
+            background-color: #2563EB;
+            border-left: 3px solid #1D4ED8;
             color: white;
             align-self: flex-end;
             text-align: right;
@@ -132,34 +132,50 @@
 
     <main class="flex-grow flex flex-col md:flex-row p-4 gap-4 overflow-hidden">
         <div class="w-full md:w-1/3 flex flex-col gap-4">
-            <div class="rounded-lg shadow-lg p-4 flex flex-col flex-shrink-0" style="background-color: var(--panel-bg);">
-                <h2 class="text-base font-semibold mb-3 flex-shrink-0" style="color: var(--text-color);">Session Management</h2>
-                <div class="space-y-3">
-                    <div>
-                        <label for="session-list" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Load / Delete Session</label>
-                        <div class="flex space-x-2">
-                            <select id="session-list" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" style="background-color: var(--input-bg);"></select>
-                            <button id="load-session-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Load</button>
-                            <button id="delete-session-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Delete</button>
+            <details class="rounded-lg shadow-lg" style="background-color: var(--panel-bg);" open>
+                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Session Management</summary>
+                <div class="p-4 border-t" style="border-color: var(--border-color);">
+                    <div class="space-y-3">
+                        <div>
+                            <label for="session-list" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Load / Delete Session</label>
+                            <div class="flex space-x-2">
+                                <select id="session-list" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" style="background-color: var(--input-bg);"></select>
+                                <button id="load-session-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Load</button>
+                                <button id="delete-session-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Delete</button>
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <label for="save-session-name" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Save Current Session</label>
-                        <div class="flex space-x-2">
-                            <input type="text" id="save-session-name" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="New session name..." style="background-color: var(--input-bg);">
-                            <button id="save-session-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Save</button>
+                        <div>
+                            <label for="save-session-name" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Save Current Session</label>
+                            <div class="flex space-x-2">
+                                <input type="text" id="save-session-name" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="New session name..." style="background-color: var(--input-bg);">
+                                <button id="save-session-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Save</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="rounded-lg shadow-lg p-4 flex flex-col flex-grow min-h-0" style="background-color: var(--panel-bg);">
-                <h2 class="text-base font-semibold mb-3 flex-shrink-0" style="color: var(--text-color);">Agent Action Log</h2>
-                <div id="agent-log" class="rounded-md p-3 flex-grow overflow-y-auto space-y-2" style="background-color: var(--bg-color);"></div>
-            </div>
+            </details>
+            <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
+                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Agent Action Log</summary>
+                <div id="agent-log" class="p-4 border-t space-y-2" style="border-color: var(--border-color);">
+                    <p id="agent-log-placeholder" class="text-xs text-gray-500">Agent actions will appear here...</p>
+                </div>
+            </details>
+            <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
+                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Empty Panel A</summary>
+                <div class="p-4 border-t" style="border-color: var(--border-color);"><p class="text-xs text-gray-500">Content for panel A.</p></div>
+            </details>
+            <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
+                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Empty Panel B</summary>
+                <div class="p-4 border-t" style="border-color: var(--border-color);"><p class="text-xs text-gray-500">Content for panel B.</p></div>
+            </details>
+            <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
+                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Empty Panel C</summary>
+                <div class="p-4 border-t" style="border-color: var(--border-color);"><p class="text-xs text-gray-500">Content for panel C.</p></div>
+            </details>
         </div>
         
         <div class="w-full md:w-2/3 rounded-lg shadow-lg p-6 flex flex-col min-h-0" style="background-color: var(--panel-bg);">
-            <h2 class="text-lg font-semibold mb-4" style="color: var(--text-color);">Conversation & Reasoning</h2>
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--text-color);">Mission Control</h2>
             <div id="conversation-log" class="flex-grow overflow-y-auto mb-4 pr-2 flex flex-col"></div>
             <div id="confirmation-container" class="hidden flex justify-center space-x-4 my-4">
                 <button id="confirm-yes" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-md">Yes</button>
@@ -191,6 +207,7 @@
             const themeToggleBtn = document.getElementById('theme-toggle');
             const lightIcon = document.getElementById('theme-icon-light');
             const darkIcon = document.getElementById('theme-icon-dark');
+            const accordionPanels = document.querySelectorAll('.accordion-panel');
             
             const orchestratorStatus = document.getElementById('orchestrator-status');
             const orchestratorText = document.getElementById('orchestrator-text');
@@ -231,16 +248,20 @@
             };
             
             const addAgentActionLog = (message, type) => {
+                const placeholder = document.getElementById('agent-log-placeholder');
+                if (placeholder) placeholder.remove();
+
                 const details = document.createElement('details');
-                details.className = `bg-gray-100 dark:bg-gray-700/50 rounded-md text-xs`;
+                details.className = `bg-gray-100 dark:bg-gray-700/50 rounded-md text-xs mb-2`;
                 
                 const summary = document.createElement('summary');
                 summary.className = 'p-1 px-2 font-semibold w-full';
                 summary.textContent = type;
                 
                 const pre = document.createElement('pre');
-                pre.className = 'whitespace-pre-wrap p-2 border-t text-gray-600 dark:text-gray-300'
+                pre.className = 'whitespace-pre-wrap p-2 border-t text-gray-600 dark:text-gray-300 overflow-x-auto'
                 pre.style.borderColor = 'var(--border-color)';
+                pre.style.wordWrap = 'break-word';
                 pre.textContent = JSON.stringify(message, null, 2);
 
                 details.appendChild(summary);
@@ -285,13 +306,12 @@
 
             socket.on('session_list_update', (result) => {
                 sessionList.innerHTML = '';
+                const placeholder = document.createElement('option');
+                placeholder.textContent = 'Choose session...';
+                placeholder.disabled = true;
+                placeholder.selected = true;
+                sessionList.appendChild(placeholder);
                 if (result && result.status === 'success' && result.sessions) {
-                    const placeholder = document.createElement('option');
-                    placeholder.textContent = 'Choose session...';
-                    placeholder.disabled = true;
-                    placeholder.selected = true;
-                    sessionList.appendChild(placeholder);
-
                     if (result.sessions.length > 0) {
                         result.sessions.forEach(session => {
                             const option = document.createElement('option');
@@ -359,7 +379,6 @@
                 promptInput.focus();
             };
             
-            // --- Event Listeners ---
             sendBtn.addEventListener('click', handleUserPrompt);
             promptInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleUserPrompt());
             saveSessionBtn.addEventListener('click', handleSaveSession);
@@ -397,6 +416,18 @@
                     darkIcon.classList.remove('hidden');
                     lightIcon.classList.add('hidden');
                 }
+            });
+
+            accordionPanels.forEach(panel => {
+                panel.addEventListener('toggle', (event) => {
+                    if (panel.open) {
+                        accordionPanels.forEach(otherPanel => {
+                            if (otherPanel !== panel) {
+                                otherPanel.open = false;
+                            }
+                        });
+                    }
+                });
             });
         });
     </script>
