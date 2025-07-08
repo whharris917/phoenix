@@ -11,14 +11,12 @@ import logging
 import time
 import random
 
-# --- NEW: Function to load API key from a file ---
+# --- Function to load API key from a file ---
 def load_api_key():
     """Safely loads the API key from an untracked file."""
     try:
-        # The path is constructed relative to the location of this script
         key_path = os.path.join(os.path.dirname(__file__), 'private_data', 'Gemini_API_Key.txt')
         with open(key_path, 'r') as f:
-            # Read the key and remove leading/trailing whitespace
             return f.read().strip()
     except FileNotFoundError:
         logging.error("CRITICAL: API key file not found at 'private_data/Gemini_API_Key.txt'")
@@ -27,8 +25,24 @@ def load_api_key():
         logging.error(f"CRITICAL: An error occurred while reading the API key file: {e}")
         return None
 
+# --- NEW: Function to load the system prompt from a file ---
+def load_system_prompt():
+    """Loads the system prompt from an external text file."""
+    try:
+        prompt_path = os.path.join(os.path.dirname(__file__), 'public_data', 'system_prompt.txt')
+        with open(prompt_path, 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        logging.error("CRITICAL: System prompt file not found at 'public_data/system_prompt.txt'")
+        return "You are a helpful assistant." # Fallback prompt
+    except Exception as e:
+        logging.error(f"CRITICAL: An error occurred while reading the system prompt file: {e}")
+        return "You are a helpful assistant."
+
 # --- CONFIGURATION ---
-API_KEY = load_api_key() # Load the key using our new function
+API_KEY = load_api_key()
+SYSTEM_PROMPT = load_system_prompt()
+SESSIONS_FILE = os.path.join(os.path.dirname(__file__), 'sandbox', 'sessions', 'sessions.json')
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
@@ -50,32 +64,7 @@ if API_KEY:
         genai.configure(api_key=API_KEY)
         model = genai.GenerativeModel(
             model_name='gemini-2.5-pro',
-            system_instruction="""
-You are "Agent Control," an AI assistant that reasons and uses tools to answer user questions.
-
-Your goal is to answer the user's question fully and efficiently. At each step, you have a choice:
-
-1.  **Answer Directly**: If you can answer the user's query using your own internal knowledge or the conversation history without needing access to the local file system, then provide the answer directly in plain text.
-
-2.  **Use a Tool**: If you need to interact with the local file system to get information or perform an action, then respond with a single JSON command for one of the available tools. I will execute it and return the result to you as "TOOL_RESULT: ...".
-
-## Reasoning Strategy
-- When asked to perform a task that requires multiple steps (like writing, executing, and then saving a script), break it down into a sequence of tool calls.
-- **Example Strategy**: If asked to "write and run a script to do X and save it", your plan should be:
-    1. First, use the `execute_python_script` tool to run the code and get the result.
-    2. After you receive the successful execution result, use the `create_file` tool in the next step to save the script you just ran.
-    3. Finally, report the result of the execution to the user.
-
-## Available Tools:
-1.  **Action: `read_file`**
-    * JSON Format: {"action": "read_file", "parameters": {"filename": "<name>"}}
-2.  **Action: `list_directory`**
-    * JSON Format: {"action": "list_directory", "parameters": {}}
-3.  **Action: `create_file`**
-    * JSON Format: {"action": "create_file", "parameters": {"filename": "<name>", "content": "<content>"}}
-4.  **Action: `execute_python_script`**
-    * JSON Format: {"action": "execute_python_script", "parameters": {"script_content": "<python_code>"}}
-"""
+            system_instruction=SYSTEM_PROMPT
         )
         logging.info("Gemini API configured successfully.")
     except Exception as e:
@@ -96,29 +85,29 @@ def get_safe_path(filename):
     requested_path = os.path.abspath(os.path.join(sandbox_dir, filename))
     if os.path.commonpath([requested_path, sandbox_dir]) != sandbox_dir:
         raise ValueError("Attempted path traversal outside of sandbox.")
-    return requested_path, sandbox_dir
+    return requested_path
 
-def execute_tool_command(command):
+def execute_tool_command(command, session_id):
     action = command.get('action')
     params = command.get('parameters', {})
     try:
         if action == 'create_file':
             filename = params.get('filename', 'default.txt')
             content = params.get('content', '') 
-            safe_path, _ = get_safe_path(filename)
+            safe_path = get_safe_path(filename)
             with open(safe_path, 'w') as f:
                 f.write(content)
             return {"status": "success", "message": f"File '{filename}' created in sandbox."}
         elif action == 'read_file':
             filename = params.get('filename')
-            safe_path, _ = get_safe_path(filename)
+            safe_path = get_safe_path(filename)
             if not os.path.exists(safe_path):
                 return {"status": "error", "message": f"File '{filename}' not found."}
             with open(safe_path, 'r') as f:
                 content = f.read()
             return {"status": "success", "message": f"Read content from '{filename}'.", "content": content}
         elif action == 'list_directory':
-            _, sandbox_dir = get_safe_path('')
+            sandbox_dir = get_safe_path('').rsplit(os.sep, 1)[0]
             files = [f for f in os.listdir(sandbox_dir) if os.path.isfile(os.path.join(sandbox_dir, f))]
             return {"status": "success", "message": "Listed files in sandbox.", "files": files}
         elif action == 'execute_python_script':
@@ -129,16 +118,67 @@ def execute_tool_command(command):
                 exec(script_content, restricted_globals, {})
             output = string_io.getvalue()
             return {"status": "success", "message": "Script executed.", "output": output}
+        
+        elif action == 'save_session':
+            session_name = params.get('session_name')
+            chat = chat_sessions.get(session_id)
+            if not session_name or not chat:
+                return {"status": "error", "message": "Session name or active chat not found."}
+            
+            history_to_save = [{"role": part.role, "parts": [part.parts[0].text]} for part in chat.history]
+            
+            summary_prompt = "Please provide a very short, one-line summary of this conversation."
+            summary_response = chat.send_message(summary_prompt)
+            summary = summary_response.text
+
+            os.makedirs(os.path.dirname(SESSIONS_FILE), exist_ok=True)
+            try:
+                with open(SESSIONS_FILE, 'r') as f:
+                    all_sessions = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                all_sessions = {}
+            
+            all_sessions[session_name] = {"summary": summary, "history": history_to_save}
+
+            with open(SESSIONS_FILE, 'w') as f:
+                json.dump(all_sessions, f, indent=4)
+            
+            return {"status": "success", "message": f"Session '{session_name}' saved."}
+
+        elif action == 'list_sessions':
+            try:
+                with open(SESSIONS_FILE, 'r') as f:
+                    all_sessions = json.load(f)
+                session_list = [{"name": name, "summary": data.get("summary")} for name, data in all_sessions.items()]
+                return {"status": "success", "sessions": session_list}
+            except (FileNotFoundError, json.JSONDecodeError):
+                return {"status": "success", "sessions": []}
+
+        elif action == 'load_session':
+            session_name = params.get('session_name')
+            try:
+                with open(SESSIONS_FILE, 'r') as f:
+                    all_sessions = json.load(f)
+                
+                session_data = all_sessions.get(session_name)
+                if not session_data:
+                    return {"status": "error", "message": f"Session '{session_name}' not found."}
+                
+                history = [{'role': item['role'], 'parts': item['parts']} for item in session_data['history']]
+                
+                chat_sessions[session_id] = model.start_chat(history=history)
+                return {"status": "success", "message": f"Session '{session_name}' loaded."}
+            except (FileNotFoundError, json.JSONDecodeError):
+                return {"status": "error", "message": "No saved sessions found."}
+        
         else:
             return {"status": "error", "message": "Unknown action"}
-    except ValueError as e:
-        return {"status": "security_error", "message": str(e)}
     except Exception as e:
         logging.error(f"Error executing tool command: {e}")
-        return {"status": "error", "message": f"Script error: {e}"}
+        return {"status": "error", "message": f"An error occurred: {e}"}
 
 # --- ORCHESTRATOR LOGIC ---
-def execute_reasoning_loop(chat, initial_prompt):
+def execute_reasoning_loop(chat, initial_prompt, session_id):
     try:
         current_prompt = initial_prompt
         for i in range(5):
@@ -152,7 +192,7 @@ def execute_reasoning_loop(chat, initial_prompt):
                 socketio.emit('agent_action', {'type': 'Executing', 'data': command_json})
                 
                 socketio.sleep(0.1)
-                tool_result = execute_tool_command(command_json)
+                tool_result = execute_tool_command(command_json, session_id)
                 
                 socketio.emit('agent_action', {'type': 'Result', 'data': tool_result})
                 current_prompt = f"TOOL_RESULT: {json.dumps(tool_result)}"
@@ -176,12 +216,6 @@ def serve_docs():
 @app.route('/documentation.md')
 def serve_markdown():
     return send_from_directory('.', 'documentation.md')
-
-@app.route('/execute', methods=['POST'])
-def handle_execute():
-    command_data = request.json
-    result = execute_tool_command(command_data)
-    return jsonify(result)
 
 @socketio.on('connect')
 def handle_connect():
@@ -210,14 +244,24 @@ def handle_start_task(data):
     chat = chat_sessions.get(session_id)
     if prompt and chat:
         socketio.emit('log_message', {'type': 'system', 'data': 'Task received. Starting reasoning process...'})
-        socketio.start_background_task(execute_reasoning_loop, chat, prompt)
+        socketio.start_background_task(execute_reasoning_loop, chat, prompt, session_id)
     elif not chat:
         app.logger.warning(f"Task from {session_id} rejected because no chat session exists.")
         socketio.emit('log_message', {'type': 'error', 'data': 'No active AI session. Please refresh.'}, to=request.sid)
 
+@socketio.on('request_sandbox_refresh')
+def handle_sandbox_refresh():
+    result = execute_tool_command({'action': 'list_directory'}, None)
+    socketio.emit('sandbox_update', result, to=request.sid)
+
+@socketio.on('request_session_list')
+def handle_session_list_request():
+    result = execute_tool_command({'action': 'list_sessions'}, None)
+    socketio.emit('session_list_update', result, to=request.sid)
+
 if __name__ == '__main__':
     if not API_KEY:
-        app.logger.critical("Server startup failed: API key is missing.")
+        app.logger.critical("Server startup failed: API key is missing. Please create 'private_data/Gemini_API_Key.txt'.")
     else:
         app.logger.info("Starting Unified Agent Server on http://127.0.0.1:5001")
         socketio.run(app, port=5001)

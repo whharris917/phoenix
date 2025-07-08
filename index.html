@@ -47,24 +47,40 @@
 
     <div class="flex-grow overflow-y-auto">
         <main class="page flex-grow flex flex-col md:flex-row p-4 gap-4 h-full">
-            <!-- UPDATED: Left column layout -->
             <div class="w-full md:w-1/3 flex flex-col gap-4">
-                <!-- Sandbox Panel -->
-                <div class="bg-gray-800 rounded-lg shadow-lg p-4 flex flex-col h-1/2">
+                <!-- NEW: Session Management Panel -->
+                <div class="bg-gray-800 rounded-lg shadow-lg p-4 flex flex-col">
+                    <h2 class="text-lg font-semibold text-white mb-3 flex-shrink-0">Session Management</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label for="session-list" class="block text-sm font-medium text-gray-400 mb-1">Load Session</label>
+                            <div class="flex space-x-2">
+                                <select id="session-list" class="w-full bg-gray-700 text-white rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+                                <button id="load-session-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors">Load</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="save-session-name" class="block text-sm font-medium text-gray-400 mb-1">Save Current Session</label>
+                            <div class="flex space-x-2">
+                                <input type="text" id="save-session-name" class="w-full bg-gray-700 text-white rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="New session name...">
+                                <button id="save-session-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-lg shadow-lg p-4 flex flex-col flex-grow">
                     <div class="flex justify-between items-center mb-3 flex-shrink-0">
                         <h2 class="text-lg font-semibold text-white">Sandbox Files</h2>
                         <button id="refresh-sandbox" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-md text-sm transition-colors">Refresh</button>
                     </div>
                     <div id="sandbox-files" class="bg-gray-900 rounded-md p-3 flex-grow overflow-y-auto"></div>
                 </div>
-                <!-- Agent Log Panel -->
-                <div class="bg-gray-800 rounded-lg shadow-lg p-4 flex flex-col h-1/2">
+                <div class="bg-gray-800 rounded-lg shadow-lg p-4 flex flex-col flex-grow">
                     <h2 class="text-lg font-semibold text-white mb-3 flex-shrink-0">Agent Action Log</h2>
                     <div id="agent-log" class="bg-gray-900 rounded-md p-3 flex-grow overflow-y-auto space-y-2"></div>
                 </div>
             </div>
             
-            <!-- Right Panel -->
             <div class="w-full md:w-2/3 bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col">
                 <h2 class="text-xl font-semibold text-white mb-4">Conversation & Reasoning</h2>
                 <div id="conversation-log" class="flex-grow overflow-y-auto mb-4 pr-2 space-y-4"></div>
@@ -84,6 +100,10 @@
             const promptInput = document.getElementById('prompt-input');
             const sendBtn = document.getElementById('send-prompt');
             const refreshBtn = document.getElementById('refresh-sandbox');
+            const sessionList = document.getElementById('session-list');
+            const loadSessionBtn = document.getElementById('load-session-btn');
+            const saveSessionNameInput = document.getElementById('save-session-name');
+            const saveSessionBtn = document.getElementById('save-session-btn');
             
             const orchestratorStatus = document.getElementById('orchestrator-status');
             const orchestratorText = document.getElementById('orchestrator-text');
@@ -136,12 +156,16 @@
             socket.on('connect', () => {
                 orchestratorStatus.className = 'w-3 h-3 rounded-full bg-green-500';
                 orchestratorText.textContent = 'Orchestrator Online';
+                refreshSandboxFiles();
+                requestSessionList();
             });
 
             socket.on('disconnect', () => {
                 orchestratorStatus.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse';
                 orchestratorText.textContent = 'Orchestrator Offline';
-                addConversationLog("Connection to Orchestrator lost.", 'error');
+                agentStatus.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse';
+                agentText.textContent = 'Agent Offline';
+                addConversationLog("Connection to server lost.", 'error');
             });
 
             socket.on('log_message', (msg) => {
@@ -151,11 +175,51 @@
                 addConversationLog(msg.data, msg.type);
                 if (msg.type === 'final_answer' || msg.type === 'error') {
                     refreshSandboxFiles();
+                    requestSessionList();
                 }
             });
 
             socket.on('agent_action', (msg) => {
                 addAgentActionLog(msg.data, msg.type);
+            });
+
+            socket.on('sandbox_update', (result) => {
+                agentStatus.className = 'w-3 h-3 rounded-full bg-green-500';
+                agentText.textContent = 'Agent Online';
+                sandboxFiles.innerHTML = '';
+                if (result && result.status === 'success' && result.files) {
+                    if (result.files.length > 0) {
+                        result.files.forEach(file => {
+                            const fileElement = document.createElement('div');
+                            fileElement.className = 'bg-gray-700 p-2 rounded-md mb-2 flex justify-between items-center text-sm';
+                            fileElement.textContent = file;
+                            sandboxFiles.appendChild(fileElement);
+                        });
+                    } else {
+                        sandboxFiles.innerHTML = '<p class="text-gray-500">Sandbox is empty.</p>';
+                    }
+                } else {
+                    sandboxFiles.innerHTML = '<p class="text-red-400">Failed to load files.</p>';
+                }
+            });
+
+            socket.on('session_list_update', (result) => {
+                sessionList.innerHTML = '';
+                if (result && result.status === 'success' && result.sessions) {
+                    if (result.sessions.length > 0) {
+                        result.sessions.forEach(session => {
+                            const option = document.createElement('option');
+                            option.value = session.name;
+                            option.textContent = `${session.name} - ${session.summary}`;
+                            sessionList.appendChild(option);
+                        });
+                    } else {
+                         const option = document.createElement('option');
+                         option.textContent = 'No saved sessions';
+                         option.disabled = true;
+                         sessionList.appendChild(option);
+                    }
+                }
             });
 
             const handleUserPrompt = () => {
@@ -166,45 +230,49 @@
                 socket.emit('start_task', { prompt });
             };
             
-            const refreshSandboxFiles = async () => {
-                sandboxFiles.innerHTML = '<p class="text-gray-500">Refreshing...</p>';
-                try {
-                    const response = await fetch(`${SERVER_URL}/execute`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: "list_directory", parameters: {} })
-                    });
-                    if (!response.ok) throw new Error('Agent offline or error');
-                    const result = await response.json();
-                    
-                    agentStatus.className = 'w-3 h-3 rounded-full bg-green-500';
-                    agentText.textContent = 'Agent Online';
-
-                    sandboxFiles.innerHTML = '';
-                    if (result && result.status === 'success' && result.files) {
-                        if (result.files.length > 0) {
-                            result.files.forEach(file => {
-                                const fileElement = document.createElement('div');
-                                fileElement.className = 'bg-gray-700 p-2 rounded-md mb-2 flex justify-between items-center text-sm';
-                                fileElement.textContent = file;
-                                sandboxFiles.appendChild(fileElement);
-                            });
-                        } else {
-                            sandboxFiles.innerHTML = '<p class="text-gray-500">Sandbox is empty.</p>';
-                        }
-                    }
-                } catch (error) {
-                    agentStatus.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse';
-                    agentText.textContent = 'Agent Offline';
-                    sandboxFiles.innerHTML = '<p class="text-red-400">Could not connect to Agent.</p>';
+            const refreshSandboxFiles = () => {
+                if (socket.connected) {
+                    sandboxFiles.innerHTML = '<p class="text-gray-500">Refreshing...</p>';
+                    socket.emit('request_sandbox_refresh');
+                } else {
+                    sandboxFiles.innerHTML = '<p class="text-red-400">Orchestrator is offline.</p>';
                 }
+            };
+
+            const requestSessionList = () => {
+                if (socket.connected) {
+                    socket.emit('request_session_list');
+                }
+            };
+
+            const handleSaveSession = () => {
+                const name = saveSessionNameInput.value;
+                if (!name) {
+                    alert("Please enter a name for the session.");
+                    return;
+                }
+                const command = `Save this session as "${name}"`;
+                addConversationLog(command, 'user');
+                socket.emit('start_task', { prompt: command });
+                saveSessionNameInput.value = '';
+            };
+
+            const handleLoadSession = () => {
+                const name = sessionList.value;
+                if (!name || name === 'No saved sessions') {
+                    alert("Please select a session to load.");
+                    return;
+                }
+                const command = `Load the session named "${name}"`;
+                addConversationLog(command, 'user');
+                socket.emit('start_task', { prompt: command });
             };
 
             sendBtn.addEventListener('click', handleUserPrompt);
             promptInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleUserPrompt());
             refreshBtn.addEventListener('click', refreshSandboxFiles);
-
-            refreshSandboxFiles();
+            saveSessionBtn.addEventListener('click', handleSaveSession);
+            loadSessionBtn.addEventListener('click', handleLoadSession);
         });
     </script>
 </body>

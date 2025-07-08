@@ -102,3 +102,81 @@ json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 2025-07-07 14:31:02,360 - INFO - Client connected: lxi1fEm1vWKqh9MOAAAF
 2025-07-07 14:31:02,360 - INFO - Chat session created for lxi1fEm1vWKqh9MOAAAF
 2025-07-07 14:35:40,442 - INFO - Client disconnected: lxi1fEm1vWKqh9MOAAAF
+2025-07-07 16:25:07,404 - INFO - Gemini API configured successfully.
+2025-07-07 16:25:07,407 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 07:36:16,918 - INFO - Gemini API configured successfully.
+2025-07-08 07:36:16,924 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 07:36:46,102 - INFO - Client connected: zvSzGw3DI5xA7Sh1AAAB
+2025-07-08 07:36:46,102 - INFO - Chat session created for zvSzGw3DI5xA7Sh1AAAB
+2025-07-08 07:37:56,409 - ERROR - Error executing tool command: __import__ not found
+2025-07-08 07:38:15,819 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\app.py", line 149, in execute_reasoning_loop
+    command_json = json.loads(response_text.strip().replace('```json', '').replace('```', ''))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2025-07-08 07:40:49,647 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\app.py", line 149, in execute_reasoning_loop
+    command_json = json.loads(response_text.strip().replace('```json', '').replace('```', ''))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2025-07-08 07:42:04,616 - INFO - Client disconnected: zvSzGw3DI5xA7Sh1AAAB
+2025-07-08 07:42:04,810 - INFO - Client connected: HsgHNPazwFUnSaLKAAAD
+2025-07-08 07:42:04,810 - INFO - Chat session created for HsgHNPazwFUnSaLKAAAD
+2025-07-08 07:42:24,704 - INFO - Client disconnected: HsgHNPazwFUnSaLKAAAD
+2025-07-08 07:42:31,392 - INFO - Gemini API configured successfully.
+2025-07-08 07:42:31,392 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 07:42:32,217 - INFO - Client connected: 1Ajvfgc_fvUZi6ddAAAB
+2025-07-08 07:42:32,218 - INFO - Chat session created for 1Ajvfgc_fvUZi6ddAAAB
+2025-07-08 07:42:36,623 - INFO - Client disconnected: 1Ajvfgc_fvUZi6ddAAAB
+2025-07-08 07:42:36,806 - INFO - Client connected: bx3h1pl4UBnv5qoyAAAD
+2025-07-08 07:42:36,807 - INFO - Chat session created for bx3h1pl4UBnv5qoyAAAD
+2025-07-08 08:02:55,342 - INFO - Client disconnected: bx3h1pl4UBnv5qoyAAAD
+2025-07-08 08:03:01,369 - INFO - Gemini API configured successfully.
+2025-07-08 08:03:01,369 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 08:03:01,603 - INFO - Client connected: 1DB8cmCfdXjqCtqcAAAB
+2025-07-08 08:03:01,603 - INFO - Chat session created for 1DB8cmCfdXjqCtqcAAAB
+2025-07-08 08:03:13,036 - INFO - Client disconnected: 1DB8cmCfdXjqCtqcAAAB
+2025-07-08 08:03:13,236 - INFO - Client connected: zpdvrg9QZAKJUWBzAAAD
+2025-07-08 08:03:13,237 - INFO - Chat session created for zpdvrg9QZAKJUWBzAAAD
+2025-07-08 08:04:32,439 - INFO - Client disconnected: zpdvrg9QZAKJUWBzAAAD
+2025-07-08 08:04:32,630 - INFO - Client connected: NIXk9O4K6FXIhnHtAAAF
+2025-07-08 08:04:32,631 - INFO - Chat session created for NIXk9O4K6FXIhnHtAAAF
+2025-07-08 08:05:51,467 - INFO - Client disconnected: NIXk9O4K6FXIhnHtAAAF
+2025-07-08 08:05:51,687 - INFO - Client connected: vTJE3XdLcSbbVbjfAAAH
+2025-07-08 08:05:51,688 - INFO - Chat session created for vTJE3XdLcSbbVbjfAAAH
+2025-07-08 08:06:11,416 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\app.py", line 189, in execute_reasoning_loop
+    command_json = json.loads(response_text.strip().replace('```json', '').replace('```', ''))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2025-07-08 08:10:46,019 - INFO - Client disconnected: vTJE3XdLcSbbVbjfAAAH
+2025-07-08 08:10:46,221 - INFO - Client connected: FEEWS28yCSKP6JD1AAAJ
+2025-07-08 08:10:46,221 - INFO - Chat session created for FEEWS28yCSKP6JD1AAAJ
+2025-07-08 08:12:26,211 - INFO - Client disconnected: FEEWS28yCSKP6JD1AAAJ
