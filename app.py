@@ -25,7 +25,7 @@ def load_api_key():
         logging.error(f"CRITICAL: An error occurred while reading the API key file: {e}")
         return None
 
-# --- NEW: Function to load the system prompt from a file ---
+# --- Function to load the system prompt from a file ---
 def load_system_prompt():
     """Loads the system prompt from an external text file."""
     try:
@@ -127,8 +127,9 @@ def execute_tool_command(command, session_id):
             
             history_to_save = [{"role": part.role, "parts": [part.parts[0].text]} for part in chat.history]
             
+            summary_chat = model.start_chat(history=history_to_save)
             summary_prompt = "Please provide a very short, one-line summary of this conversation."
-            summary_response = chat.send_message(summary_prompt)
+            summary_response = summary_chat.send_message(summary_prompt)
             summary = summary_response.text
 
             os.makedirs(os.path.dirname(SESSIONS_FILE), exist_ok=True)
@@ -170,6 +171,23 @@ def execute_tool_command(command, session_id):
                 return {"status": "success", "message": f"Session '{session_name}' loaded."}
             except (FileNotFoundError, json.JSONDecodeError):
                 return {"status": "error", "message": "No saved sessions found."}
+
+        # --- NEW: Delete Session Tool ---
+        elif action == 'delete_session':
+            session_name = params.get('session_name')
+            try:
+                with open(SESSIONS_FILE, 'r') as f:
+                    all_sessions = json.load(f)
+                
+                if session_name in all_sessions:
+                    del all_sessions[session_name]
+                    with open(SESSIONS_FILE, 'w') as f:
+                        json.dump(all_sessions, f, indent=4)
+                    return {"status": "success", "message": f"Session '{session_name}' deleted."}
+                else:
+                    return {"status": "error", "message": f"Session '{session_name}' not found."}
+            except (FileNotFoundError, json.JSONDecodeError):
+                 return {"status": "error", "message": "No sessions file found to delete from."}
         
         else:
             return {"status": "error", "message": "Unknown action"}
@@ -191,13 +209,11 @@ def execute_reasoning_loop(chat, initial_prompt, session_id):
                 socketio.emit('log_message', {'type': 'thought', 'data': f"I should use the '{action}' tool."})
                 socketio.emit('agent_action', {'type': 'Executing', 'data': command_json})
                 
-                socketio.sleep(0.1)
                 tool_result = execute_tool_command(command_json, session_id)
                 
                 socketio.emit('agent_action', {'type': 'Result', 'data': tool_result})
                 current_prompt = f"TOOL_RESULT: {json.dumps(tool_result)}"
             else:
-                socketio.sleep(0.1)
                 socketio.emit('log_message', {'type': 'final_answer', 'data': response_text})
                 return
     except Exception as e:

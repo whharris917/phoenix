@@ -180,3 +180,34 @@ json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 2025-07-08 08:10:46,221 - INFO - Client connected: FEEWS28yCSKP6JD1AAAJ
 2025-07-08 08:10:46,221 - INFO - Chat session created for FEEWS28yCSKP6JD1AAAJ
 2025-07-08 08:12:26,211 - INFO - Client disconnected: FEEWS28yCSKP6JD1AAAJ
+2025-07-08 15:25:43,700 - INFO - Gemini API configured successfully.
+2025-07-08 15:25:43,703 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 15:26:06,163 - INFO - Client connected: L51eAN0zOgef7_pNAAAB
+2025-07-08 15:26:06,164 - INFO - Chat session created for L51eAN0zOgef7_pNAAAB
+2025-07-08 15:28:29,240 - INFO - Client connected: rNz_N6t3oECeDewtAAAD
+2025-07-08 15:28:29,241 - INFO - Chat session created for rNz_N6t3oECeDewtAAAD
+2025-07-08 15:28:29,804 - INFO - Client disconnected: L51eAN0zOgef7_pNAAAB
+2025-07-08 15:30:58,010 - INFO - Client disconnected: rNz_N6t3oECeDewtAAAD
+2025-07-08 15:30:58,192 - INFO - Client connected: 0AVzTMDaPL1CkFeDAAAF
+2025-07-08 15:30:58,193 - INFO - Chat session created for 0AVzTMDaPL1CkFeDAAAF
+2025-07-08 15:31:44,130 - INFO - Client disconnected: 0AVzTMDaPL1CkFeDAAAF
+2025-07-08 15:31:44,336 - INFO - Client connected: -DnYZkSrX6rr9Zy-AAAH
+2025-07-08 15:31:44,336 - INFO - Chat session created for -DnYZkSrX6rr9Zy-AAAH
+2025-07-08 15:37:23,704 - INFO - Client disconnected: -DnYZkSrX6rr9Zy-AAAH
+2025-07-08 15:37:23,860 - INFO - Client connected: vzq2ema4Y6kei0waAAAJ
+2025-07-08 15:37:23,862 - INFO - Chat session created for vzq2ema4Y6kei0waAAAJ
+2025-07-08 15:52:51,917 - INFO - Client disconnected: vzq2ema4Y6kei0waAAAJ
+2025-07-08 15:52:52,181 - INFO - Client connected: iSJ1xLC0gaFLgPgOAAAL
+2025-07-08 15:52:52,181 - INFO - Chat session created for iSJ1xLC0gaFLgPgOAAAL
+2025-07-08 15:52:57,264 - INFO - Client disconnected: iSJ1xLC0gaFLgPgOAAAL
+2025-07-08 15:53:00,869 - INFO - Gemini API configured successfully.
+2025-07-08 15:53:00,869 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 15:53:01,217 - INFO - Client connected: Ajrrb4cmLJosVD_sAAAB
+2025-07-08 15:53:01,218 - INFO - Chat session created for Ajrrb4cmLJosVD_sAAAB
+2025-07-08 15:54:43,715 - INFO - Client disconnected: Ajrrb4cmLJosVD_sAAAB
+2025-07-08 15:54:46,513 - INFO - Client connected: _dP_TGwcutpBh9N6AAAD
+2025-07-08 15:54:46,513 - INFO - Chat session created for _dP_TGwcutpBh9N6AAAD
+2025-07-08 16:16:14,277 - INFO - Gemini API configured successfully.
+2025-07-08 16:16:14,280 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 16:16:14,741 - INFO - Client connected: YoPnWOcFegtuQEeBAAAC
+2025-07-08 16:16:14,742 - INFO - Chat session created for YoPnWOcFegtuQEeBAAAC
