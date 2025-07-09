@@ -62,6 +62,11 @@ def serve_docs():
 def serve_markdown():
     return send_from_directory('.', 'documentation.md')
 
+# --- NEW: Route to serve the workshop page ---
+@app.route('/workshop')
+def serve_workshop():
+    return send_from_directory('.', 'workshop.html')
+
 @socketio.on('connect')
 def handle_connect():
     app.logger.info(f"Client connected: {request.sid}")

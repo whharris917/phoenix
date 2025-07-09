@@ -6,7 +6,6 @@
     <title>Gemini Agent Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         html.dark {
@@ -91,6 +90,7 @@
             <nav class="flex items-center space-x-2">
                 <a href="/" class="nav-link active py-2 px-3 rounded-md text-xs font-medium">Agent Control</a>
                 <a href="/docs" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Documentation</a>
+                <a href="/workshop" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Workshop</a>
                 <div class="relative" id="commands-dropdown-container">
                     <button id="commands-dropdown-btn" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center">
                         Available Commands
@@ -162,35 +162,8 @@
                 </div>
             </details>
             <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
-                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Workflow Visualization</summary>
-                <div class="p-4 border-t" style="border-color: var(--border-color);">
-                    <pre class="mermaid">
-                        graph TD
-                            subgraph "Your Computer (Local)"
-                                A["User<br>(UI)"]
-                                B("Orchestrator<br>(app.py)")
-                                D("Tool Agent<br>(app.py logic)")
-                                E["Sandbox"]
-                            end
-
-                            subgraph "Internet"
-                                C{"Google Gemini API"}
-                            end
-
-                            A -- "1. User Prompt" --> B
-                            B -- "2. API Call" --> C
-                            C -- "3. AI Response" --> B
-                            B -- "4. Tool Command" --> D
-                            D -- "5. File Action" --> E
-                            B -- "6. Final Answer" --> A
-
-                            style A fill:#1E40AF,stroke:#1D4ED8,color:#fff
-                            style B fill:#4338CA,stroke:#4F46E5,color:#fff
-                            style C fill:#1E3A8A,stroke:#3B82F6,color:#fff
-                            style D fill:#14532D,stroke:#16A34A,color:#fff
-                            style E fill:#78350F,stroke:#F59E0B,color:#fff
-                    </pre>
-                </div>
+                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Empty Panel A</summary>
+                <div class="p-4 border-t" style="border-color: var(--border-color);"><p class="text-xs text-gray-500">Content for panel A.</p></div>
             </details>
             <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
                 <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Empty Panel B</summary>
@@ -216,7 +189,6 @@
         </div>
     </main>
     <script>
-        mermaid.initialize({ startOnLoad: true, theme: 'dark', darkMode: document.documentElement.classList.contains('dark') });
         document.addEventListener('DOMContentLoaded', () => {
             const agentLog = document.getElementById('agent-log');
             const conversationLog = document.getElementById('conversation-log');

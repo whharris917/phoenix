@@ -316,3 +316,43 @@ Traceback (most recent call last):
     tool_result = execute_tool_command(command_json, session_id, chat_sessions, model)
                                                                  ^^^^^^^^^^^^^
 NameError: name 'chat_sessions' is not defined
+2025-07-08 19:00:51,550 - INFO - Gemini API configured successfully.
+2025-07-08 19:00:51,554 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 19:00:51,703 - INFO - Client connected: iRdqTnGr2c37q_c_AAAB
+2025-07-08 19:00:51,704 - INFO - Chat session created for iRdqTnGr2c37q_c_AAAB
+2025-07-08 19:00:55,234 - INFO - Client disconnected: iRdqTnGr2c37q_c_AAAB
+2025-07-08 19:00:55,535 - INFO - Client connected: 4Qj2omlVZhHh4p83AAAD
+2025-07-08 19:00:55,536 - INFO - Chat session created for 4Qj2omlVZhHh4p83AAAD
+2025-07-08 19:03:36,169 - INFO - Client disconnected: 4Qj2omlVZhHh4p83AAAD
+2025-07-08 19:03:36,506 - INFO - Client connected: CHCDlhEt4yE31g2UAAAF
+2025-07-08 19:03:36,507 - INFO - Chat session created for CHCDlhEt4yE31g2UAAAF
+2025-07-08 19:11:43,663 - INFO - Client disconnected: CHCDlhEt4yE31g2UAAAF
+2025-07-08 19:11:44,046 - INFO - Client connected: kTyEzcEYw50NoZy9AAAH
+2025-07-08 19:11:44,047 - INFO - Chat session created for kTyEzcEYw50NoZy9AAAH
+2025-07-08 19:11:44,898 - INFO - Client disconnected: kTyEzcEYw50NoZy9AAAH
+2025-07-08 19:15:38,950 - INFO - Client connected: 5NJCrPZQ7GdQ4lLRAAAJ
+2025-07-08 19:15:38,950 - INFO - Chat session created for 5NJCrPZQ7GdQ4lLRAAAJ
+2025-07-08 19:15:40,356 - INFO - Client disconnected: 5NJCrPZQ7GdQ4lLRAAAJ
+2025-07-08 19:15:45,640 - INFO - Client connected: tojKtLB_GoIsCd3IAAAL
+2025-07-08 19:15:45,640 - INFO - Chat session created for tojKtLB_GoIsCd3IAAAL
+2025-07-08 19:15:49,606 - INFO - Client disconnected: tojKtLB_GoIsCd3IAAAL
+2025-07-08 19:18:01,392 - INFO - Client connected: IVcKNPvMn58IYJG1AAAN
+2025-07-08 19:18:01,392 - INFO - Chat session created for IVcKNPvMn58IYJG1AAAN
+2025-07-08 19:19:51,884 - INFO - Client disconnected: IVcKNPvMn58IYJG1AAAN
+2025-07-08 19:33:42,550 - INFO - Gemini API configured successfully.
+2025-07-08 19:33:42,550 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 19:34:16,955 - INFO - Gemini API configured successfully.
+2025-07-08 19:34:16,958 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 19:41:06,720 - INFO - Gemini API configured successfully.
+2025-07-08 19:41:06,722 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 19:41:08,785 - INFO - Client connected: 2aMLdDJv82sS_6cdAAAB
+2025-07-08 19:41:08,785 - INFO - Chat session created for 2aMLdDJv82sS_6cdAAAB
+2025-07-08 19:41:11,933 - INFO - Client disconnected: 2aMLdDJv82sS_6cdAAAB
+2025-07-08 19:41:13,083 - INFO - Client connected: R-UHbCR9rzu49l-lAAAD
+2025-07-08 19:41:13,083 - INFO - Chat session created for R-UHbCR9rzu49l-lAAAD
+2025-07-08 20:43:37,402 - INFO - Client disconnected: R-UHbCR9rzu49l-lAAAD
+2025-07-08 20:43:37,663 - INFO - Client connected: 3x5p00bNSOEsoW2dAAAF
+2025-07-08 20:43:37,664 - INFO - Chat session created for 3x5p00bNSOEsoW2dAAAF
+2025-07-08 20:43:38,990 - INFO - Client disconnected: 3x5p00bNSOEsoW2dAAAF
+2025-07-08 20:43:41,252 - INFO - Client connected: _OjwZVRxcl0HSUTWAAAH
+2025-07-08 20:43:41,253 - INFO - Chat session created for _OjwZVRxcl0HSUTWAAAH
