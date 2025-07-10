@@ -356,3 +356,738 @@ NameError: name 'chat_sessions' is not defined
 2025-07-08 20:43:38,990 - INFO - Client disconnected: 3x5p00bNSOEsoW2dAAAF
 2025-07-08 20:43:41,252 - INFO - Client connected: _OjwZVRxcl0HSUTWAAAH
 2025-07-08 20:43:41,253 - INFO - Chat session created for _OjwZVRxcl0HSUTWAAAH
+2025-07-08 21:14:43,771 - INFO - Gemini API configured successfully.
+2025-07-08 21:14:43,773 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 21:14:49,331 - INFO - Client connected: 1-AJNc4H4_Rlx9MNAAAB
+2025-07-08 21:14:49,334 - INFO - Chat session created for 1-AJNc4H4_Rlx9MNAAAB
+2025-07-08 21:36:35,192 - INFO - Client disconnected: 1-AJNc4H4_Rlx9MNAAAB
+2025-07-08 21:36:35,425 - INFO - Client connected: 42EIszgmsHPUTUxYAAAD
+2025-07-08 21:36:35,425 - INFO - Chat session created for 42EIszgmsHPUTUxYAAAD
+2025-07-08 21:38:38,721 - INFO - Client disconnected: 42EIszgmsHPUTUxYAAAD
+2025-07-08 21:38:39,993 - INFO - Client connected: tUolSPIHfqhx0wDOAAAF
+2025-07-08 21:38:39,993 - INFO - Chat session created for tUolSPIHfqhx0wDOAAAF
+2025-07-08 21:43:28,729 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\orchestrator.py", line 16, in execute_reasoning_loop
+    command_json = json.loads(response_text.strip().replace('```json', '').replace('```', ''))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2025-07-08 21:47:55,034 - INFO - Client disconnected: tUolSPIHfqhx0wDOAAAF
+2025-07-08 21:47:55,231 - INFO - Client connected: n8Ct2Nder5LILutqAAAH
+2025-07-08 21:47:55,232 - INFO - Chat session created for n8Ct2Nder5LILutqAAAH
+2025-07-08 21:49:44,150 - INFO - Gemini API configured successfully.
+2025-07-08 21:49:44,152 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 21:49:44,215 - INFO - Client connected: dXFkqCFWDEcKzK1RAAAB
+2025-07-08 21:49:44,216 - INFO - Chat session created for dXFkqCFWDEcKzK1RAAAB
+2025-07-08 21:49:46,958 - INFO - Client disconnected: dXFkqCFWDEcKzK1RAAAB
+2025-07-08 21:49:47,280 - INFO - Client connected: DFMdFtCNA49kFrcLAAAD
+2025-07-08 21:49:47,280 - INFO - Chat session created for DFMdFtCNA49kFrcLAAAD
+2025-07-08 21:56:46,401 - INFO - Client disconnected: DFMdFtCNA49kFrcLAAAD
+2025-07-08 21:56:46,674 - INFO - Client connected: 7wkhK6zWzSYODJ41AAAF
+2025-07-08 21:56:46,674 - INFO - Chat session created for 7wkhK6zWzSYODJ41AAAF
+2025-07-08 21:58:31,180 - INFO - Client disconnected: 7wkhK6zWzSYODJ41AAAF
+2025-07-08 21:58:31,330 - INFO - Client connected: M9f5luLi7fP2YTpxAAAH
+2025-07-08 21:58:31,333 - INFO - Chat session created for M9f5luLi7fP2YTpxAAAH
+2025-07-08 22:02:35,399 - INFO - Client disconnected: M9f5luLi7fP2YTpxAAAH
+2025-07-08 22:02:35,576 - INFO - Client connected: Q82SR0NDpfhdtnyOAAAJ
+2025-07-08 22:02:35,576 - INFO - Chat session created for Q82SR0NDpfhdtnyOAAAJ
+2025-07-08 22:02:41,436 - INFO - Client disconnected: Q82SR0NDpfhdtnyOAAAJ
+2025-07-08 22:02:47,084 - INFO - Gemini API configured successfully.
+2025-07-08 22:02:47,085 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 22:02:47,354 - INFO - Client connected: fhgYF8k_LWJx7DjGAAAC
+2025-07-08 22:02:47,355 - INFO - Chat session created for fhgYF8k_LWJx7DjGAAAC
+2025-07-08 22:16:34,095 - INFO - Gemini API configured successfully.
+2025-07-08 22:16:34,097 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 22:16:34,211 - INFO - Client connected: HCGBBnFOcAQcgLcgAAAB
+2025-07-08 22:16:34,211 - INFO - Chat session created for HCGBBnFOcAQcgLcgAAAB
+2025-07-08 22:16:53,549 - INFO - Gemini API configured successfully.
+2025-07-08 22:16:53,551 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 22:16:53,690 - INFO - Client connected: wciWnQ7HODrqoebzAAAB
+2025-07-08 22:16:53,690 - INFO - Chat session created for wciWnQ7HODrqoebzAAAB
+2025-07-08 22:16:59,064 - INFO - Client disconnected: wciWnQ7HODrqoebzAAAB
+2025-07-08 22:17:19,134 - INFO - Client connected: cvVLLi_9SXHGaA0_AAAD
+2025-07-08 22:17:19,134 - INFO - Chat session created for cvVLLi_9SXHGaA0_AAAD
+2025-07-08 22:20:24,221 - INFO - Client disconnected: cvVLLi_9SXHGaA0_AAAD
+2025-07-08 22:20:24,436 - INFO - Client connected: YVHRn9PNMnHSsE8jAAAF
+2025-07-08 22:20:24,436 - INFO - Chat session created for YVHRn9PNMnHSsE8jAAAF
+2025-07-08 22:21:07,422 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\orchestrator.py", line 16, in execute_reasoning_loop
+    command_json = json.loads(response_text.strip().replace('```json', '').replace('```', ''))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2025-07-08 22:27:53,922 - INFO - Client disconnected: YVHRn9PNMnHSsE8jAAAF
+2025-07-08 22:27:57,267 - INFO - Gemini API configured successfully.
+2025-07-08 22:27:57,269 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-08 22:27:57,304 - INFO - Client connected: JwR7VL6go-oWnJg-AAAB
+2025-07-08 22:27:57,305 - INFO - Chat session created for JwR7VL6go-oWnJg-AAAB
+2025-07-08 22:27:58,378 - INFO - Client disconnected: JwR7VL6go-oWnJg-AAAB
+2025-07-08 22:27:58,619 - INFO - Client connected: PmLogUxw9owrL_j-AAAD
+2025-07-08 22:27:58,619 - INFO - Chat session created for PmLogUxw9owrL_j-AAAD
+2025-07-08 22:30:58,850 - INFO - Client disconnected: PmLogUxw9owrL_j-AAAD
+2025-07-09 07:35:17,473 - INFO - Client connected: lFL9sNsILs_B0Q_3AAAF
+2025-07-09 07:35:17,473 - INFO - Chat session created for lFL9sNsILs_B0Q_3AAAF
+2025-07-09 08:18:02,484 - INFO - Gemini API configured successfully.
+2025-07-09 08:18:02,485 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 08:18:02,682 - INFO - Client connected: 2HoFa5t7TS2UnRAMAAAB
+2025-07-09 08:18:02,682 - INFO - Chat session created for 2HoFa5t7TS2UnRAMAAAB
+2025-07-09 08:18:07,987 - INFO - Client disconnected: 2HoFa5t7TS2UnRAMAAAB
+2025-07-09 08:18:08,299 - INFO - Client connected: j0QDUXlivtYE1x3zAAAD
+2025-07-09 08:18:08,299 - INFO - Chat session created for j0QDUXlivtYE1x3zAAAD
+2025-07-09 08:18:13,880 - INFO - Client disconnected: j0QDUXlivtYE1x3zAAAD
+2025-07-09 08:18:16,836 - INFO - Client connected: Sx2TD89A4pVGdK5TAAAF
+2025-07-09 08:18:16,837 - INFO - Chat session created for Sx2TD89A4pVGdK5TAAAF
+2025-07-09 08:18:37,015 - INFO - Client disconnected: Sx2TD89A4pVGdK5TAAAF
+2025-07-09 08:18:37,233 - INFO - Client connected: 0LxyU9qhe-stPDsFAAAH
+2025-07-09 08:18:37,234 - INFO - Chat session created for 0LxyU9qhe-stPDsFAAAH
+2025-07-09 08:18:50,520 - INFO - Client disconnected: 0LxyU9qhe-stPDsFAAAH
+2025-07-09 08:18:50,710 - INFO - Client connected: khmaPudqWGTFDaizAAAJ
+2025-07-09 08:18:50,710 - INFO - Chat session created for khmaPudqWGTFDaizAAAJ
+2025-07-09 09:30:30,094 - INFO - Gemini API configured successfully.
+2025-07-09 09:30:30,096 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 09:30:56,144 - INFO - Client connected: PoUwMlAlGzGDoEFjAAAB
+2025-07-09 09:30:56,145 - INFO - Chat session created for PoUwMlAlGzGDoEFjAAAB
+2025-07-09 09:31:26,060 - INFO - Client disconnected: PoUwMlAlGzGDoEFjAAAB
+2025-07-09 09:31:26,255 - INFO - Client connected: an1Cc6e49IqhTNfeAAAD
+2025-07-09 09:31:26,255 - INFO - Chat session created for an1Cc6e49IqhTNfeAAAD
+2025-07-09 09:35:11,425 - INFO - Client disconnected: an1Cc6e49IqhTNfeAAAD
+2025-07-09 10:26:01,485 - INFO - Client connected: Q1SyrhPQCRBtpIz9AAAF
+2025-07-09 10:26:01,485 - INFO - Chat session created for Q1SyrhPQCRBtpIz9AAAF
+2025-07-09 10:26:17,811 - INFO - Client disconnected: Q1SyrhPQCRBtpIz9AAAF
+2025-07-09 10:26:18,007 - INFO - Client connected: V0PMj8Mug2Du8XmmAAAH
+2025-07-09 10:26:18,008 - INFO - Chat session created for V0PMj8Mug2Du8XmmAAAH
+2025-07-09 10:36:01,690 - INFO - Client disconnected: V0PMj8Mug2Du8XmmAAAH
+2025-07-09 10:36:01,895 - INFO - Client connected: LUvWb4LdGINvYX5jAAAJ
+2025-07-09 10:36:01,895 - INFO - Chat session created for LUvWb4LdGINvYX5jAAAJ
+2025-07-09 10:36:22,916 - INFO - Client disconnected: LUvWb4LdGINvYX5jAAAJ
+2025-07-09 10:36:23,130 - INFO - Client connected: BHpG9NvjKNAwlLkcAAAL
+2025-07-09 10:36:23,131 - INFO - Chat session created for BHpG9NvjKNAwlLkcAAAL
+2025-07-09 10:40:36,418 - INFO - Client disconnected: BHpG9NvjKNAwlLkcAAAL
+2025-07-09 10:40:36,667 - INFO - Client connected: rTHypiSL3Rw6HI01AAAN
+2025-07-09 10:40:36,668 - INFO - Chat session created for rTHypiSL3Rw6HI01AAAN
+2025-07-09 10:50:16,519 - INFO - Client disconnected: rTHypiSL3Rw6HI01AAAN
+2025-07-09 10:50:16,738 - INFO - Client connected: uvr616eDL-i1GMXoAAAP
+2025-07-09 10:50:16,738 - INFO - Chat session created for uvr616eDL-i1GMXoAAAP
+2025-07-09 10:50:53,185 - INFO - Client disconnected: uvr616eDL-i1GMXoAAAP
+2025-07-09 10:50:53,398 - INFO - Client connected: 4cgs-SqKGcxXnJXdAAAR
+2025-07-09 10:50:53,399 - INFO - Chat session created for 4cgs-SqKGcxXnJXdAAAR
+2025-07-09 10:51:21,617 - INFO - Client disconnected: 4cgs-SqKGcxXnJXdAAAR
+2025-07-09 10:51:21,826 - INFO - Client connected: O4kfDHEBR7DiknQtAAAT
+2025-07-09 10:51:21,827 - INFO - Chat session created for O4kfDHEBR7DiknQtAAAT
+2025-07-09 11:00:27,027 - INFO - Client disconnected: O4kfDHEBR7DiknQtAAAT
+2025-07-09 11:00:27,229 - INFO - Client connected: aftlDxMxB5lEqi2EAAAV
+2025-07-09 11:00:27,230 - INFO - Chat session created for aftlDxMxB5lEqi2EAAAV
+2025-07-09 11:00:46,461 - INFO - Client disconnected: aftlDxMxB5lEqi2EAAAV
+2025-07-09 11:00:46,647 - INFO - Client connected: 0mklkbHQqpxVNM5kAAAX
+2025-07-09 11:00:46,647 - INFO - Chat session created for 0mklkbHQqpxVNM5kAAAX
+2025-07-09 11:07:05,963 - INFO - Client disconnected: 0mklkbHQqpxVNM5kAAAX
+2025-07-09 11:07:06,203 - INFO - Client connected: GxMxdKJ4B193Xk8QAAAZ
+2025-07-09 11:07:06,203 - INFO - Chat session created for GxMxdKJ4B193Xk8QAAAZ
+2025-07-09 11:08:17,261 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\orchestrator.py", line 16, in execute_reasoning_loop
+    command_json = json.loads(response_text.strip().replace('```json', '').replace('```', ''))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2025-07-09 11:08:41,209 - INFO - Client disconnected: GxMxdKJ4B193Xk8QAAAZ
+2025-07-09 11:08:45,132 - INFO - Gemini API configured successfully.
+2025-07-09 11:08:45,135 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 11:08:45,354 - INFO - Client connected: HEVwDL3LDn6A7iijAAAB
+2025-07-09 11:08:45,355 - INFO - Chat session created for HEVwDL3LDn6A7iijAAAB
+2025-07-09 11:08:49,837 - INFO - Client disconnected: HEVwDL3LDn6A7iijAAAB
+2025-07-09 11:08:50,034 - INFO - Client connected: ghcCSD81t7DCVpbLAAAD
+2025-07-09 11:08:50,034 - INFO - Chat session created for ghcCSD81t7DCVpbLAAAD
+2025-07-09 11:09:07,743 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\orchestrator.py", line 16, in execute_reasoning_loop
+    command_json = json.loads(response_text.strip().replace('```json', '').replace('```', ''))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\json\decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+2025-07-09 11:11:06,844 - INFO - Gemini API configured successfully.
+2025-07-09 11:11:06,846 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 11:11:06,905 - INFO - Client connected: PW9ns-ghhJjbI-G6AAAB
+2025-07-09 11:11:06,906 - INFO - Chat session created for PW9ns-ghhJjbI-G6AAAB
+2025-07-09 11:11:08,482 - INFO - Client disconnected: PW9ns-ghhJjbI-G6AAAB
+2025-07-09 11:11:08,700 - INFO - Client connected: G-AxoTr5JTN8WITOAAAD
+2025-07-09 11:11:08,700 - INFO - Chat session created for G-AxoTr5JTN8WITOAAAD
+2025-07-09 11:17:10,987 - INFO - Gemini API configured successfully.
+2025-07-09 11:17:10,987 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 11:17:11,088 - INFO - Client connected: ALk3KBgnWLFD75aKAAAB
+2025-07-09 11:17:11,088 - INFO - Chat session created for ALk3KBgnWLFD75aKAAAB
+2025-07-09 11:17:30,969 - INFO - Client disconnected: ALk3KBgnWLFD75aKAAAB
+2025-07-09 11:17:31,238 - INFO - Client connected: klEJa26HXWsKsyBbAAAD
+2025-07-09 11:17:31,239 - INFO - Chat session created for klEJa26HXWsKsyBbAAAD
+2025-07-09 11:32:37,289 - INFO - Client disconnected: klEJa26HXWsKsyBbAAAD
+2025-07-09 11:32:37,538 - INFO - Client connected: hWYdJ3hR8hWaR7VQAAAF
+2025-07-09 11:32:37,538 - INFO - Chat session created for hWYdJ3hR8hWaR7VQAAAF
+2025-07-09 11:38:50,294 - INFO - Client disconnected: hWYdJ3hR8hWaR7VQAAAF
+2025-07-09 11:38:55,247 - INFO - Gemini API configured successfully.
+2025-07-09 11:38:55,247 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 11:38:55,264 - INFO - Client connected: 5B9QZO4KEYpcSVtxAAAB
+2025-07-09 11:38:55,264 - INFO - Chat session created for 5B9QZO4KEYpcSVtxAAAB
+2025-07-09 11:39:00,969 - INFO - Client disconnected: 5B9QZO4KEYpcSVtxAAAB
+2025-07-09 11:39:01,197 - INFO - Client connected: XWugnOGwv9VQX-4hAAAD
+2025-07-09 11:39:01,197 - INFO - Chat session created for XWugnOGwv9VQX-4hAAAD
+2025-07-09 12:26:35,877 - INFO - Client disconnected: XWugnOGwv9VQX-4hAAAD
+2025-07-09 12:26:35,887 - INFO - Client connected: ak3UGAdQMRUhPQ42AAAF
+2025-07-09 12:26:35,887 - INFO - Chat session created for ak3UGAdQMRUhPQ42AAAF
+2025-07-09 14:32:45,286 - INFO - Client disconnected: ak3UGAdQMRUhPQ42AAAF
+2025-07-09 15:29:25,524 - INFO - Client connected: 0I47QqQ9ljDFuDPWAAAH
+2025-07-09 15:29:25,524 - INFO - Chat session created for 0I47QqQ9ljDFuDPWAAAH
+2025-07-09 15:32:54,353 - INFO - Client disconnected: 0I47QqQ9ljDFuDPWAAAH
+2025-07-09 15:32:55,019 - INFO - Client connected: YoedR1QvWCPHw8MIAAAJ
+2025-07-09 15:32:55,020 - INFO - Chat session created for YoedR1QvWCPHw8MIAAAJ
+2025-07-09 15:32:59,522 - INFO - Client disconnected: YoedR1QvWCPHw8MIAAAJ
+2025-07-09 15:32:59,918 - INFO - Client connected: RJm66GjJm1X7s13zAAAL
+2025-07-09 15:32:59,919 - INFO - Chat session created for RJm66GjJm1X7s13zAAAL
+2025-07-09 15:33:04,215 - INFO - Client disconnected: RJm66GjJm1X7s13zAAAL
+2025-07-09 15:33:09,230 - INFO - Gemini API configured successfully.
+2025-07-09 15:33:09,235 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 15:33:10,049 - INFO - Client connected: X_ClGlZxb9pRCi8TAAAB
+2025-07-09 15:33:10,050 - INFO - Chat session created for X_ClGlZxb9pRCi8TAAAB
+2025-07-09 16:00:38,303 - INFO - Client disconnected: X_ClGlZxb9pRCi8TAAAB
+2025-07-09 16:00:38,318 - INFO - Client connected: iPptGP27Htww5cMaAAAF
+2025-07-09 16:00:38,318 - INFO - Chat session created for iPptGP27Htww5cMaAAAF
+2025-07-09 16:00:38,827 - INFO - Client connected: wCkE1LrvBWUmcQDoAAAH
+2025-07-09 16:00:38,827 - INFO - Chat session created for wCkE1LrvBWUmcQDoAAAH
+2025-07-09 16:01:26,408 - INFO - Client disconnected: iPptGP27Htww5cMaAAAF
+2025-07-09 16:11:44,490 - INFO - Client disconnected: wCkE1LrvBWUmcQDoAAAH
+2025-07-09 16:12:38,150 - ERROR - Error executing tool command: __import__ not found
+2025-07-09 16:12:38,153 - INFO - Client connected: 3J-cJo3gREIWWenoAAAK
+2025-07-09 16:12:38,153 - INFO - Chat session created for 3J-cJo3gREIWWenoAAAK
+2025-07-09 16:13:20,511 - INFO - Client disconnected: 3J-cJo3gREIWWenoAAAK
+2025-07-09 16:13:30,171 - ERROR - Error executing tool command: __import__ not found
+2025-07-09 16:14:27,930 - ERROR - 'Session is disconnected' q4HmDA3-z_fJgrnSAAAM (further occurrences of this error will be logged with level INFO)
+2025-07-09 16:14:27,946 - INFO - Client connected: K0EaW_g8Y1C1ko4CAAAO
+2025-07-09 16:14:27,946 - INFO - Chat session created for K0EaW_g8Y1C1ko4CAAAO
+2025-07-09 16:19:42,665 - INFO - Client connected: IEReqbb4mRV1H5_7AAAQ
+2025-07-09 16:19:42,665 - INFO - Chat session created for IEReqbb4mRV1H5_7AAAQ
+2025-07-09 16:21:31,575 - INFO - Client disconnected: K0EaW_g8Y1C1ko4CAAAO
+2025-07-09 16:21:33,843 - INFO - Client connected: JGKlVIiEFhpKp9K0AAAS
+2025-07-09 16:21:33,844 - INFO - Chat session created for JGKlVIiEFhpKp9K0AAAS
+2025-07-09 16:23:22,473 - INFO - Client disconnected: IEReqbb4mRV1H5_7AAAQ
+2025-07-09 16:23:22,479 - INFO - Client disconnected: JGKlVIiEFhpKp9K0AAAS
+2025-07-09 16:23:23,281 - INFO - Client connected: O1Hp3ciAJW268iSwAAAU
+2025-07-09 16:23:23,281 - INFO - Chat session created for O1Hp3ciAJW268iSwAAAU
+2025-07-09 16:23:23,834 - INFO - Client connected: N2jYQHxlk-iaqfAXAAAW
+2025-07-09 16:23:23,835 - INFO - Chat session created for N2jYQHxlk-iaqfAXAAAW
+2025-07-09 16:35:21,116 - INFO - Gemini API configured successfully.
+2025-07-09 16:35:21,119 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 16:35:22,839 - INFO - Client connected: _ksaF3VtBTBguzW1AAAB
+2025-07-09 16:35:22,839 - INFO - Chat session created for _ksaF3VtBTBguzW1AAAB
+2025-07-09 16:35:23,157 - INFO - Client connected: X7ofzhUnV_EseJkzAAAD
+2025-07-09 16:35:23,157 - INFO - Chat session created for X7ofzhUnV_EseJkzAAAD
+2025-07-09 16:36:16,976 - INFO - Client disconnected: _ksaF3VtBTBguzW1AAAB
+2025-07-09 16:37:23,395 - INFO - Client connected: 1QzauRShs7z0-My7AAAF
+2025-07-09 16:37:23,396 - INFO - Chat session created for 1QzauRShs7z0-My7AAAF
+2025-07-09 16:37:24,858 - INFO - Client disconnected: 1QzauRShs7z0-My7AAAF
+2025-07-09 16:41:24,024 - INFO - Gemini API configured successfully.
+2025-07-09 16:41:24,028 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 16:41:24,164 - INFO - Client connected: aZuqAHeqtxv-u5KVAAAB
+2025-07-09 16:41:24,164 - INFO - Chat session created for aZuqAHeqtxv-u5KVAAAB
+2025-07-09 16:41:34,221 - INFO - Client disconnected: aZuqAHeqtxv-u5KVAAAB
+2025-07-09 16:41:34,715 - INFO - Client connected: _JXia3a_R1sfvvygAAAD
+2025-07-09 16:41:34,715 - INFO - Chat session created for _JXia3a_R1sfvvygAAAD
+2025-07-09 16:42:09,178 - INFO - Client disconnected: _JXia3a_R1sfvvygAAAD
+2025-07-09 16:42:13,585 - INFO - Gemini API configured successfully.
+2025-07-09 16:42:13,588 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 16:42:14,130 - INFO - Client connected: 1UncMupEiv0nn_XtAAAC
+2025-07-09 16:42:14,131 - INFO - Chat session created for 1UncMupEiv0nn_XtAAAC
+2025-07-09 16:43:02,191 - INFO - Client disconnected: 1UncMupEiv0nn_XtAAAC
+2025-07-09 16:43:09,067 - INFO - Gemini API configured successfully.
+2025-07-09 16:43:09,073 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 16:43:09,163 - INFO - Client connected: 7zzI7nEAJmRigWjMAAAB
+2025-07-09 16:43:09,163 - INFO - Chat session created for 7zzI7nEAJmRigWjMAAAB
+2025-07-09 16:43:09,548 - INFO - Client disconnected: 7zzI7nEAJmRigWjMAAAB
+2025-07-09 16:43:09,962 - INFO - Client connected: a3o_mxDzRHfjV7mPAAAD
+2025-07-09 16:43:09,963 - INFO - Chat session created for a3o_mxDzRHfjV7mPAAAD
+2025-07-09 16:43:31,039 - INFO - Gemini API configured successfully.
+2025-07-09 16:43:31,042 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 16:43:32,451 - INFO - Client connected: NiM1qOYnV12gvhUwAAAB
+2025-07-09 16:43:32,452 - INFO - Chat session created for NiM1qOYnV12gvhUwAAAB
+2025-07-09 16:43:33,145 - INFO - Client disconnected: NiM1qOYnV12gvhUwAAAB
+2025-07-09 16:43:33,643 - INFO - Client connected: 9tZbbMWfU8y2XS7lAAAD
+2025-07-09 16:43:33,644 - INFO - Chat session created for 9tZbbMWfU8y2XS7lAAAD
+2025-07-09 17:02:42,675 - INFO - Client disconnected: 9tZbbMWfU8y2XS7lAAAD
+2025-07-09 17:03:18,444 - INFO - Client connected: FvtDEYCApZXL8TI7AAAG
+2025-07-09 17:03:18,445 - INFO - Chat session created for FvtDEYCApZXL8TI7AAAG
+2025-07-09 17:15:07,973 - INFO - Client disconnected: FvtDEYCApZXL8TI7AAAG
+2025-07-09 17:15:10,154 - INFO - Client connected: tQz9a5i92rZ7tp-AAAAI
+2025-07-09 17:15:10,154 - INFO - Chat session created for tQz9a5i92rZ7tp-AAAAI
+2025-07-09 17:18:32,498 - INFO - Client disconnected: tQz9a5i92rZ7tp-AAAAI
+2025-07-09 17:18:32,961 - INFO - Client connected: 4i_wQ_-Kie-lbF1KAAAK
+2025-07-09 17:18:32,962 - INFO - Chat session created for 4i_wQ_-Kie-lbF1KAAAK
+2025-07-09 17:21:53,118 - INFO - Client disconnected: 4i_wQ_-Kie-lbF1KAAAK
+2025-07-09 17:21:54,914 - INFO - Client connected: OvPhcJ8i3QNGgOyZAAAM
+2025-07-09 17:21:54,914 - INFO - Chat session created for OvPhcJ8i3QNGgOyZAAAM
+2025-07-09 17:30:34,116 - INFO - Client disconnected: OvPhcJ8i3QNGgOyZAAAM
+2025-07-09 17:30:34,535 - INFO - Client connected: Cy9ar5dHzDcQ-IEQAAAO
+2025-07-09 17:30:34,536 - INFO - Chat session created for Cy9ar5dHzDcQ-IEQAAAO
+2025-07-09 17:30:40,087 - INFO - Client disconnected: Cy9ar5dHzDcQ-IEQAAAO
+2025-07-09 17:30:46,493 - INFO - Gemini API configured successfully.
+2025-07-09 17:30:46,497 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 17:30:46,616 - INFO - Client connected: obqpkSEy0hP8z8kXAAAB
+2025-07-09 17:30:46,616 - INFO - Chat session created for obqpkSEy0hP8z8kXAAAB
+2025-07-09 17:30:49,466 - INFO - Gemini API configured successfully.
+2025-07-09 17:30:49,689 - INFO - Client connected: xctXqwuEd8f3ooECAAAD
+2025-07-09 17:30:49,690 - INFO - Chat session created for xctXqwuEd8f3ooECAAAD
+2025-07-09 17:31:52,754 - INFO - Client disconnected: obqpkSEy0hP8z8kXAAAB
+2025-07-09 17:33:05,362 - INFO - Client disconnected: xctXqwuEd8f3ooECAAAD
+2025-07-09 17:33:05,996 - INFO - Client connected: K7IYRaueJ-QLKR31AAAF
+2025-07-09 17:33:05,996 - INFO - Chat session created for K7IYRaueJ-QLKR31AAAF
+2025-07-09 17:38:25,936 - INFO - Client disconnected: K7IYRaueJ-QLKR31AAAF
+2025-07-09 17:38:26,407 - INFO - Client connected: 1TVQ5gwZxNJnPHgiAAAH
+2025-07-09 17:38:26,412 - INFO - Chat session created for 1TVQ5gwZxNJnPHgiAAAH
+2025-07-09 17:49:40,183 - INFO - Gemini API configured successfully.
+2025-07-09 17:49:40,185 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 17:49:41,147 - INFO - Client connected: KNxGu2oUmSWUS8zfAAAB
+2025-07-09 17:49:41,147 - INFO - Chat session created for KNxGu2oUmSWUS8zfAAAB
+2025-07-09 17:49:44,199 - INFO - Gemini API configured successfully.
+2025-07-09 17:49:46,828 - INFO - Starting heartbeat for KNxGu2oUmSWUS8zfAAAB
+2025-07-09 17:50:14,052 - INFO - Starting heartbeat for KNxGu2oUmSWUS8zfAAAB
+2025-07-09 17:52:33,301 - INFO - Starting heartbeat for KNxGu2oUmSWUS8zfAAAB
+2025-07-09 17:53:23,481 - INFO - Client disconnected: KNxGu2oUmSWUS8zfAAAB
+2025-07-09 17:53:27,257 - INFO - Client connected: IGDRRK1bLGoqA_MaAAAD
+2025-07-09 17:53:27,257 - INFO - Chat session created for IGDRRK1bLGoqA_MaAAAD
+2025-07-09 17:54:24,952 - INFO - Starting heartbeat for IGDRRK1bLGoqA_MaAAAD
+2025-07-09 17:56:18,375 - INFO - Starting heartbeat for IGDRRK1bLGoqA_MaAAAD
+2025-07-09 18:01:21,558 - INFO - Starting heartbeat for IGDRRK1bLGoqA_MaAAAD
+2025-07-09 18:02:03,194 - INFO - Starting heartbeat for IGDRRK1bLGoqA_MaAAAD
+2025-07-09 18:02:37,606 - INFO - Client disconnected: IGDRRK1bLGoqA_MaAAAD
+2025-07-09 18:05:14,032 - INFO - Gemini API configured successfully.
+2025-07-09 18:05:14,039 - INFO - Serving on http://0.0.0.0:5000
+2025-07-09 18:11:53,652 - INFO - Client connected: OTI7jgQ3D_XkSn5lAAAB
+2025-07-09 18:11:53,658 - INFO - Chat session created for OTI7jgQ3D_XkSn5lAAAB
+2025-07-09 18:11:53,964 - ERROR - Exception while serving /socket.io/
+Traceback (most recent call last):
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\channel.py", line 430, in service
+    task.service()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 167, in service
+    self.execute()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 435, in execute
+    app_iter = self.channel.server.application(environ, start_response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\proxy_headers.py", line 64, in translate_proxy_headers
+    return app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask_socketio\__init__.py", line 42, in __call__
+    return super().__call__(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\middleware.py", line 63, in __call__
+    return self.engineio_app.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\socketio\server.py", line 434, in handle_request
+    return self.eio.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\server.py", line 286, in handle_request
+    packets = socket.handle_get_request(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 92, in handle_get_request
+    return getattr(self, '_upgrade_' + transport)(environ,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 151, in _upgrade_websocket
+    return ws(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\async_drivers\eventlet.py", line 38, in __call__
+    raise RuntimeError('You need to use the eventlet server. '
+RuntimeError: You need to use the eventlet server. See the Deployment section of the documentation for more information.
+2025-07-09 18:12:11,020 - INFO - Client connected: FNYprDVCW1rkGZNNAAAD
+2025-07-09 18:12:11,021 - INFO - Chat session created for FNYprDVCW1rkGZNNAAAD
+2025-07-09 18:12:11,323 - ERROR - Exception while serving /socket.io/
+Traceback (most recent call last):
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\channel.py", line 430, in service
+    task.service()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 167, in service
+    self.execute()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 435, in execute
+    app_iter = self.channel.server.application(environ, start_response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\proxy_headers.py", line 64, in translate_proxy_headers
+    return app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask_socketio\__init__.py", line 42, in __call__
+    return super().__call__(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\middleware.py", line 63, in __call__
+    return self.engineio_app.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\socketio\server.py", line 434, in handle_request
+    return self.eio.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\server.py", line 286, in handle_request
+    packets = socket.handle_get_request(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 92, in handle_get_request
+    return getattr(self, '_upgrade_' + transport)(environ,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 151, in _upgrade_websocket
+    return ws(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\async_drivers\eventlet.py", line 38, in __call__
+    raise RuntimeError('You need to use the eventlet server. '
+RuntimeError: You need to use the eventlet server. See the Deployment section of the documentation for more information.
+2025-07-09 18:12:14,004 - INFO - Gemini API configured successfully.
+2025-07-09 18:12:38,707 - INFO - Client disconnected: OTI7jgQ3D_XkSn5lAAAB
+2025-07-09 18:13:13,127 - INFO - Client connected: jF4u4oJBh-BJLgwBAAAF
+2025-07-09 18:13:13,127 - INFO - Chat session created for jF4u4oJBh-BJLgwBAAAF
+2025-07-09 18:13:13,442 - ERROR - Exception while serving /socket.io/
+Traceback (most recent call last):
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\channel.py", line 430, in service
+    task.service()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 167, in service
+    self.execute()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 435, in execute
+    app_iter = self.channel.server.application(environ, start_response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\proxy_headers.py", line 64, in translate_proxy_headers
+    return app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask_socketio\__init__.py", line 42, in __call__
+    return super().__call__(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\middleware.py", line 63, in __call__
+    return self.engineio_app.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\socketio\server.py", line 434, in handle_request
+    return self.eio.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\server.py", line 286, in handle_request
+    packets = socket.handle_get_request(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 92, in handle_get_request
+    return getattr(self, '_upgrade_' + transport)(environ,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 151, in _upgrade_websocket
+    return ws(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\async_drivers\eventlet.py", line 38, in __call__
+    raise RuntimeError('You need to use the eventlet server. '
+RuntimeError: You need to use the eventlet server. See the Deployment section of the documentation for more information.
+2025-07-09 18:13:24,653 - INFO - Client disconnected: FNYprDVCW1rkGZNNAAAD
+2025-07-09 18:13:58,146 - INFO - Client disconnected: jF4u4oJBh-BJLgwBAAAF
+2025-07-09 18:13:58,152 - ERROR - Invalid session O-8DNl3C08BxpTyKAAAE (further occurrences of this error will be logged with level INFO)
+2025-07-09 18:13:59,135 - INFO - Client connected: 1cUVNbXpIUoH_gtTAAAH
+2025-07-09 18:13:59,135 - INFO - Chat session created for 1cUVNbXpIUoH_gtTAAAH
+2025-07-09 18:13:59,440 - ERROR - Exception while serving /socket.io/
+Traceback (most recent call last):
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\channel.py", line 430, in service
+    task.service()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 167, in service
+    self.execute()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 435, in execute
+    app_iter = self.channel.server.application(environ, start_response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\proxy_headers.py", line 64, in translate_proxy_headers
+    return app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask_socketio\__init__.py", line 42, in __call__
+    return super().__call__(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\middleware.py", line 63, in __call__
+    return self.engineio_app.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\socketio\server.py", line 434, in handle_request
+    return self.eio.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\server.py", line 286, in handle_request
+    packets = socket.handle_get_request(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 92, in handle_get_request
+    return getattr(self, '_upgrade_' + transport)(environ,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 151, in _upgrade_websocket
+    return ws(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\async_drivers\eventlet.py", line 38, in __call__
+    raise RuntimeError('You need to use the eventlet server. '
+RuntimeError: You need to use the eventlet server. See the Deployment section of the documentation for more information.
+2025-07-09 18:14:19,597 - INFO - Client connected: mfp8i2cxh1WqJneMAAAJ
+2025-07-09 18:14:19,598 - INFO - Chat session created for mfp8i2cxh1WqJneMAAAJ
+2025-07-09 18:14:19,904 - ERROR - Exception while serving /socket.io/
+Traceback (most recent call last):
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\channel.py", line 430, in service
+    task.service()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 167, in service
+    self.execute()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 435, in execute
+    app_iter = self.channel.server.application(environ, start_response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\proxy_headers.py", line 64, in translate_proxy_headers
+    return app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask_socketio\__init__.py", line 42, in __call__
+    return super().__call__(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\middleware.py", line 63, in __call__
+    return self.engineio_app.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\socketio\server.py", line 434, in handle_request
+    return self.eio.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\server.py", line 286, in handle_request
+    packets = socket.handle_get_request(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 92, in handle_get_request
+    return getattr(self, '_upgrade_' + transport)(environ,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 151, in _upgrade_websocket
+    return ws(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\async_drivers\eventlet.py", line 38, in __call__
+    raise RuntimeError('You need to use the eventlet server. '
+RuntimeError: You need to use the eventlet server. See the Deployment section of the documentation for more information.
+2025-07-09 18:14:44,136 - INFO - Client disconnected: 1cUVNbXpIUoH_gtTAAAH
+2025-07-09 18:15:04,609 - INFO - Client disconnected: mfp8i2cxh1WqJneMAAAJ
+2025-07-09 18:15:05,687 - INFO - Client connected: GbH3m0UgQz1vAb5eAAAL
+2025-07-09 18:15:05,689 - INFO - Chat session created for GbH3m0UgQz1vAb5eAAAL
+2025-07-09 18:15:05,997 - ERROR - Exception while serving /socket.io/
+Traceback (most recent call last):
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\channel.py", line 430, in service
+    task.service()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 167, in service
+    self.execute()
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\task.py", line 435, in execute
+    app_iter = self.channel.server.application(environ, start_response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\waitress\proxy_headers.py", line 64, in translate_proxy_headers
+    return app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\flask_socketio\__init__.py", line 42, in __call__
+    return super().__call__(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\middleware.py", line 63, in __call__
+    return self.engineio_app.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\socketio\server.py", line 434, in handle_request
+    return self.eio.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\server.py", line 286, in handle_request
+    packets = socket.handle_get_request(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 92, in handle_get_request
+    return getattr(self, '_upgrade_' + transport)(environ,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\socket.py", line 151, in _upgrade_websocket
+    return ws(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\engineio\async_drivers\eventlet.py", line 38, in __call__
+    raise RuntimeError('You need to use the eventlet server. '
+RuntimeError: You need to use the eventlet server. See the Deployment section of the documentation for more information.
+2025-07-09 18:15:32,272 - WARNING - 1 thread(s) still running
+2025-07-09 18:15:34,164 - INFO - Gemini API configured successfully.
+2025-07-09 18:15:34,165 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 18:15:38,357 - INFO - Client connected: i7gI3Y2-E3b-2qv8AAAB
+2025-07-09 18:15:38,358 - INFO - Chat session created for i7gI3Y2-E3b-2qv8AAAB
+2025-07-09 18:15:40,452 - INFO - Gemini API configured successfully.
+2025-07-09 18:15:48,786 - INFO - Starting heartbeat for i7gI3Y2-E3b-2qv8AAAB
+2025-07-09 18:16:38,749 - INFO - Client disconnected: i7gI3Y2-E3b-2qv8AAAB
+2025-07-09 18:16:38,907 - INFO - Client connected: FAysv0dxvFf7pFrHAAAD
+2025-07-09 18:16:38,907 - INFO - Chat session created for FAysv0dxvFf7pFrHAAAD
+2025-07-09 18:16:49,401 - INFO - Client disconnected: FAysv0dxvFf7pFrHAAAD
+2025-07-09 18:16:49,599 - INFO - Client connected: prb32AUglXdsdWzSAAAF
+2025-07-09 18:16:49,599 - INFO - Chat session created for prb32AUglXdsdWzSAAAF
+2025-07-09 18:22:22,766 - INFO - Gemini API configured successfully.
+2025-07-09 18:22:22,768 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 18:22:22,961 - INFO - Client connected: sxCBIRg9g1DP4javAAAB
+2025-07-09 18:22:22,962 - INFO - Chat session created for sxCBIRg9g1DP4javAAAB
+2025-07-09 18:22:25,011 - INFO - Gemini API configured successfully.
+2025-07-09 18:22:26,174 - INFO - Client disconnected: sxCBIRg9g1DP4javAAAB
+2025-07-09 18:22:27,031 - INFO - Client connected: gdzJbD7M9mNMnQbqAAAD
+2025-07-09 18:22:27,031 - INFO - Chat session created for gdzJbD7M9mNMnQbqAAAD
+2025-07-09 18:23:01,852 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\orchestrator.py", line 12, in execute_reasoning_loop
+    chat = session_data['chat']
+           ~~~~~~~~~~~~^^^^^^^^
+TypeError: 'ChatSession' object is not subscriptable
+2025-07-09 18:24:13,233 - INFO - Client disconnected: gdzJbD7M9mNMnQbqAAAD
+2025-07-09 18:24:14,298 - INFO - Client connected: dFPOVv7MietMQ3DCAAAF
+2025-07-09 18:24:14,299 - INFO - Chat session created for dFPOVv7MietMQ3DCAAAF
+2025-07-09 18:26:53,893 - INFO - API usage statistics saved.
+2025-07-09 18:26:59,889 - INFO - Gemini API configured successfully.
+2025-07-09 18:26:59,902 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 18:26:59,957 - INFO - Client connected: Je53QJ54PfsGFzf0AAAB
+2025-07-09 18:26:59,958 - INFO - Chat session created for Je53QJ54PfsGFzf0AAAB
+2025-07-09 18:27:01,681 - INFO - Gemini API configured successfully.
+2025-07-09 18:27:04,119 - INFO - Client disconnected: Je53QJ54PfsGFzf0AAAB
+2025-07-09 18:27:04,328 - INFO - Client connected: v-rpFpAlJp7NSyR8AAAD
+2025-07-09 18:27:04,328 - INFO - Chat session created for v-rpFpAlJp7NSyR8AAAD
+2025-07-09 18:28:02,316 - INFO - Client disconnected: v-rpFpAlJp7NSyR8AAAD
+2025-07-09 18:28:02,526 - INFO - Client connected: afdttEISvztECRmbAAAF
+2025-07-09 18:28:02,527 - INFO - Chat session created for afdttEISvztECRmbAAAF
+2025-07-09 18:31:32,835 - INFO - Client disconnected: afdttEISvztECRmbAAAF
+2025-07-09 18:31:33,041 - INFO - Client connected: u8m5PmX9R4BoNORiAAAH
+2025-07-09 18:31:33,041 - INFO - Chat session created for u8m5PmX9R4BoNORiAAAH
+2025-07-09 18:32:25,900 - INFO - Client disconnected: u8m5PmX9R4BoNORiAAAH
+2025-07-09 18:32:26,136 - INFO - Client connected: _uOsQtUMxK-fC_AcAAAJ
+2025-07-09 18:32:26,137 - INFO - Chat session created for _uOsQtUMxK-fC_AcAAAJ
+2025-07-09 20:03:08,269 - INFO - API usage statistics saved.
+2025-07-09 20:03:15,658 - INFO - Gemini API configured successfully.
+2025-07-09 20:03:15,662 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 20:03:16,682 - INFO - Client connected: uo9uSZzwvzbvfeefAAAB
+2025-07-09 20:03:16,683 - INFO - Chat session created for uo9uSZzwvzbvfeefAAAB
+2025-07-09 20:03:19,428 - INFO - Gemini API configured successfully.
+2025-07-09 20:03:38,772 - INFO - Client disconnected: uo9uSZzwvzbvfeefAAAB
+2025-07-09 20:03:39,678 - INFO - Client connected: 1bxU7V83IjYSTMw3AAAD
+2025-07-09 20:03:39,682 - INFO - Chat session created for 1bxU7V83IjYSTMw3AAAD
+2025-07-09 20:08:05,404 - INFO - Client disconnected: 1bxU7V83IjYSTMw3AAAD
+2025-07-09 20:08:05,880 - INFO - Client connected: wgwx7qBB1lRNWTywAAAF
+2025-07-09 20:08:05,881 - INFO - Chat session created for wgwx7qBB1lRNWTywAAAF
+2025-07-09 20:10:21,371 - INFO - Client disconnected: wgwx7qBB1lRNWTywAAAF
+2025-07-09 20:10:21,764 - INFO - Client connected: 2OzozxMTvxl6go1oAAAH
+2025-07-09 20:10:21,765 - INFO - Chat session created for 2OzozxMTvxl6go1oAAAH
+2025-07-09 20:10:59,372 - INFO - Client disconnected: 2OzozxMTvxl6go1oAAAH
+2025-07-09 20:10:59,728 - INFO - Client connected: v77qxDPP0-cYq3klAAAJ
+2025-07-09 20:10:59,728 - INFO - Chat session created for v77qxDPP0-cYq3klAAAJ
+2025-07-09 20:12:46,873 - INFO - Client disconnected: v77qxDPP0-cYq3klAAAJ
+2025-07-09 20:12:47,814 - INFO - Client connected: daVzHBI3bIHvjIwiAAAL
+2025-07-09 20:12:47,814 - INFO - Chat session created for daVzHBI3bIHvjIwiAAAL
+2025-07-09 20:13:18,894 - INFO - Client disconnected: daVzHBI3bIHvjIwiAAAL
+2025-07-09 20:13:19,284 - INFO - Client connected: BJbGOYT_jtFz9yaaAAAN
+2025-07-09 20:13:19,285 - INFO - Chat session created for BJbGOYT_jtFz9yaaAAAN
+2025-07-09 20:31:56,965 - INFO - Client disconnected: BJbGOYT_jtFz9yaaAAAN
+2025-07-09 20:31:57,183 - INFO - Client connected: QnLTRdIWTPWsdFO1AAAP
+2025-07-09 20:31:57,183 - INFO - Chat session created for QnLTRdIWTPWsdFO1AAAP
+2025-07-09 20:32:05,693 - INFO - API usage statistics saved.
+2025-07-09 20:32:07,340 - INFO - Client disconnected: QnLTRdIWTPWsdFO1AAAP
+2025-07-09 20:32:07,946 - INFO - API usage statistics saved.
+2025-07-09 20:32:11,941 - INFO - Gemini API configured successfully.
+2025-07-09 20:32:11,955 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 20:32:13,438 - INFO - Client connected: fvVmEOll4ny85LaFAAAB
+2025-07-09 20:32:13,439 - INFO - Chat session created for fvVmEOll4ny85LaFAAAB
+2025-07-09 20:32:15,693 - INFO - Gemini API configured successfully.
+2025-07-09 20:32:15,856 - INFO - Client connected: zUdNmbl4ntPUuGxsAAAD
+2025-07-09 20:32:15,856 - INFO - Chat session created for zUdNmbl4ntPUuGxsAAAD
+2025-07-09 20:33:13,472 - INFO - Client disconnected: fvVmEOll4ny85LaFAAAB
+2025-07-09 20:37:39,664 - INFO - Client disconnected: zUdNmbl4ntPUuGxsAAAD
+2025-07-09 20:37:39,912 - INFO - Client connected: gMhHG7yITsBJdnFgAAAF
+2025-07-09 20:37:39,914 - INFO - Chat session created for gMhHG7yITsBJdnFgAAAF
+2025-07-09 20:37:55,310 - INFO - API usage statistics saved.
+2025-07-09 20:38:01,212 - INFO - Gemini API configured successfully.
+2025-07-09 20:38:01,215 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 20:38:01,296 - INFO - Client connected: nDAcEh0BhEG57QWHAAAB
+2025-07-09 20:38:01,298 - INFO - Chat session created for nDAcEh0BhEG57QWHAAAB
+2025-07-09 20:38:03,286 - INFO - Gemini API configured successfully.
+2025-07-09 20:38:03,522 - INFO - Client connected: -6NJAYhx_qNWrIGgAAAD
+2025-07-09 20:38:03,523 - INFO - Chat session created for -6NJAYhx_qNWrIGgAAAD
+2025-07-09 20:38:36,697 - INFO - API usage statistics saved.
+2025-07-09 20:39:59,469 - INFO - Gemini API configured successfully.
+2025-07-09 20:39:59,472 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 20:39:59,911 - INFO - Client connected: g5WNZ-QgFPgOyO2mAAAB
+2025-07-09 20:39:59,912 - INFO - Chat session created for g5WNZ-QgFPgOyO2mAAAB
+2025-07-09 20:40:01,834 - INFO - Gemini API configured successfully.
+2025-07-09 20:40:04,246 - INFO - Client disconnected: g5WNZ-QgFPgOyO2mAAAB
+2025-07-09 20:40:04,506 - INFO - Client connected: BaDvdwd_ZrI3VaThAAAD
+2025-07-09 20:40:04,506 - INFO - Chat session created for BaDvdwd_ZrI3VaThAAAD
+2025-07-09 20:44:30,453 - INFO - API usage statistics saved.
+2025-07-09 20:44:36,566 - INFO - Gemini API configured successfully.
+2025-07-09 20:44:36,566 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 20:44:36,815 - INFO - Client connected: eU4QXNdpvGe35MsgAAAC
+2025-07-09 20:44:36,815 - INFO - Chat session created for eU4QXNdpvGe35MsgAAAC
+2025-07-09 20:44:38,577 - INFO - Gemini API configured successfully.
+2025-07-09 20:46:31,046 - INFO - API usage statistics saved.
+2025-07-09 20:46:37,052 - INFO - Gemini API configured successfully.
+2025-07-09 20:46:37,055 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 20:46:37,284 - INFO - Client connected: 0l6WROhJaVKpKPbRAAAB
+2025-07-09 20:46:37,284 - INFO - Chat session created for 0l6WROhJaVKpKPbRAAAB
+2025-07-09 20:46:38,945 - INFO - Gemini API configured successfully.
+2025-07-09 20:47:11,939 - INFO - Client disconnected: 0l6WROhJaVKpKPbRAAAB
+2025-07-09 20:47:12,195 - INFO - Client connected: shg_zzO4HI3k-CRKAAAD
+2025-07-09 20:47:12,195 - INFO - Chat session created for shg_zzO4HI3k-CRKAAAD
+2025-07-09 20:48:14,521 - INFO - API usage statistics saved.
+2025-07-09 20:48:20,493 - INFO - Gemini API configured successfully.
+2025-07-09 20:48:20,497 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 20:48:20,749 - INFO - Client connected: PioChVPKEegRTsyuAAAC
+2025-07-09 20:48:20,749 - INFO - Chat session created for PioChVPKEegRTsyuAAAC
+2025-07-09 20:48:22,743 - INFO - Gemini API configured successfully.
+2025-07-09 20:50:02,563 - INFO - API usage statistics saved.
+2025-07-09 20:50:08,589 - INFO - Gemini API configured successfully.
+2025-07-09 20:50:08,594 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 20:50:08,894 - INFO - Client connected: Syh7W_cSjCUsD7kKAAAC
+2025-07-09 20:50:08,895 - INFO - Chat session created for Syh7W_cSjCUsD7kKAAAC
+2025-07-09 20:50:10,806 - INFO - Gemini API configured successfully.
+2025-07-09 20:51:00,496 - INFO - Client disconnected: Syh7W_cSjCUsD7kKAAAC
+2025-07-09 20:51:01,903 - INFO - Client connected: geArfGYwrfLDtNPBAAAE
+2025-07-09 20:51:01,903 - INFO - Chat session created for geArfGYwrfLDtNPBAAAE
+2025-07-09 20:52:05,041 - INFO - API usage statistics saved.
+2025-07-09 20:52:11,151 - INFO - Gemini API configured successfully.
+2025-07-09 20:52:11,155 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 20:52:11,352 - INFO - Client connected: VxtosNyeryESGybVAAAB
+2025-07-09 20:52:11,353 - INFO - Chat session created for VxtosNyeryESGybVAAAB
+2025-07-09 20:52:13,289 - INFO - Gemini API configured successfully.
+2025-07-09 20:52:13,454 - INFO - Client connected: _0_cKfKOT8M8kSrPAAAD
+2025-07-09 20:52:13,455 - INFO - Chat session created for _0_cKfKOT8M8kSrPAAAD
+2025-07-09 20:52:59,007 - INFO - Client disconnected: VxtosNyeryESGybVAAAB
+2025-07-09 20:53:34,822 - INFO - Client disconnected: _0_cKfKOT8M8kSrPAAAD
+2025-07-09 20:54:01,186 - INFO - Client connected: rLnh-aISEE6PRa_dAAAF
+2025-07-09 20:54:01,187 - INFO - Chat session created for rLnh-aISEE6PRa_dAAAF
+2025-07-09 20:56:55,116 - INFO - Client disconnected: rLnh-aISEE6PRa_dAAAF
+2025-07-09 20:56:55,360 - INFO - Client connected: thfz_RH1VYssuZa4AAAH
+2025-07-09 20:56:55,360 - INFO - Chat session created for thfz_RH1VYssuZa4AAAH
+2025-07-09 20:56:57,804 - INFO - API usage statistics saved.
+2025-07-09 20:56:58,588 - INFO - Client disconnected: thfz_RH1VYssuZa4AAAH
+2025-07-09 20:56:59,661 - INFO - API usage statistics saved.
+2025-07-09 20:57:03,751 - INFO - Gemini API configured successfully.
+2025-07-09 20:57:03,763 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-09 20:57:03,922 - INFO - Client connected: Zzmbv2oXJtk14RU2AAAB
+2025-07-09 20:57:03,922 - INFO - Chat session created for Zzmbv2oXJtk14RU2AAAB
+2025-07-09 20:57:05,906 - INFO - Gemini API configured successfully.
+2025-07-09 20:57:06,061 - INFO - Client connected: yQkjqEoOhk_ltCYOAAAD
+2025-07-09 20:57:06,061 - INFO - Chat session created for yQkjqEoOhk_ltCYOAAAD
+2025-07-09 20:58:13,348 - INFO - Client disconnected: Zzmbv2oXJtk14RU2AAAB
+2025-07-09 20:58:13,348 - INFO - Client disconnected: yQkjqEoOhk_ltCYOAAAD
+2025-07-09 20:58:13,946 - INFO - Client connected: H0R5DqsA48jPfGPKAAAF
+2025-07-09 20:58:13,946 - INFO - Chat session created for H0R5DqsA48jPfGPKAAAF
+2025-07-09 21:07:47,532 - INFO - Client disconnected: H0R5DqsA48jPfGPKAAAF
+2025-07-09 21:07:51,845 - INFO - Client connected: _5evJFObAFN9G-NoAAAH
+2025-07-09 21:07:51,846 - INFO - Chat session created for _5evJFObAFN9G-NoAAAH

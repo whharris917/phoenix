@@ -4,6 +4,8 @@ from flask_cors import CORS
 import google.generativeai as genai
 import os
 import logging
+import json
+import atexit # To save stats on exit
 from orchestrator import execute_reasoning_loop, confirmation_events
 from tool_agent import execute_tool_command
 
@@ -28,6 +30,7 @@ def load_system_prompt():
 # --- CONFIGURATION ---
 API_KEY = load_api_key()
 SYSTEM_PROMPT = load_system_prompt()
+API_STATS_FILE = os.path.join(os.path.dirname(__file__), 'api_usage.json')
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
@@ -47,6 +50,26 @@ if API_KEY:
 else:
     logging.critical("FATAL: Gemini API key not loaded.")
 
+# --- NEW: API Usage Tracking ---
+def load_api_stats():
+    """Loads API usage stats from a JSON file."""
+    try:
+        with open(API_STATS_FILE, 'r') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        # If file doesn't exist or is empty, start with fresh stats
+        return {'total_calls': 0, 'total_prompt_tokens': 0, 'total_completion_tokens': 0}
+
+def save_api_stats():
+    """Saves the current API usage stats to a JSON file."""
+    with open(API_STATS_FILE, 'w') as f:
+        json.dump(api_stats, f, indent=4)
+    logging.info("API usage statistics saved.")
+
+api_stats = load_api_stats()
+# Register the save function to be called on program exit
+atexit.register(save_api_stats)
+
 chat_sessions = {}
 
 # --- SERVER ROUTES & EVENTS ---
@@ -62,7 +85,6 @@ def serve_docs():
 def serve_markdown():
     return send_from_directory('.', 'documentation.md')
 
-# --- NEW: Route to serve the workshop page ---
 @app.route('/workshop')
 def serve_workshop():
     return send_from_directory('.', 'workshop.html')
@@ -72,8 +94,13 @@ def handle_connect():
     app.logger.info(f"Client connected: {request.sid}")
     if model:
         try:
-            chat_sessions[request.sid] = model.start_chat(history=[])
+            chat_sessions[request.sid] = {
+                "chat": model.start_chat(history=[]),
+                "name": "[New Session]"
+            }
             app.logger.info(f"Chat session created for {request.sid}")
+            # Inform the client of the new session name
+            socketio.emit('session_name_update', {'name': '[New Session]'}, to=request.sid)
         except Exception as e:
             app.logger.exception(f"Could not create chat session for {request.sid}.")
             socketio.emit('log_message', {'type': 'error', 'data': 'Failed to initialize AI session.'}, to=request.sid)
@@ -90,11 +117,12 @@ def handle_disconnect():
 def handle_start_task(data):
     prompt = data.get('prompt')
     session_id = request.sid
-    chat = chat_sessions.get(session_id)
-    if prompt and chat:
+    session_data = chat_sessions.get(session_id)
+    if prompt and session_data:
         socketio.emit('log_message', {'type': 'system', 'data': 'Task received. Starting reasoning process...'})
-        socketio.start_background_task(execute_reasoning_loop, socketio, chat, prompt, session_id, chat_sessions, model)
-    elif not chat:
+        # Pass the api_stats dictionary to the reasoning loop
+        socketio.start_background_task(execute_reasoning_loop, socketio, session_data, prompt, session_id, chat_sessions, model, api_stats)
+    elif not session_data:
         socketio.emit('log_message', {'type': 'error', 'data': 'No active AI session. Please refresh.'}, to=request.sid)
 
 @socketio.on('request_sandbox_refresh')
@@ -106,6 +134,11 @@ def handle_sandbox_refresh():
 def handle_session_list_request():
     result = execute_tool_command({'action': 'list_sessions'}, None, None, None)
     socketio.emit('session_list_update', result, to=request.sid)
+
+# NEW: Event to provide current API stats to the client
+@socketio.on('request_api_stats')
+def handle_api_stats_request():
+    socketio.emit('api_usage_update', api_stats, to=request.sid)
 
 @socketio.on('user_confirmation')
 def handle_user_confirmation(data):

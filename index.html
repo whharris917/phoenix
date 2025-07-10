@@ -6,17 +6,19 @@
     <title>Gemini Agent Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         html.dark {
             --bg-color: #111827; --text-color: #d1d5db; --panel-bg: #1f2937;
             --header-bg: #1f2937; --border-color: #374151; --input-bg: #374151;
-            --message-text-color: #f9fafb;
+            --code-bg: #374151;
         }
         html {
             --bg-color: #f9fafb; --text-color: #374151; --panel-bg: #ffffff;
             --header-bg: #ffffff; --border-color: #e5e7eb; --input-bg: #f3f4f6;
-            --message-text-color: #111827;
+            --message-text-color: #ffffff; 
+            --code-bg: #e5e7eb;
         }
         body { 
             font-family: 'Inter', sans-serif;
@@ -24,41 +26,51 @@
             color: var(--text-color);
         }
         .log-entry { 
-            max-width: 80%;
-            padding: 0.5rem 0.75rem;
+            max-width: 95%;
+            padding: 0.75rem 1rem;
             border-radius: 0.5rem;
             margin-bottom: 0.5rem;
+            color: var(--message-text-color); 
         }
         .log-entry-user {
             background-color: #2563EB;
             border-left: 3px solid #1D4ED8;
-            color: white;
             align-self: flex-end;
-            text-align: right;
         }
         .log-entry-system {
-            background-color: #FEF3C7;
-            border-left: 3px solid #FBBF24;
+            background-color: #D97706; 
+            border-left: 3px solid #B45309;
             align-self: flex-start;
-            color: #92400E;
         }
         html.dark .log-entry-system {
-            background-color: #422006;
-            color: #FBBF24;
+            background-color: #92400E;
+            border-left: 3px solid #B45309;
         }
         .log-entry-thought, .log-entry-final_answer, .log-entry-error {
-            background-color: #FEE2E2;
-            border-left: 3px solid #F87171;
+            background-color: #8B5CF6;
+            border-left: 3px solid #6D28D9;
             align-self: flex-start;
-            color: #991B1B;
         }
         html.dark .log-entry-thought, html.dark .log-entry-final_answer, html.dark .log-entry-error {
-            background-color: #450A0A;
-            color: #F87171;
+            background-color: #7C3AED;
+            border-left: 3px solid #5B21B6;
         }
         .message-body {
             color: var(--message-text-color);
         }
+        .message-body h1, .message-body h2, .message-body h3, .message-body strong { font-weight: 600; }
+        .message-body h1 { font-size: 1.5rem; }
+        .message-body h2 { font-size: 1.25rem; }
+        .message-body h3 { font-size: 1.1rem; }
+        .message-body ul, .message-body ol { margin-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        .message-body ul { list-style-type: disc; }
+        .message-body ol { list-style-type: decimal; }
+        .message-body p { margin-bottom: 0.5rem; }
+        .message-body pre { background-color: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 0.375rem; margin: 0.5rem 0; overflow-x: auto; font-size: 0.875rem; }
+        .message-body code { font-family: monospace; }
+        .message-body pre code { background-color: transparent; padding: 0; }
+        .message-body a { font-weight: 500; text-decoration: underline; }
+
         .nav-link { transition: all 0.2s ease-in-out; }
         .nav-link.active { background-color: #4F46E5; color: white; }
         html:not(.dark) .nav-link.active { color: white; }
@@ -80,6 +92,13 @@
         ::-webkit-scrollbar-track { background: var(--input-bg); }
         ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        #prompt-input {
+            resize: none;
+            overflow-y: hidden;
+            line-height: 1.5;
+            max-height: calc(1.5em * 7);
+        }
     </style>
 </head>
 <body class="flex flex-col h-screen">
@@ -101,6 +120,8 @@
                             <span class="block px-4 py-2 text-xs text-gray-400">File System Tools</span>
                             <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">create_file</a>
                             <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">read_file</a>
+                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">read_project_file</a>
+                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">list_allowed_project_files</a>
                             <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">list_directory</a>
                             <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">delete_file</a>
                             <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">execute_python_script</a>
@@ -115,7 +136,15 @@
                 </div>
             </nav>
         </div>
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-6">
+            <button id="agent-thoughts-toggle" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700" data-state="visible" title="Toggle Agent Thoughts">
+                <span id="thoughts-visible-icon">
+                    <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 4l-6 10h12L10 4z"/></svg>
+                </span>
+                <span id="thoughts-hidden-icon" class="hidden">
+                     <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 16l6-10H4l6 10z"/></svg>
+                </span>
+            </button>
             <button id="theme-toggle" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700">
                 <svg id="theme-icon-light" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-1.414 8.486a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"></path></svg>
                 <svg id="theme-icon-dark" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
@@ -126,13 +155,13 @@
             </div>
             <div class="flex items-center space-x-2">
                 <div id="agent-status" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
-                <span id="agent-text" class="text-xs text-gray-400">Agent Offline</span>
+                <span id="agent-text" class="text-xs text-gray-400">Agent Online</span>
             </div>
         </div>
     </header>
 
     <main class="flex-grow flex flex-col md:flex-row p-4 gap-4 overflow-hidden">
-        <div class="w-full md:w-1/3 flex flex-col gap-4">
+        <div class="w-full md:w-1/4 flex flex-col gap-4">
             <details class="rounded-lg shadow-lg" style="background-color: var(--panel-bg);" open>
                 <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Session Management</summary>
                 <div class="p-4 border-t" style="border-color: var(--border-color);">
@@ -156,40 +185,52 @@
                 </div>
             </details>
             <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
+                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">API Usage Stats</summary>
+                <div id="api-stats-container" class="p-4 border-t text-xs space-y-2" style="border-color: var(--border-color);">
+                    <div class="flex justify-between"><span>Total API Calls:</span><span id="api-calls">0</span></div>
+                    <div class="flex justify-between"><span>Prompt Tokens:</span><span id="prompt-tokens">0</span></div>
+                    <div class="flex justify-between"><span>Completion Tokens:</span><span id="completion-tokens">0</span></div>
+                    <div class="flex justify-between"><span>Total Tokens:</span><span id="total-tokens">0</span></div>
+                    <div class="border-t my-1" style="border-color: var(--border-color);"></div>
+                    <div class="flex justify-between font-semibold"><span>Est. MTD Cost:</span><span id="est-cost">$0.00</span></div>
+                    <p class="text-gray-400 text-center text-[10px] pt-2">Based on Gemini 1.5 Pro pricing.</p>
+                </div>
+            </details>
+            <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
                 <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Agent Action Log</summary>
                 <div id="agent-log" class="p-4 border-t space-y-2" style="border-color: var(--border-color);">
                     <p id="agent-log-placeholder" class="text-xs text-gray-500">Agent actions will appear here...</p>
                 </div>
             </details>
-            <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
-                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Empty Panel A</summary>
-                <div class="p-4 border-t" style="border-color: var(--border-color);"><p class="text-xs text-gray-500">Content for panel A.</p></div>
-            </details>
-            <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
-                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Empty Panel B</summary>
-                <div class="p-4 border-t" style="border-color: var(--border-color);"><p class="text-xs text-gray-500">Content for panel B.</p></div>
-            </details>
-            <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
-                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Empty Panel C</summary>
-                <div class="p-4 border-t" style="border-color: var(--border-color);"><p class="text-xs text-gray-500">Content for panel C.</p></div>
-            </details>
         </div>
         
-        <div class="w-full md:w-2/3 rounded-lg shadow-lg p-6 flex flex-col min-h-0" style="background-color: var(--panel-bg);">
-            <h2 class="text-lg font-semibold mb-4" style="color: var(--text-color);">Mission Control</h2>
+        <div class="w-full md:w-1/2 rounded-lg shadow-lg p-6 flex flex-col min-h-0" style="background-color: var(--panel-bg);">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold" style="color: var(--text-color);">Mission Control</h2>
+                <span id="session-name-display" class="text-sm font-mono px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">[New Session]</span>
+            </div>
             <div id="conversation-log" class="flex-grow overflow-y-auto mb-4 pr-2 flex flex-col"></div>
             <div id="confirmation-container" class="hidden flex justify-center space-x-4 my-4">
                 <button id="confirm-yes" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-md">Yes</button>
                 <button id="confirm-no" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-md">No</button>
             </div>
             <div class="mt-auto flex items-center border-t pt-4 flex-shrink-0" style="border-color: var(--border-color);">
-                <input type="text" id="prompt-input" class="w-full rounded-l-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your command..." style="background-color: var(--input-bg);">
-                <button id="send-prompt" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-r-md transition-colors">Send</button>
+                <!-- MODIFIED: Added inline style to restore original color scheme -->
+                <textarea id="prompt-input" class="w-full rounded-l-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your command... (Shift+Enter for new line)" rows="1" style="background-color: var(--input-bg);"></textarea>
+                <button id="send-prompt" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-r-md transition-colors self-stretch">Send</button>
             </div>
+        </div>
+
+        <div class="w-full md:w-1/4 rounded-lg shadow-lg p-6 flex flex-col min-h-0" style="background-color: var(--panel-bg);">
+             <h2 class="text-lg font-semibold mb-4" style="color: var(--text-color);">Right Panel</h2>
+             <div class="flex-grow overflow-y-auto mb-4 pr-2">
+                <p class="text-xs text-gray-500">Content for the new right panel.</p>
+             </div>
         </div>
     </main>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- Element Selectors ---
             const agentLog = document.getElementById('agent-log');
             const conversationLog = document.getElementById('conversation-log');
             const promptInput = document.getElementById('prompt-input');
@@ -208,49 +249,73 @@
             const lightIcon = document.getElementById('theme-icon-light');
             const darkIcon = document.getElementById('theme-icon-dark');
             const accordionPanels = document.querySelectorAll('.accordion-panel');
+            const agentThoughtsToggle = document.getElementById('agent-thoughts-toggle');
+            const sessionNameDisplay = document.getElementById('session-name-display');
             
             const orchestratorStatus = document.getElementById('orchestrator-status');
             const orchestratorText = document.getElementById('orchestrator-text');
             const agentStatus = document.getElementById('agent-status');
             const agentText = document.getElementById('agent-text');
 
+            const apiCallsEl = document.getElementById('api-calls');
+            const promptTokensEl = document.getElementById('prompt-tokens');
+            const completionTokensEl = document.getElementById('completion-tokens');
+            const totalTokensEl = document.getElementById('total-tokens');
+            const estCostEl = document.getElementById('est-cost');
+
+            // --- Constants ---
             const SERVER_URL = window.location.origin;
             const socket = io(SERVER_URL);
             
-            const userIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-1.414 8.486a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"></path></svg>`;
+            const userIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>`;
             const orchestratorIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z"></path></svg>`;
-            const agentIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.982.54 2.256 0 3.238-1.372 1.372.734 2.942 2.106 2.106.982-.54 2.256-.54 3.238 0 1.372 1.372 2.942-.734 2.106-2.106a1.532 1.532 0 012.286-.948c1.372.836 2.942-.734 2.106-2.106a1.532 1.532 0 01-2.286-.948zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path></svg>`;
+            const agentIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C3.732 4.943 9.5 3 10 3s6.268 1.943 9.542 7c-3.274 5.057-9.5 7-9.542 7S3.732 15.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>`;
 
-            const addLog = (container, message, type) => {
-                const entry = document.createElement('div');
-                entry.className = `log-entry log-entry-${type}`;
-                entry.innerHTML = message;
-                container.appendChild(entry);
-                container.scrollTop = container.scrollHeight;
+            // --- Core Functions ---
+            const updateConversationVisibility = () => {
+                const thoughtsAreVisible = agentThoughtsToggle.dataset.state === 'visible';
+                const messages = conversationLog.querySelectorAll('.log-entry');
+                const typesToHide = ['system', 'thought'];
+
+                messages.forEach(msg => {
+                    const shouldBeHidden = typesToHide.some(type => msg.classList.contains(`log-entry-${type}`));
+                    msg.style.display = (!thoughtsAreVisible && shouldBeHidden) ? 'none' : '';
+                });
+                conversationLog.scrollTop = conversationLog.scrollHeight;
             };
 
             const addConversationLog = (message, type) => {
-                const formattedMessage = message.replace(/\n/g, '<br>');
-                let typeDisplay = type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-                let icon = '';
-                if (type === 'user') {
-                    typeDisplay = 'You';
-                    icon = userIcon;
-                } else if (type === 'system') {
-                    typeDisplay = 'Orchestrator';
-                    icon = orchestratorIcon;
+                let formattedMessage;
+                if (type === 'final_answer' || type === 'user') {
+                    formattedMessage = marked.parse(message, { gfm: true, breaks: true });
                 } else {
-                    typeDisplay = type === 'thought' ? 'Agent Thought' : 'Agent Response';
-                    icon = agentIcon;
+                    formattedMessage = message.replace(/\n/g, '<br>');
                 }
-                const content = `<div class="flex items-start">${icon}<div class="flex-1"><strong>${typeDisplay}:</strong><div class="mt-1 text-sm message-body">${formattedMessage}</div></div></div>`;
-                addLog(conversationLog, content, type);
+
+                let typeDisplay, icon;
+                switch(type) {
+                    case 'user': typeDisplay = 'You'; icon = userIcon; break;
+                    case 'system': typeDisplay = 'Orchestrator'; icon = orchestratorIcon; break;
+                    case 'thought': typeDisplay = 'Agent Thought'; icon = agentIcon; break;
+                    default: typeDisplay = 'Agent Response'; icon = agentIcon;
+                }
+                
+                const titleHTML = type === 'final_answer' ? '' : `<strong class="text-white/80">${typeDisplay}:</strong>`;
+                const content = `<div class="flex items-start">${icon}<div class="flex-1">${titleHTML}<div class="mt-1 text-sm message-body">${formattedMessage}</div></div></div>`;
+                const entry = document.createElement('div');
+                entry.className = `log-entry log-entry-${type}`;
+                entry.innerHTML = content;
+
+                if (agentThoughtsToggle.dataset.state === 'hidden' && (type === 'system' || type === 'thought')) {
+                    entry.style.display = 'none';
+                }
+
+                conversationLog.appendChild(entry);
+                conversationLog.scrollTop = conversationLog.scrollHeight;
             };
             
             const addAgentActionLog = (message, type) => {
-                const placeholder = document.getElementById('agent-log-placeholder');
-                if (placeholder) placeholder.remove();
-
+                document.getElementById('agent-log-placeholder')?.remove();
                 const details = document.createElement('details');
                 details.className = `bg-gray-100 dark:bg-gray-700/50 rounded-md text-xs mb-2`;
                 
@@ -270,12 +335,37 @@
                 agentLog.scrollTop = agentLog.scrollHeight;
             };
 
+            const requestSessionList = () => {
+                if (socket.connected) socket.emit('request_session_list');
+            };
+
+            const updateApiStats = (stats) => {
+                const INPUT_PRICE_PER_MILLION = 3.50; 
+                const OUTPUT_PRICE_PER_MILLION = 10.50;
+
+                const promptTokens = stats.total_prompt_tokens || 0;
+                const completionTokens = stats.total_completion_tokens || 0;
+                const totalTokens = promptTokens + completionTokens;
+
+                const cost = (promptTokens / 1000000 * INPUT_PRICE_PER_MILLION) + 
+                             (completionTokens / 1000000 * OUTPUT_PRICE_PER_MILLION);
+
+                apiCallsEl.textContent = stats.total_calls || 0;
+                promptTokensEl.textContent = promptTokens.toLocaleString();
+                completionTokensEl.textContent = completionTokens.toLocaleString();
+                totalTokensEl.textContent = totalTokens.toLocaleString();
+                estCostEl.textContent = `$${cost.toFixed(4)}`;
+            };
+
+
+            // --- Socket Event Handlers ---
             socket.on('connect', () => {
                 orchestratorStatus.className = 'w-3 h-3 rounded-full bg-green-500';
                 orchestratorText.textContent = 'Orchestrator Online';
                 agentStatus.className = 'w-3 h-3 rounded-full bg-green-500';
                 agentText.textContent = 'Agent Online';
                 requestSessionList();
+                socket.emit('request_api_stats');
             });
 
             socket.on('disconnect', () => {
@@ -286,16 +376,8 @@
                 addConversationLog("Connection to server lost.", 'error');
             });
 
-            socket.on('log_message', (msg) => {
-                addConversationLog(msg.data, msg.type);
-                if (msg.type === 'final_answer' || msg.type === 'error') {
-                    requestSessionList();
-                }
-            });
-
-            socket.on('agent_action', (msg) => {
-                addAgentActionLog(msg.data, msg.type);
-            });
+            socket.on('log_message', (msg) => addConversationLog(msg.data, msg.type));
+            socket.on('agent_action', (msg) => addAgentActionLog(msg.data, msg.type));
             
             socket.on('request_user_confirmation', (data) => {
                 addConversationLog(data.prompt, 'system');
@@ -306,69 +388,50 @@
 
             socket.on('session_list_update', (result) => {
                 sessionList.innerHTML = '';
-                const placeholder = document.createElement('option');
-                placeholder.textContent = 'Choose session...';
+                const placeholder = new Option('Choose session...', '', true, true);
                 placeholder.disabled = true;
-                placeholder.selected = true;
-                sessionList.appendChild(placeholder);
-                if (result && result.status === 'success' && result.sessions) {
-                    if (result.sessions.length > 0) {
-                        result.sessions.forEach(session => {
-                            const option = document.createElement('option');
-                            option.value = session.name;
-                            option.textContent = session.name;
-                            sessionList.appendChild(option);
-                        });
-                    }
+                sessionList.add(placeholder);
+                if (result?.status === 'success' && result.sessions) {
+                    result.sessions.forEach(session => {
+                        sessionList.add(new Option(session.name, session.name));
+                    });
                 }
             });
+            
+            socket.on('session_name_update', (data) => {
+                sessionNameDisplay.textContent = data.name || '[New Session]';
+            });
 
+            socket.on('api_usage_update', (stats) => {
+                updateApiStats(stats);
+            });
+
+
+            // --- UI Event Handlers ---
             const handleUserPrompt = () => {
-                const prompt = promptInput.value;
+                const prompt = promptInput.value.trim();
                 if (!prompt) return;
                 addConversationLog(prompt, 'user');
                 promptInput.value = '';
+                adjustTextareaHeight();
                 socket.emit('start_task', { prompt });
             };
             
-            const requestSessionList = () => {
-                if (socket.connected) {
-                    socket.emit('request_session_list');
-                }
-            };
-
             const handleSaveSession = () => {
-                const name = saveSessionNameInput.value;
-                if (!name) {
-                    alert("Please enter a name for the session.");
-                    return;
-                }
-                const command = `Save this session as "${name}"`;
-                addConversationLog(command, 'user');
-                socket.emit('start_task', { prompt: command });
+                const name = saveSessionNameInput.value.trim();
+                if (!name) return alert("Please enter a name for the session.");
+                socket.emit('start_task', { prompt: `Save this session as "${name}"` });
                 saveSessionNameInput.value = '';
             };
 
             const handleLoadSession = () => {
-                const name = sessionList.value;
-                if (sessionList.selectedIndex === 0) {
-                    alert("Please select a session to load.");
-                    return;
-                }
-                const command = `Load the session named "${name}"`;
-                addConversationLog(command, 'user');
-                socket.emit('start_task', { prompt: command });
+                if (!sessionList.value) return alert("Please select a session to load.");
+                socket.emit('start_task', { prompt: `Load the session named "${sessionList.value}"` });
             };
 
             const handleDeleteSession = () => {
-                const name = sessionList.value;
-                if (sessionList.selectedIndex === 0) {
-                    alert("Please select a session to delete.");
-                    return;
-                }
-                const command = `Delete the session named "${name}"`;
-                addConversationLog(command, 'user');
-                socket.emit('start_task', { prompt: command });
+                if (!sessionList.value) return alert("Please select a session to delete.");
+                socket.emit('start_task', { prompt: `Delete the session named "${sessionList.value}"` });
             };
 
             const handleConfirmation = (response) => {
@@ -378,15 +441,69 @@
                 sendBtn.disabled = false;
                 promptInput.focus();
             };
+
+            const setupTheme = () => {
+                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                    darkIcon.classList.remove('hidden');
+                    lightIcon.classList.add('hidden');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    lightIcon.classList.remove('hidden');
+                    darkIcon.classList.add('hidden');
+                }
+            };
+
+            const toggleTheme = () => {
+                document.documentElement.classList.toggle('dark');
+                localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+                setupTheme();
+            };
             
-            // --- Event Listeners ---
+            const handleToggleAgentThoughts = () => {
+                const thoughtsVisibleIcon = document.getElementById('thoughts-visible-icon');
+                const thoughtsHiddenIcon = document.getElementById('thoughts-hidden-icon');
+                const currentState = agentThoughtsToggle.dataset.state;
+
+                if (currentState === 'visible') {
+                    agentThoughtsToggle.dataset.state = 'hidden';
+                    thoughtsVisibleIcon.classList.add('hidden');
+                    thoughtsHiddenIcon.classList.remove('hidden');
+                } else {
+                    agentThoughtsToggle.dataset.state = 'visible';
+                    thoughtsVisibleIcon.classList.remove('hidden');
+                    thoughtsHiddenIcon.classList.add('hidden');
+                }
+                updateConversationVisibility();
+            };
+            
+            const adjustTextareaHeight = () => {
+                promptInput.style.height = 'auto';
+                promptInput.style.height = `${promptInput.scrollHeight}px`;
+                if (promptInput.scrollHeight > parseFloat(getComputedStyle(promptInput).maxHeight)) {
+                    promptInput.style.overflowY = 'auto';
+                } else {
+                    promptInput.style.overflowY = 'hidden';
+                }
+            };
+
+            // --- Initial Setup ---
             sendBtn.addEventListener('click', handleUserPrompt);
-            promptInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleUserPrompt());
+            promptInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleUserPrompt();
+                }
+            });
+            promptInput.addEventListener('input', adjustTextareaHeight);
+
             saveSessionBtn.addEventListener('click', handleSaveSession);
             loadSessionBtn.addEventListener('click', handleLoadSession);
             deleteSessionBtn.addEventListener('click', handleDeleteSession);
             confirmYesBtn.addEventListener('click', () => handleConfirmation('yes'));
             confirmNoBtn.addEventListener('click', () => handleConfirmation('no'));
+            agentThoughtsToggle.addEventListener('click', handleToggleAgentThoughts);
+            themeToggleBtn.addEventListener('click', toggleTheme);
             
             commandsDropdownBtn.addEventListener('click', () => {
                 commandsDropdownMenu.classList.toggle('hidden');
@@ -397,39 +514,18 @@
                 }
             });
 
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-                darkIcon.classList.remove('hidden');
-                lightIcon.classList.add('hidden');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-
-            themeToggleBtn.addEventListener('click', () => {
-                if (document.documentElement.classList.contains('dark')) {
-                    document.documentElement.classList.remove('dark');
-                    localStorage.theme = 'light';
-                    lightIcon.classList.remove('hidden');
-                    darkIcon.classList.add('hidden');
-                } else {
-                    document.documentElement.classList.add('dark');
-                    localStorage.theme = 'dark';
-                    darkIcon.classList.remove('hidden');
-                    lightIcon.classList.add('hidden');
-                }
-            });
-
             accordionPanels.forEach(panel => {
                 panel.addEventListener('toggle', (event) => {
                     if (panel.open) {
                         accordionPanels.forEach(otherPanel => {
-                            if (otherPanel !== panel) {
-                                otherPanel.open = false;
-                            }
+                            if (otherPanel !== panel) otherPanel.open = false;
                         });
                     }
                 });
             });
+            
+            setupTheme();
+            adjustTextareaHeight();
         });
     </script>
 </body>
