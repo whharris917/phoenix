@@ -1,5 +1,6 @@
 import json
 import logging
+from eventlet import tpool
 from eventlet.event import Event
 from tool_agent import execute_tool_command
 
@@ -10,12 +11,9 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
     try:
         current_prompt = initial_prompt
         
-        # MODIFIED: Safely unpack the chat object from the session_data.
-        # This prevents the "not subscriptable" error if the data structure is incorrect.
         if isinstance(session_data, dict):
             chat = session_data.get('chat')
         else:
-            # Fallback for the case where session_data is the raw ChatSession object
             chat = session_data
 
         if not chat:
@@ -24,17 +22,17 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
             return
 
         for i in range(10):
-            socketio.sleep(0)
+            socketio.sleep(0) # Yield control to allow other tasks (like heartbeats) to run
             
-            # --- API Call and Usage Tracking ---
-            response = chat.send_message(current_prompt)
+            # --- THIS IS THE CHANGE ---
+            # The API call is now wrapped in eventlet.tpool.execute to prevent it from blocking the server.
+            response = tpool.execute(chat.send_message, current_prompt)
             
-            # NEW: Track API usage metadata
+            # --- Track API Usage ---
             if response.usage_metadata:
                 api_stats['total_calls'] += 1
                 api_stats['total_prompt_tokens'] += response.usage_metadata.prompt_token_count
                 api_stats['total_completion_tokens'] += response.usage_metadata.candidates_token_count
-                # Emit the updated stats to the client
                 socketio.emit('api_usage_update', api_stats)
             
             response_text = response.text
@@ -64,16 +62,13 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 socketio.emit('log_message', {'type': 'thought', 'data': f"I should use the '{action}' tool."})
                 socketio.emit('agent_action', {'type': 'Executing', 'data': command_json})
                 
-                # Pass the session_data object to the tool command
                 tool_result = execute_tool_command(command_json, session_id, chat_sessions, model)
                 
                 socketio.emit('agent_action', {'type': 'Result', 'data': tool_result})
                 
-                # After a tool is used, let the orchestrator know if the session list or name needs an update
                 if action in ['save_session', 'load_session', 'delete_session']:
                     sessions_result = execute_tool_command({'action': 'list_sessions'}, session_id, chat_sessions, model)
                     socketio.emit('session_list_update', sessions_result, to=session_id)
-                    # If a session was saved or loaded, update the name for this client
                     if (action == 'save_session' or action == 'load_session') and tool_result.get('status') == 'success':
                         new_name = command_json.get('parameters', {}).get('session_name')
                         if isinstance(session_data, dict):

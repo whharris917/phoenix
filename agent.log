@@ -1091,3 +1091,96 @@ TypeError: 'ChatSession' object is not subscriptable
 2025-07-09 21:07:47,532 - INFO - Client disconnected: H0R5DqsA48jPfGPKAAAF
 2025-07-09 21:07:51,845 - INFO - Client connected: _5evJFObAFN9G-NoAAAH
 2025-07-09 21:07:51,846 - INFO - Chat session created for _5evJFObAFN9G-NoAAAH
+2025-07-10 00:14:29,139 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\orchestrator.py", line 30, in execute_reasoning_loop
+    response = chat.send_message(current_prompt)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\generativeai\generative_models.py", line 578, in send_message
+    response = self.model.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\generativeai\generative_models.py", line 331, in generate_content
+    response = self._client.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 835, in generate_content
+    response = rpc(
+               ^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+           ^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\retry\retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+             ^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\grpc_helpers.py", line 78, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.DeadlineExceeded: 504 Deadline Exceeded
+2025-07-10 00:14:29,155 - INFO - Client disconnected: _5evJFObAFN9G-NoAAAH
+2025-07-10 12:51:33,852 - INFO - Client connected: K8d_wwXfVUtXAvPQAAAO
+2025-07-10 12:51:33,852 - INFO - Chat session created for K8d_wwXfVUtXAvPQAAAO
+2025-07-10 13:34:16,705 - INFO - Client connected: ytEgfGZP9OOS1BA1AAAQ
+2025-07-10 13:34:16,705 - INFO - Chat session created for ytEgfGZP9OOS1BA1AAAQ
+2025-07-10 13:35:02,352 - INFO - Client disconnected: ytEgfGZP9OOS1BA1AAAQ
+2025-07-10 14:20:58,487 - INFO - API usage statistics saved.
+2025-07-10 14:21:05,508 - INFO - Gemini API configured successfully.
+2025-07-10 14:21:05,511 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-10 14:21:05,846 - INFO - Client connected: vxcyM7fx2vo3UoeaAAAB
+2025-07-10 14:21:05,847 - INFO - Chat session created for vxcyM7fx2vo3UoeaAAAB
+2025-07-10 14:21:07,736 - INFO - Gemini API configured successfully.
+2025-07-10 14:27:36,750 - INFO - API usage statistics saved.
+2025-07-10 14:27:42,920 - INFO - Gemini API configured successfully.
+2025-07-10 14:27:42,923 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-10 14:27:43,108 - INFO - Client connected: SI9FcdRyVkuDIVhWAAAB
+2025-07-10 14:27:43,108 - INFO - Chat session created for SI9FcdRyVkuDIVhWAAAB
+2025-07-10 14:27:44,952 - INFO - Gemini API configured successfully.
+2025-07-10 14:27:45,257 - INFO - Client disconnected: SI9FcdRyVkuDIVhWAAAB
+2025-07-10 14:27:45,504 - INFO - Client connected: _xNH5sRzjrsG77UgAAAD
+2025-07-10 14:27:45,504 - INFO - Chat session created for _xNH5sRzjrsG77UgAAAD
+2025-07-10 14:29:59,275 - INFO - Client disconnected: _xNH5sRzjrsG77UgAAAD
+2025-07-10 14:30:07,986 - INFO - Client connected: FxhCV4RaMuutDCBRAAAF
+2025-07-10 14:30:07,986 - INFO - Chat session created for FxhCV4RaMuutDCBRAAAF
+2025-07-10 14:39:59,851 - INFO - API usage statistics saved.
+2025-07-10 14:40:06,065 - INFO - Gemini API configured successfully.
+2025-07-10 14:40:06,067 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-10 14:40:07,872 - INFO - Client connected: o4WTvYgACFH5mcgXAAAB
+2025-07-10 14:40:07,872 - INFO - Chat session created for o4WTvYgACFH5mcgXAAAB
+2025-07-10 14:40:09,969 - INFO - Gemini API configured successfully.
+2025-07-10 14:40:15,787 - INFO - Client disconnected: o4WTvYgACFH5mcgXAAAB
+2025-07-10 14:40:16,015 - INFO - Client connected: 0AY6mct9YWxaDUeuAAAD
+2025-07-10 14:40:16,016 - INFO - Chat session created for 0AY6mct9YWxaDUeuAAAD
+2025-07-10 14:40:26,316 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\orchestrator.py", line 29, in execute_reasoning_loop
+    response = eventlet.tpool.execute(chat.send_message, current_prompt)
+               ^^^^^^^^^^^^^^
+AttributeError: module 'eventlet' has no attribute 'tpool'
+2025-07-10 14:45:15,670 - INFO - API usage statistics saved.
+2025-07-10 14:45:16,088 - INFO - Client disconnected: 0AY6mct9YWxaDUeuAAAD
+2025-07-10 14:45:17,577 - INFO - API usage statistics saved.
+2025-07-10 14:45:21,591 - INFO - Gemini API configured successfully.
+2025-07-10 14:45:21,595 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-10 14:45:23,038 - INFO - Client connected: z-Ruj7DO9s_Y8ZdOAAAB
+2025-07-10 14:45:23,038 - INFO - Chat session created for z-Ruj7DO9s_Y8ZdOAAAB
+2025-07-10 14:45:23,045 - ERROR - Error executing tool command: module 'eventlet' has no attribute 'tpool'
+2025-07-10 14:45:26,163 - INFO - Client disconnected: z-Ruj7DO9s_Y8ZdOAAAB
+2025-07-10 14:45:26,377 - INFO - Client connected: 98ist1k_v_uHAnImAAAD
+2025-07-10 14:45:26,377 - INFO - Chat session created for 98ist1k_v_uHAnImAAAD
+2025-07-10 14:45:26,396 - ERROR - Error executing tool command: module 'eventlet' has no attribute 'tpool'
+2025-07-10 14:45:29,502 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\orchestrator.py", line 29, in execute_reasoning_loop
+    response = eventlet.tpool.execute(chat.send_message, current_prompt)
+               ^^^^^^^^^^^^^^
+AttributeError: module 'eventlet' has no attribute 'tpool'
+2025-07-10 14:49:36,462 - INFO - Client disconnected: 98ist1k_v_uHAnImAAAD
+2025-07-10 14:49:37,866 - INFO - API usage statistics saved.
