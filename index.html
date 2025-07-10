@@ -215,7 +215,6 @@
                 <button id="confirm-no" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-md">No</button>
             </div>
             <div class="mt-auto flex items-center border-t pt-4 flex-shrink-0" style="border-color: var(--border-color);">
-                <!-- MODIFIED: Added inline style to restore original color scheme -->
                 <textarea id="prompt-input" class="w-full rounded-l-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your command... (Shift+Enter for new line)" rows="1" style="background-color: var(--input-bg);"></textarea>
                 <button id="send-prompt" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-r-md transition-colors self-stretch">Send</button>
             </div>
@@ -404,6 +403,31 @@
 
             socket.on('api_usage_update', (stats) => {
                 updateApiStats(stats);
+            });
+
+            socket.on('load_chat_history', (data) => {
+                conversationLog.innerHTML = ''; 
+                if (data && data.history) {
+                    data.history.forEach(item => {
+                        // --- ROBUSTNESS FIX ---
+                        // Safely check if the message part exists and has text before processing.
+                        if (item.parts && Array.isArray(item.parts) && item.parts.length > 0 && item.parts[0].text) {
+                            const text = item.parts[0].text;
+
+                            if (item.role === 'user') {
+                                if (!text.startsWith('TOOL_RESULT:')) {
+                                    addConversationLog(text, 'user');
+                                }
+                            } else if (item.role === 'model') {
+                                const isToolCommand = text.trim().startsWith('```json');
+                                if (!isToolCommand) {
+                                    addConversationLog(text, 'final_answer');
+                                }
+                            }
+                        }
+                    });
+                    conversationLog.scrollTop = conversationLog.scrollHeight;
+                }
             });
 
 

@@ -1,4 +1,3 @@
-# tool_agent.py
 import os
 import io
 import sys
@@ -18,9 +17,6 @@ ALLOWED_PROJECT_FILES = [
     'workshop.html',
     'documentation_viewer.html'
 ]
-
-# --- Process Pool for all blocking I/O ---
-# No longer needed, as eventlet's tpool will handle this.
 
 # --- Helper functions that run in the Process Pool ---
 
@@ -119,7 +115,7 @@ def execute_tool_command(command, session_id, chat_sessions, model):
             filename = params.get('filename', 'default.txt')
             content = params.get('content', '') 
             safe_path = get_safe_path(filename)
-            result = tpool.execute(_write_file, safe_path, content) # <-- MODIFIED
+            result = tpool.execute(_write_file, safe_path, content)
             if result['status'] == 'success':
                 return {"status": "success", "message": f"File '{filename}' created in sandbox."}
             else:
@@ -128,7 +124,7 @@ def execute_tool_command(command, session_id, chat_sessions, model):
         elif action == 'read_file':
             filename = params.get('filename')
             safe_path = get_safe_path(filename)
-            result = tpool.execute(_read_file, safe_path) # <-- MODIFIED
+            result = tpool.execute(_read_file, safe_path)
             if result['status'] == 'success':
                 return {"status": "success", "message": f"Read content from '{filename}'.", "content": result['content']}
             else:
@@ -139,7 +135,7 @@ def execute_tool_command(command, session_id, chat_sessions, model):
             if filename not in ALLOWED_PROJECT_FILES:
                 return {"status": "error", "message": f"Access denied. Reading the project file '{filename}' is not permitted."}
             project_file_path = os.path.join(os.path.dirname(__file__), filename)
-            result = tpool.execute(_read_file, project_file_path) # <-- MODIFIED
+            result = tpool.execute(_read_file, project_file_path)
             if result['status'] == 'success':
                 return {"status": "success", "message": f"Read content from project file '{filename}'.", "content": result['content']}
             else:
@@ -150,7 +146,7 @@ def execute_tool_command(command, session_id, chat_sessions, model):
 
         elif action == 'list_directory':
             sandbox_dir = get_safe_path('').rsplit(os.sep, 1)[0]
-            result = tpool.execute(_list_directory, sandbox_dir) # <-- MODIFIED
+            result = tpool.execute(_list_directory, sandbox_dir)
             if result['status'] == 'success':
                  return {"status": "success", "message": "Listed files in sandbox.", "files": result['files']}
             else:
@@ -159,7 +155,7 @@ def execute_tool_command(command, session_id, chat_sessions, model):
         elif action == 'delete_file':
             filename = params.get('filename')
             safe_path = get_safe_path(filename)
-            result = tpool.execute(_delete_file, safe_path) # <-- MODIFIED
+            result = tpool.execute(_delete_file, safe_path)
             if result['status'] == 'success':
                 return {"status": "success", "message": f"File '{filename}' deleted."}
             else:
@@ -167,7 +163,7 @@ def execute_tool_command(command, session_id, chat_sessions, model):
 
         elif action == 'execute_python_script':
             script_content = params.get('script_content', '')
-            result = tpool.execute(_execute_script, script_content) # <-- MODIFIED
+            result = tpool.execute(_execute_script, script_content)
             if result['status'] == 'success':
                 return {"status": "success", "message": "Script executed.", "output": result['output']}
             else:
@@ -183,16 +179,25 @@ def execute_tool_command(command, session_id, chat_sessions, model):
             if not chat:
                  return {"status": "error", "message": "Chat object not found in session."}
 
-            history_to_save = [{"role": part.role, "parts": [part.parts[0].text]} for part in chat.history]
-            
+            # --- THE BUG FIX IS HERE ---
+            # The history must be saved in the exact format the API expects, 
+            # which is a list of dictionaries, not a list of raw strings.
+            history_to_save = []
+            for part in chat.history:
+                # Ensure parts are correctly formatted as a list of dicts
+                history_to_save.append({
+                    "role": part.role,
+                    "parts": [{'text': p.text} for p in part.parts]
+                })
+
             summary_chat = model.start_chat(history=history_to_save)
             summary_prompt = "Please provide a very short, one-line summary of this conversation."
             summary_response = summary_chat.send_message(summary_prompt)
             summary = summary_response.text
 
-            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE) # <-- MODIFIED
+            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE)
             all_sessions[session_name] = {"summary": summary, "history": history_to_save}
-            write_result = tpool.execute(_write_sessions_file, SESSIONS_FILE, all_sessions) # <-- MODIFIED
+            write_result = tpool.execute(_write_sessions_file, SESSIONS_FILE, all_sessions)
             
             if write_result['status'] == 'success':
                 return {"status": "success", "message": f"Session '{session_name}' saved."}
@@ -200,33 +205,33 @@ def execute_tool_command(command, session_id, chat_sessions, model):
                 return {"status": "error", "message": f"Failed to save session: {write_result['message']}"}
 
         elif action == 'list_sessions':
-            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE) # <-- MODIFIED
+            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE)
             session_list = [{"name": name, "summary": data.get("summary")} for name, data in all_sessions.items()]
             return {"status": "success", "sessions": session_list}
 
         elif action == 'load_session':
             session_name = params.get('session_name')
-            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE) # <-- MODIFIED
-            session_data = all_sessions.get(session_name)
-            if not session_data:
+            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE)
+            session_data_to_load = all_sessions.get(session_name)
+            if not session_data_to_load:
                 return {"status": "error", "message": f"Session '{session_name}' not found."}
             
-            history = [{'role': item['role'], 'parts': item['parts']} for item in session_data['history']]
+            history = [{'role': item['role'], 'parts': item['parts']} for item in session_data_to_load['history']]
             
             chat_sessions[session_id] = {
                 "chat": model.start_chat(history=history),
                 "name": session_name
             }
-            return {"status": "success", "message": f"Session '{session_name}' loaded."}
+            return {"status": "success", "message": f"Session '{session_name}' loaded.", "history": history}
         
         elif action == 'delete_session':
             session_name = params.get('session_name')
-            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE) # <-- MODIFIED
+            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE)
             if session_name not in all_sessions:
                  return {"status": "error", "message": f"Session '{session_name}' not found."}
 
             del all_sessions[session_name]
-            write_result = tpool.execute(_write_sessions_file, SESSIONS_FILE, all_sessions) # <-- MODIFIED
+            write_result = tpool.execute(_write_sessions_file, SESSIONS_FILE, all_sessions)
 
             if write_result['status'] == 'success':
                 return {"status": "success", "message": f"Session '{session_name}' deleted."}
