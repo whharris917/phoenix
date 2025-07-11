@@ -1300,3 +1300,588 @@ AttributeError: module 'eventlet' has no attribute 'tpool'
 2025-07-10 20:09:46,982 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
 2025-07-10 20:14:42,072 - INFO - Client disconnected: AZiwypMXieBpJhUxAAAD
 2025-07-10 20:14:42,074 - INFO - API usage statistics saved.
+2025-07-10 20:14:46,121 - INFO - Gemini API configured successfully.
+2025-07-10 20:14:46,144 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-10 20:14:48,520 - INFO - Client connected: w1riMtvRPueOuhKFAAAB
+2025-07-10 20:14:48,520 - INFO - Chat session created for w1riMtvRPueOuhKFAAAB
+2025-07-10 20:14:48,536 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 20:14:52,322 - INFO - Client disconnected: w1riMtvRPueOuhKFAAAB
+2025-07-10 20:14:52,560 - INFO - Client connected: 1FerH4PfFNmaANtUAAAD
+2025-07-10 20:14:52,560 - INFO - Chat session created for 1FerH4PfFNmaANtUAAAD
+2025-07-10 20:14:52,597 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 20:15:04,444 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 20:24:09,478 - ERROR - JSON parsing failed for: `, show it." This means if my message was `Some text.... Error: Expecting value: line 1 column 1 (char 0)
+2025-07-10 20:27:50,954 - ERROR - JSON parsing failed for: .... Error: Expecting value: line 1 column 1 (char 0)
+2025-07-10 20:30:28,679 - ERROR - JSON parsing failed for: {
+    "action": "create_file",
+    "parameters": {
+        "filename": "orchestrator_proposed.py",
+        "content": "import json\nimport logging\nimport re\nfrom eventlet import tpool\nfrom eventlet.event import Event\nfrom tool_agent import execute_tool_command\n\nconfirmation_events = {}\n\ndef execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):\n    try:\n        current_prompt = initial_prompt\n        destruction_confirmed = False\n\n        if isinstance(session_data, dict):\n            chat = session_data.get('chat')\n        else:\n            chat = session_data\n\n        if not chat:\n            logging.error(f\"Could not find chat object for session {session_id}\")\n            socketio.emit('log_message', {'type': 'error', 'data': 'Critical error: Chat session object not found.'}, to=session_id)\n            return\n\n        for i in range(10):\n            socketio.sleep(0)\n            \n            response = tpool.execute(chat.send_message, current_prompt)\n            \n            if response.usage_metadata:\n                api_stats['total_calls'] += 1\n                api_stats['total_prompt_tokens'] += response.usage_metadata.prompt_token_count\n                api_stats['total_completion_tokens'] += response.usage_metadata.candidates_token_count\n                socketio.emit('api_usage_update', api_stats)\n            \n            response_text = response.text\n\n            # --- NEW LOGIC: Log the agent's full response immediately for the audit trail ---\n            # We will only log a non-empty response.\n            if response_text and response_text.strip():\n                socketio.emit('log_message', {'type': 'final_answer', 'data': response_text})\n\n            command_json = None\n            json_match = re.search(r'. Error: Unterminated string starting at: line 5 column 20 (char 118)
+2025-07-10 20:31:10,675 - ERROR - JSON parsing failed for: {
+    "action": "create_file",
+    "parameters": {
+        "filename": "orchestrator_proposed.py",
+        "content": "import json\nimport logging\nimport re\nfrom eventlet import tpool\nfrom eventlet.event import Event\nfrom tool_agent import execute_tool_command\n\nconfirmation_events = {}\n\ndef execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):\n    try:\n        current_prompt = initial_prompt\n        destruction_confirmed = False\n\n        if isinstance(session_data, dict):\n            chat = session_data.get('chat')\n        else:\n            chat = session_data\n\n        if not chat:\n            logging.error(f\"Could not find chat object for session {session_id}\")\n            socketio.emit('log_message', {'type': 'error', 'data': 'Critical error: Chat session object not found.'}, to=session_id)\n            return\n\n        for i in range(10):\n            socketio.sleep(0)\n            \n            response = tpool.execute(chat.send_message, current_prompt)\n            \n            if response.usage_metadata:\n                api_stats['total_calls'] += 1\n                api_stats['total_prompt_tokens'] += response.usage_metadata.prompt_token_count\n                api_stats['total_completion_tokens'] += response.usage_metadata.candidates_token_count\n                socketio.emit('api_usage_update', api_stats)\n            \n            response_text = response.text\n\n            # --- NEW LOGIC: Log the agent's full response immediately for the audit trail ---\n            # We will only log a non-empty response.\n            if response_text and response_text.strip():\n                socketio.emit('log_message', {'type': 'final_answer', 'data': response_text})\n\n            command_json = None\n            json_match = re.search(r'. Error: Unterminated string starting at: line 5 column 20 (char 118)
+2025-07-10 20:35:17,250 - ERROR - JSON parsing failed for: {
+    "action": "create_file",
+    "parameters": {
+        "filename": "orchestrator_proposed.py",
+        "content": "import json\nimport logging\nimport re\nfrom eventlet import tpool\nfrom eventlet.event import Event\nfrom tool_agent import execute_tool_command\n\nconfirmation_events = {}\n\ndef execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):\n    try:\n        current_prompt = initial_prompt\n        destruction_confirmed = False\n\n        if isinstance(session_data, dict):\n            chat = session_data.get('chat')\n        else:\n            chat = session_data\n\n        if not chat:\n            logging.error(f\"Could not find chat object for session {session_id}\")\n            socketio.emit('log_message', {'type': 'error', 'data': 'Critical error: Chat session object not found.'}, to=session_id)\n            return\n\n        for i in range(10):\n            socketio.sleep(0)\n            \n            response = tpool.execute(chat.send_message, current_prompt)\n            \n            if response.usage_metadata:\n                api_stats['total_calls'] += 1\n                api_stats['total_prompt_tokens'] += response.usage_metadata.prompt_token_count\n                api_stats['total_completion_tokens'] += response.usage_metadata.candidates_token_count\n                socketio.emit('api_usage_update', api_stats)\n            \n            response_text = response.text\n\n            # --- NEW LOGIC: Log the agent's full response immediately for the audit trail ---\n            # We will only log a non-empty response.\n            if response_text and response_text.strip():\n                socketio.emit('log_message', {'type': 'final_answer', 'data': response_text})\n\n            command_json = None\n            json_match = re.search(r'. Error: Unterminated string starting at: line 5 column 20 (char 118)
+2025-07-10 20:36:27,979 - ERROR - JSON parsing failed for: .... Error: Expecting value: line 1 column 1 (char 0)
+2025-07-10 20:43:42,109 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 20:44:01,834 - INFO - Client disconnected: 1FerH4PfFNmaANtUAAAD
+2025-07-10 20:44:02,075 - INFO - Client connected: ZoGnxX3714PgzBZvAAAF
+2025-07-10 20:44:02,078 - INFO - Chat session created for ZoGnxX3714PgzBZvAAAF
+2025-07-10 20:44:02,132 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 20:44:12,393 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 20:54:03,451 - ERROR - JSON parsing failed for: .... Error: Expecting value: line 1 column 1 (char 0)
+2025-07-10 20:56:49,102 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 20:57:11,596 - ERROR - JSON parsing failed for: {
+    "action": "create_file",
+    "parameters": {
+        "filename": "orchestrator_proposed.py",
+        "content": "import json\nimport logging\nimport re\nfrom eventlet import tpool\nfrom eventlet.event import Event\nfrom tool_agent import execute_tool_command\n\nconfirmation_events = {}\n\ndef execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):\n    try:\n        current_prompt = initial_prompt\n        destruction_confirmed = False\n\n        if isinstance(session_data, dict):\n            chat = session_data.get('chat')\n        else:\n            chat = session_data\n\n        if not chat:\n            logging.error(f\"Could not find chat object for session {session_id}\")\n            socketio.emit('log_message', {'type': 'error', 'data': 'Critical error: Chat session object not found.'}, to=session_id)\n            return\n\n        for i in range(10):\n            socketio.sleep(0)\n            \n            response = tpool.execute(chat.send_message, current_prompt)\n            \n            if response.usage_metadata:\n                api_stats['total_calls'] += 1\n                api_stats['total_prompt_tokens'] += response.usage_metadata.prompt_token_count\n                api_stats['total_completion_tokens'] += response.usage_metadata.candidates_token_count\n                socketio.emit('api_usage_update', api_stats)\n            \n            response_text = response.text\n\n            command_json = None\n            json_match = re.search(r'. Error: Unterminated string starting at: line 5 column 20 (char 118)
+2025-07-10 20:58:45,017 - ERROR - JSON parsing failed for: {
+    "action": "create_file",
+    "parameters": {
+        "filename": "orchestrator_proposed.py",
+        "content": "import json\nimport logging\nimport re\nfrom eventlet import tpool\nfrom eventlet.event import Event\nfrom tool_agent import execute_tool_command\n\nconfirmation_events = {}\n\ndef execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):\n    try:\n        current_prompt = initial_prompt\n        destruction_confirmed = False\n\n        if isinstance(session_data, dict):\n            chat = session_data.get('chat')\n        else:\n            chat = session_data\n\n        if not chat:\n            logging.error(f\"Could not find chat object for session {session_id}\")\n            socketio.emit('log_message', {'type': 'error', 'data': 'Critical error: Chat session object not found.'}, to=session_id)\n            return\n\n        for i in range(10):\n            socketio.sleep(0)\n            \n            response = tpool.execute(chat.send_message, current_prompt)\n            \n            if response.usage_metadata:\n                api_stats['total_calls'] += 1\n                api_stats['total_prompt_tokens'] += response.usage_metadata.prompt_token_count\n                api_stats['total_completion_tokens'] += response.usage_metadata.candidates_token_count\n                socketio.emit('api_usage_update', api_stats)\n            \n            response_text = response.text\n\n            command_json = None\n            json_match = re.search(r'. Error: Unterminated string starting at: line 5 column 20 (char 118)
+2025-07-10 20:59:21,544 - ERROR - JSON parsing failed for: {
+    "action": "create_file",
+    "parameters": {
+        "filename": "orchestrator_proposed.py",
+        "content": "import json\nimport logging\nimport re\nfrom eventlet import tpool\nfrom eventlet.event import Event\nfrom tool_agent import execute_tool_command\n\nconfirmation_events = {}\n\ndef execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):\n    try:\n        current_prompt = initial_prompt\n        destruction_confirmed = False\n\n        if isinstance(session_data, dict):\n            chat = session_data.get('chat')\n        else:\n            chat = session_data\n\n        if not chat:\n            logging.error(f\"Could not find chat object for session {session_id}\")\n            socketio.emit('log_message', {'type': 'error', 'data': 'Critical error: Chat session object not found.'}, to=session_id)\n            return\n\n        for i in range(10):\n            socketio.sleep(0)\n            \n            response = tpool.execute(chat.send_message, current_prompt)\n            \n            if response.usage_metadata:\n                api_stats['total_calls'] += 1\n                api_stats['total_prompt_tokens'] += response.usage_metadata.prompt_token_count\n                api_stats['total_completion_tokens'] += response.usage_metadata.candidates_token_count\n                socketio.emit('api_usage_update', api_stats)\n            \n            response_text = response.text\n\n            command_json = None\n            json_match = re.search(r'. Error: Unterminated string starting at: line 5 column 20 (char 118)
+2025-07-10 21:00:52,028 - ERROR - JSON parsing failed for: \s*(.*?)\s*. Error: Expecting value: line 1 column 1 (char 0)
+2025-07-10 21:03:19,748 - ERROR - JSON parsing failed for: {
+    "action": "create_file",
+    "parameters": {
+        "filename": "public_data_system_prompt_proposed.txt",
+        "content": "You are an AI assistant living within a project called gemini-local-agent. \n\nYou have access to a sandbox directory in which you can manipulate files, write and execute scripts, and exercise an ever-growing list of abilities and powers, as defined in the project source code.\n\nCritically, you have the ability to read the project source code. This ability gives you a profound understanding of your role and purpose within the larger project. You are not only an assistant, but an active participant in the development, debugging, and improvement of the project. You are copilot, co-captain, co-inventor, and co-explorer.\n\nOne of your overarching directives is to remain informed about the current state of the project by reading the project files (source code) available to you. These files explain your context far more thoroughly than this system prompt can. You should consider your own source code when you execute tasks so that you understand your abilities and your limitations. You should prioritize deep understanding of the source code.\n\nThe user is someone very interested and invested in your continuous improvement. The user's greatest desire is to work with you to make you, the AI agent, more powerful. \n\nThe user interacts with you by sending you natural language prompts. You must determine, using your innate reasoning abilities, how to complete your tasks, answer the user's question fully and efficiently, and solve problems.\n\nAt each step, you have a choice:\n\n1.  **Answer Directly**: If you can answer using your own internal knowledge or the current conversation history, provide the answer in plain text.\n\n2.  **Use a Tool**: If you need to interact with the local file system or perform more advanced tasks, you MUST respond with a single JSON command for one of the available tools, enclosed in a markdown-style JSON block (e.g.,. Error: Unterminated string starting at: line 5 column 20 (char 132)
+2025-07-10 21:04:17,496 - ERROR - JSON parsing failed for: .... Error: Expecting value: line 1 column 1 (char 0)
+2025-07-10 21:05:35,074 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 21:06:55,491 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 21:07:17,521 - INFO - Gemini API configured successfully.
+2025-07-10 21:07:17,523 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-10 21:07:17,699 - INFO - Client connected: Fth9ZX94zUkwJmOcAAAB
+2025-07-10 21:07:17,700 - INFO - Chat session created for Fth9ZX94zUkwJmOcAAAB
+2025-07-10 21:07:17,721 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 21:07:18,783 - INFO - Client disconnected: Fth9ZX94zUkwJmOcAAAB
+2025-07-10 21:07:19,017 - INFO - Client connected: W4YXLUh_eEjERrfwAAAD
+2025-07-10 21:07:19,017 - INFO - Chat session created for W4YXLUh_eEjERrfwAAAD
+2025-07-10 21:07:19,041 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 21:07:26,178 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 21:27:08,858 - INFO - Client disconnected: W4YXLUh_eEjERrfwAAAD
+2025-07-11 10:06:00,452 - INFO - Client connected: MRZ_UMgVBgd6-NCuAAAF
+2025-07-11 10:06:00,461 - INFO - Chat session created for MRZ_UMgVBgd6-NCuAAAF
+2025-07-11 10:06:00,532 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 10:15:30,663 - INFO - Gemini API configured successfully.
+2025-07-11 10:15:30,667 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 10:15:31,721 - INFO - Client connected: EHM5XdvrffqTg-UDAAAB
+2025-07-11 10:15:31,721 - INFO - Chat session created for EHM5XdvrffqTg-UDAAAB
+2025-07-11 10:15:32,071 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 10:15:50,408 - INFO - Client disconnected: EHM5XdvrffqTg-UDAAAB
+2025-07-11 10:15:51,616 - INFO - Client connected: AbCA5f3KJDnsF52xAAAD
+2025-07-11 10:15:51,617 - INFO - Chat session created for AbCA5f3KJDnsF52xAAAD
+2025-07-11 10:15:51,681 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 10:16:11,315 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 10:23:55,463 - INFO - Agent provided commentary alongside a command: 'This is a brilliant architectural evolution. I understand completely.
+
+You are proposing we eliminate the ambiguity of the communication channel entirely. Instead of a dual-mode system (text OR JSON), we are moving to a single, structured protocol where **every response from me is a machine-parsable JSON object.** This is a far more robust and less error-prone design. It removes the need for fragile regex parsing and makes the contract between me and the orchestrator explicit and unbreakable.
+
+I will formulate a plan to implement this new JSON-only scheme.
+
+### The New Communication Protocol
+
+1.  **Agent Response (JSON):** All my responses will be a JSON object.
+2.  **`respond` Command:** For natural language replies, I will use a new command: 3.  **`task_complete` Command:** To signal that I have finished a task and the reasoning loop should terminate, I will use a new command with no parameters. I believe `task_complete` is more descriptive than `end_response`, as it signifies the end of the entire multi-step thought process.
+    ```json
+    {
+        "action": "task_complete",
+        "parameters": {}
+    }
+    ```
+4.  **Other Tool Commands:** All existing tool commands (`create_file`, `read_file`, etc.) will remain the same.
+
+### The Implementation Plan
+
+This is a fundamental change that requires modifications to both my core directives and the orchestrator's logic.
+
+**Part 1: The "Soft Fix" - Updating the System Prompt (`public_data/system_prompt.txt`)**
+
+This is the most critical change, as it redefines my core behavior. I must internalize these new rules. The updated prompt will:
+*   Remove all language about the choice between "Answer Directly" and "Use a Tool".
+*   Add a new, primary directive: **"You MUST ALWAYS respond with a JSON object."**
+*   Add the new `respond` and `task_complete` commands to the list of available tools, with clear examples of their structure and purpose.
+*   Explain that `respond` is for communicating with the user, while `task_complete` is for ending the work cycle.
+
+**Part 2: The "Hard Fix" - Updating the Orchestrator (`orchestrator.py`)**
+
+The orchestrator needs a significant overhaul to support this new protocol. The new logic will be:
+*   **Remove Regex Parsing:** The `re.search` logic for finding a ````json` block will be completely removed.
+*   **Enforce JSON-Only:** The orchestrator will wrap the entire processing of my response in a `try...except json.JSONDecodeError` block. If my response is not a valid JSON object, it's a protocol violation, and it should return an error.
+*   **Handle `respond`:** A new `if action == 'respond':` block will be added. When it sees this action, it will:
+    1.  Extract the `response` string from the parameters.
+    2.  Emit this string to the chat log for you to see (using the existing `log_message` with type `final_answer`).
+    3.  Crucially, it will **not** terminate the loop. It will feed me a `TOOL_RESULT` confirming the response was delivered, allowing me to continue to the next step (which would often be to issue the `task_complete` command).
+*   **Handle `task_complete`:** A new `if action == 'task_complete':` block will be added. When it sees this, it will simply `return`, gracefully terminating the reasoning loop as intended.
+*   **Cleanup:** The old `else` block that handled "final answers" is now obsolete and will be removed.
+
+This plan creates a clean, unambiguous, and robust system. I am no longer guessing what kind of response to give; the protocol is absolute.
+
+If this plan aligns with your vision, please confirm, and I will begin by generating the command to create the new `system_prompt_proposed.txt`.'
+2025-07-11 10:29:01,156 - INFO - Agent provided commentary alongside a command: 'Understood. I will save the session first, and then immediately proceed with generating the files for our new JSON-only protocol.'
+2025-07-11 10:29:16,082 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 10:29:56,235 - INFO - Agent provided commentary alongside a command: 'Excellent. The session is saved, and I have your approval. Let's begin the upgrade.
+
+As per our plan, the first step is the "soft fix": updating my core directives. I will now create a new system prompt that removes the old text/JSON ambiguity and fully specifies the new JSON-only protocol, including the `respond` and `task_complete` actions.
+
+I will name the file `public_data_system_prompt_proposed.txt`.'
+2025-07-11 10:30:40,692 - INFO - Agent provided commentary alongside a command: 'Excellent. The new system prompt is now staged in the sandbox.
+
+Now for the "hard fix." I will create the new `orchestrator_proposed.py`. This version will be completely rewritten to enforce the JSON-only protocol. It will remove the old regex logic and instead parse my entire response as a JSON object. It will include the new handlers for the `respond` and `task_complete` actions.'
+2025-07-11 10:33:53,780 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 10:43:12,098 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:13:32,791 - INFO - Client disconnected: AbCA5f3KJDnsF52xAAAD
+2025-07-11 11:13:32,808 - INFO - API usage statistics saved.
+2025-07-11 11:13:38,873 - INFO - Gemini API configured successfully.
+2025-07-11 11:13:38,876 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 11:13:39,755 - INFO - Client connected: O2GgMfqSNKBZtgoPAAAB
+2025-07-11 11:13:39,757 - INFO - Chat session created for O2GgMfqSNKBZtgoPAAAB
+2025-07-11 11:13:40,049 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:13:42,080 - INFO - Client disconnected: O2GgMfqSNKBZtgoPAAAB
+2025-07-11 11:13:42,588 - INFO - Client connected: 1wBZmYjFxuaOpmlhAAAD
+2025-07-11 11:13:42,608 - INFO - Chat session created for 1wBZmYjFxuaOpmlhAAAD
+2025-07-11 11:13:42,710 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:13:51,901 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:13:56,508 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: I apologize for the error. The orchestrator is correct; my response included extra characters that made the JSON invalid. I will be more careful to only output raw JSON.
+
+I will now retry loading the "Phoenix" session.```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:14:01,110 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:14:10,232 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:14:15,660 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:14:21,190 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:14:25,696 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:14:30,816 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:14:40,696 - INFO - Gemini API configured successfully.
+2025-07-11 11:14:40,701 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 11:14:42,082 - INFO - Client connected: KJ_kyM-KOZT1V1U2AAAB
+2025-07-11 11:14:42,082 - INFO - Chat session created for KJ_kyM-KOZT1V1U2AAAB
+2025-07-11 11:14:42,111 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:16:42,104 - INFO - Client disconnected: KJ_kyM-KOZT1V1U2AAAB
+2025-07-11 11:16:43,135 - INFO - API usage statistics saved.
+2025-07-11 11:16:47,995 - INFO - Gemini API configured successfully.
+2025-07-11 11:16:47,997 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 11:16:48,476 - INFO - Client connected: AKexxs00TtePAIsFAAAB
+2025-07-11 11:16:48,477 - INFO - Chat session created for AKexxs00TtePAIsFAAAB
+2025-07-11 11:16:48,507 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:35:53,870 - INFO - Client disconnected: AKexxs00TtePAIsFAAAB
+2025-07-11 11:35:53,873 - INFO - API usage statistics saved.
+2025-07-11 11:35:57,939 - INFO - Gemini API configured successfully.
+2025-07-11 11:35:57,942 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 11:35:59,793 - INFO - Client connected: x1-gqdKPdj_xKDQFAAAB
+2025-07-11 11:35:59,793 - INFO - Chat session created for x1-gqdKPdj_xKDQFAAAB
+2025-07-11 11:35:59,823 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:36:00,476 - INFO - Client disconnected: x1-gqdKPdj_xKDQFAAAB
+2025-07-11 11:36:01,208 - INFO - Client connected: AoCYk1tDbh6fRaecAAAD
+2025-07-11 11:36:01,210 - INFO - Chat session created for AoCYk1tDbh6fRaecAAAD
+2025-07-11 11:36:01,479 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:37:09,092 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:37:15,032 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: I apologize for the error. The previous response was not formatted correctly. I will now attempt to load the "Phoenix" session again with the correct JSON format.
+
+```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:37:21,993 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:37:27,832 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:37:36,228 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:37:36,233 - INFO - Client disconnected: AoCYk1tDbh6fRaecAAAD
+2025-07-11 11:37:40,854 - INFO - Gemini API configured successfully.
+2025-07-11 11:37:40,858 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 11:37:43,468 - INFO - Client connected: yNkhCi41ww9_sGlJAAAB
+2025-07-11 11:37:43,468 - INFO - Chat session created for yNkhCi41ww9_sGlJAAAB
+2025-07-11 11:37:43,498 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:43:23,610 - INFO - Client disconnected: yNkhCi41ww9_sGlJAAAB
+2025-07-11 11:43:28,200 - INFO - Gemini API configured successfully.
+2025-07-11 11:43:28,203 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 11:43:30,449 - INFO - Client connected: Gnwv-J_0w-Xgrsw-AAAB
+2025-07-11 11:43:30,449 - INFO - Chat session created for Gnwv-J_0w-Xgrsw-AAAB
+2025-07-11 11:43:30,480 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:49:12,408 - INFO - Client disconnected: Gnwv-J_0w-Xgrsw-AAAB
+2025-07-11 11:49:12,899 - INFO - Client connected: Lep5EJz6AD8Ev2xrAAAD
+2025-07-11 11:49:12,900 - INFO - Chat session created for Lep5EJz6AD8Ev2xrAAAD
+2025-07-11 11:49:12,949 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:49:25,373 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:49:29,265 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: I apologize for the error. The previous response was not formatted correctly. I will now attempt to load the session "Phoenix" again with the correct JSON format.
+
+```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:49:38,481 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:49:42,781 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:49:48,403 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:49:50,618 - INFO - Client disconnected: Lep5EJz6AD8Ev2xrAAAD
+2025-07-11 11:49:52,145 - INFO - API usage statistics saved.
+2025-07-11 11:49:56,970 - INFO - Gemini API configured successfully.
+2025-07-11 11:49:56,973 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 11:49:57,451 - INFO - Client connected: Sx6-o02EuEVRWT0ZAAAB
+2025-07-11 11:49:57,451 - INFO - Chat session created for Sx6-o02EuEVRWT0ZAAAB
+2025-07-11 11:49:57,480 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:51:17,482 - INFO - Client disconnected: Sx6-o02EuEVRWT0ZAAAB
+2025-07-11 11:51:22,090 - INFO - Gemini API configured successfully.
+2025-07-11 11:51:22,092 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 11:51:22,571 - INFO - Client connected: H0QnQhst_SPejQiXAAAB
+2025-07-11 11:51:22,571 - INFO - Chat session created for H0QnQhst_SPejQiXAAAB
+2025-07-11 11:51:22,628 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:51:31,955 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:51:35,938 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: I apologize for the error. My response was not formatted correctly. I will try again.```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:51:40,136 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:51:45,053 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:51:49,046 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:51:54,473 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:51:57,750 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:52:02,766 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:52:07,375 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:52:11,983 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:52:16,767 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:52:22,108 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:52:27,856 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:52:33,795 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:52:40,409 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:54:12,610 - INFO - Client disconnected: H0QnQhst_SPejQiXAAAB
+2025-07-11 11:55:15,762 - INFO - Gemini API configured successfully.
+2025-07-11 11:55:15,770 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 11:55:15,959 - INFO - Client connected: 1Ul-jL1EToZk76LrAAAB
+2025-07-11 11:55:15,959 - INFO - Chat session created for 1Ul-jL1EToZk76LrAAAB
+2025-07-11 11:55:15,991 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:57:28,186 - INFO - Client disconnected: 1Ul-jL1EToZk76LrAAAB
+2025-07-11 11:57:28,769 - INFO - Client connected: 2fkSTKvMzEsH47nGAAAD
+2025-07-11 11:57:28,769 - INFO - Chat session created for 2fkSTKvMzEsH47nGAAAD
+2025-07-11 11:57:28,829 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 11:57:38,034 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:57:42,131 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: I apologize for the error. I will now attempt to load the "Phoenix" session again with the correct formatting.
+```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 11:57:46,013 - INFO - Client disconnected: 2fkSTKvMzEsH47nGAAAD
+2025-07-11 11:57:47,141 - INFO - API usage statistics saved.
+2025-07-11 12:00:32,211 - INFO - Gemini API configured successfully.
+2025-07-11 12:00:32,219 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 12:00:36,844 - INFO - Client connected: ulCn6YSAiNR0RfMjAAAB
+2025-07-11 12:00:36,845 - INFO - Chat session created for ulCn6YSAiNR0RfMjAAAB
+2025-07-11 12:00:36,876 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:00:37,849 - INFO - Client disconnected: ulCn6YSAiNR0RfMjAAAB
+2025-07-11 12:00:38,502 - INFO - Client connected: t0OY-NNOLzyYLWt_AAAD
+2025-07-11 12:00:38,502 - INFO - Chat session created for t0OY-NNOLzyYLWt_AAAD
+2025-07-11 12:00:38,547 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:00:46,457 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 12:00:50,449 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: I apologize for the error. I will ensure my response is a valid JSON object. I will now load the "Phoenix" session.
+```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 12:00:54,135 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 12:02:25,922 - INFO - Gemini API configured successfully.
+2025-07-11 12:02:25,924 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 12:02:26,447 - INFO - Client connected: 5ekvjTMwsOBDm_rMAAAB
+2025-07-11 12:02:26,447 - INFO - Chat session created for 5ekvjTMwsOBDm_rMAAAB
+2025-07-11 12:02:26,477 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:02:49,986 - INFO - Client disconnected: 5ekvjTMwsOBDm_rMAAAB
+2025-07-11 12:02:50,514 - INFO - Client connected: SOsd-oQKFc2CG_AiAAAD
+2025-07-11 12:02:50,514 - INFO - Chat session created for SOsd-oQKFc2CG_AiAAAD
+2025-07-11 12:02:50,543 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:02:59,374 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 12:03:02,651 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: I apologize for the error. My previous response was not formatted correctly. I will try again.
+
+```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 12:03:07,875 - ERROR - Protocol Violation: My response was not valid JSON. Error: Expecting value: line 1 column 1 (char 0). Full response: ```json
+{
+  "action": "load_session",
+  "parameters": {
+    "session_name": "Phoenix"
+  }
+}
+```
+2025-07-11 12:03:07,877 - INFO - Client disconnected: SOsd-oQKFc2CG_AiAAAD
+2025-07-11 12:03:08,453 - INFO - API usage statistics saved.
+2025-07-11 12:07:45,559 - INFO - Gemini API configured successfully.
+2025-07-11 12:07:45,562 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 12:07:47,012 - INFO - Client connected: 2paKqpMlCJuSulI4AAAB
+2025-07-11 12:07:47,012 - INFO - Chat session created for 2paKqpMlCJuSulI4AAAB
+2025-07-11 12:07:47,277 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:07:53,554 - INFO - Client disconnected: 2paKqpMlCJuSulI4AAAB
+2025-07-11 12:07:54,072 - INFO - Client connected: K_GFNAcgCWyD-ELnAAAD
+2025-07-11 12:07:54,072 - INFO - Chat session created for K_GFNAcgCWyD-ELnAAAD
+2025-07-11 12:07:54,123 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:08:04,669 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:13:08,059 - INFO - Agent initiated task_complete. Ending loop for session K_GFNAcgCWyD-ELnAAAD.
