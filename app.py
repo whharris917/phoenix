@@ -50,14 +50,13 @@ if API_KEY:
 else:
     logging.critical("FATAL: Gemini API key not loaded.")
 
-# --- NEW: API Usage Tracking ---
+# --- API Usage Tracking ---
 def load_api_stats():
     """Loads API usage stats from a JSON file."""
     try:
         with open(API_STATS_FILE, 'r') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        # If file doesn't exist or is empty, start with fresh stats
         return {'total_calls': 0, 'total_prompt_tokens': 0, 'total_completion_tokens': 0}
 
 def save_api_stats():
@@ -67,7 +66,6 @@ def save_api_stats():
     logging.info("API usage statistics saved.")
 
 api_stats = load_api_stats()
-# Register the save function to be called on program exit
 atexit.register(save_api_stats)
 
 chat_sessions = {}
@@ -96,11 +94,10 @@ def handle_connect():
         try:
             chat_sessions[request.sid] = {
                 "chat": model.start_chat(history=[]),
-                "name": "[New Session]"
+                "name": None
             }
             app.logger.info(f"Chat session created for {request.sid}")
-            # Inform the client of the new session name
-            socketio.emit('session_name_update', {'name': '[New Session]'}, to=request.sid)
+            socketio.emit('session_name_update', {'name': None}, to=request.sid)
         except Exception as e:
             app.logger.exception(f"Could not create chat session for {request.sid}.")
             socketio.emit('log_message', {'type': 'error', 'data': 'Failed to initialize AI session.'}, to=request.sid)
@@ -120,25 +117,26 @@ def handle_start_task(data):
     session_data = chat_sessions.get(session_id)
     if prompt and session_data:
         socketio.emit('log_message', {'type': 'system', 'data': 'Task received. Starting reasoning process...'})
-        # Pass the api_stats dictionary to the reasoning loop
         socketio.start_background_task(execute_reasoning_loop, socketio, session_data, prompt, session_id, chat_sessions, model, api_stats)
     elif not session_data:
         socketio.emit('log_message', {'type': 'error', 'data': 'No active AI session. Please refresh.'}, to=request.sid)
-
-@socketio.on('request_sandbox_refresh')
-def handle_sandbox_refresh():
-    result = execute_tool_command({'action': 'list_directory'}, None, None, None)
-    socketio.emit('sandbox_update', result, to=request.sid)
 
 @socketio.on('request_session_list')
 def handle_session_list_request():
     result = execute_tool_command({'action': 'list_sessions'}, None, None, None)
     socketio.emit('session_list_update', result, to=request.sid)
 
-# NEW: Event to provide current API stats to the client
 @socketio.on('request_api_stats')
 def handle_api_stats_request():
     socketio.emit('api_usage_update', api_stats, to=request.sid)
+
+@socketio.on('request_session_name')
+def handle_session_name_request():
+    session_id = request.sid
+    session_data = chat_sessions.get(session_id)
+    if session_data:
+        name = session_data.get('name')
+        socketio.emit('session_name_update', {'name': name}, to=request.sid)
 
 @socketio.on('user_confirmation')
 def handle_user_confirmation(data):

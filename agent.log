@@ -1260,3 +1260,43 @@ AttributeError: module 'eventlet' has no attribute 'tpool'
 }. Error: Expecting ',' delimiter: line 5 column 9201 (char 9289)
 2025-07-10 17:34:29,304 - INFO - Client disconnected: ZBoFyJFJLKQES1I4AAAH
 2025-07-10 17:34:29,307 - INFO - API usage statistics saved.
+2025-07-10 17:34:34,717 - INFO - Gemini API configured successfully.
+2025-07-10 17:34:34,719 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-10 17:34:34,760 - INFO - Client connected: tWyMe8Ed0Cc0ohXwAAAB
+2025-07-10 17:34:34,760 - INFO - Chat session created for tWyMe8Ed0Cc0ohXwAAAB
+2025-07-10 17:36:42,389 - INFO - Client disconnected: tWyMe8Ed0Cc0ohXwAAAB
+2025-07-10 17:36:42,607 - INFO - Client connected: bBI2OgPmUvkkAt0fAAAD
+2025-07-10 17:36:42,607 - INFO - Chat session created for bBI2OgPmUvkkAt0fAAAD
+2025-07-10 17:36:48,283 - INFO - Client disconnected: bBI2OgPmUvkkAt0fAAAD
+2025-07-10 17:36:48,846 - INFO - Client connected: AYbq73O9HIOtRnWDAAAF
+2025-07-10 17:36:48,847 - INFO - Chat session created for AYbq73O9HIOtRnWDAAAF
+2025-07-10 18:16:31,352 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 19:05:39,518 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 19:22:47,429 - INFO - Client disconnected: AYbq73O9HIOtRnWDAAAF
+2025-07-10 19:22:47,445 - INFO - API usage statistics saved.
+2025-07-10 19:22:51,061 - INFO - Gemini API configured successfully.
+2025-07-10 19:22:51,071 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-10 19:22:53,657 - INFO - Client connected: tqspSWCJJzYpp6-_AAAC
+2025-07-10 19:22:53,657 - INFO - Chat session created for tqspSWCJJzYpp6-_AAAC
+2025-07-10 19:22:53,693 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 19:23:57,204 - INFO - Client disconnected: tqspSWCJJzYpp6-_AAAC
+2025-07-10 19:23:57,411 - INFO - Client connected: MjwpGN2bBMd2m_-mAAAE
+2025-07-10 19:23:57,411 - INFO - Chat session created for MjwpGN2bBMd2m_-mAAAE
+2025-07-10 19:23:57,428 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 19:59:01,069 - INFO - Client disconnected: MjwpGN2bBMd2m_-mAAAE
+2025-07-10 19:59:01,310 - INFO - Client connected: Hb_S4h2UWbQ1csDXAAAG
+2025-07-10 19:59:01,310 - INFO - Chat session created for Hb_S4h2UWbQ1csDXAAAG
+2025-07-10 19:59:01,346 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 19:59:35,585 - INFO - Gemini API configured successfully.
+2025-07-10 19:59:35,589 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-10 19:59:37,103 - INFO - Client connected: 4w2mVDpZD7lvGGlWAAAB
+2025-07-10 19:59:37,103 - INFO - Chat session created for 4w2mVDpZD7lvGGlWAAAB
+2025-07-10 19:59:37,121 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 19:59:37,596 - INFO - Client disconnected: 4w2mVDpZD7lvGGlWAAAB
+2025-07-10 19:59:37,805 - INFO - Client connected: AZiwypMXieBpJhUxAAAD
+2025-07-10 19:59:37,805 - INFO - Chat session created for AZiwypMXieBpJhUxAAAD
+2025-07-10 19:59:37,834 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 19:59:57,879 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 20:09:46,982 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-10 20:14:42,072 - INFO - Client disconnected: AZiwypMXieBpJhUxAAAD
+2025-07-10 20:14:42,074 - INFO - API usage statistics saved.

@@ -10,7 +10,6 @@ confirmation_events = {}
 def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):
     try:
         current_prompt = initial_prompt
-        # --- NEW: Safety lock for destructive operations ---
         destruction_confirmed = False
 
         if isinstance(session_data, dict):
@@ -37,7 +36,8 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
             response_text = response.text
 
             command_json = None
-            json_match = re.search(r'```json\n(.*?)\n```', response_text, re.DOTALL)
+            # --- CORRECTED REGEX: Using \s* to be flexible with whitespace ---
+            json_match = re.search(r'```json\s*(.*?)\s*```', response_text, re.DOTALL)
             if json_match:
                 json_str = json_match.group(1).strip()
                 try:
@@ -49,14 +49,11 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
             if command_json:
                 action = command_json.get("action")
                 
-                # --- SAFETY LOCK LOGIC ---
                 destructive_actions = ['delete_file', 'delete_session']
                 if action in destructive_actions and not destruction_confirmed:
-                    # If a destructive action is attempted without confirmation, deny it.
                     err_msg = f"Action '{action}' is destructive and requires user confirmation. I must use 'request_confirmation' first."
                     logging.warning(err_msg)
                     current_prompt = f"TOOL_RESULT: {json.dumps({'status': 'error', 'message': err_msg})}"
-                    # Reset the flag after a failed attempt
                     destruction_confirmed = False
                     continue
 
@@ -68,9 +65,9 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                     user_response = confirmation_event.wait()
                     confirmation_events.pop(session_id, None)
                     if user_response == 'yes':
-                        destruction_confirmed = True # Unlock for the next step
+                        destruction_confirmed = True
                     else:
-                        destruction_confirmed = False # Ensure lock remains
+                        destruction_confirmed = False
                     current_prompt = f"USER_CONFIRMATION: '{user_response}'"
                     continue
 
@@ -79,7 +76,6 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 
                 tool_result = execute_tool_command(command_json, session_id, chat_sessions, model)
 
-                # Reset the lock after any tool execution
                 destruction_confirmed = False
                 
                 socketio.emit('agent_action', {'type': 'Result', 'data': tool_result})
@@ -94,6 +90,14 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                         if isinstance(session_data, dict):
                             session_data['name'] = new_name
                         socketio.emit('session_name_update', {'name': new_name}, to=session_id)
+
+                    if action == 'delete_session' and tool_result.get('status') == 'success':
+                        deleted_name = command_json.get('parameters', {}).get('session_name')
+                        current_name = session_data.get('name') if isinstance(session_data, dict) else None
+                        if deleted_name == current_name:
+                            if isinstance(session_data, dict):
+                                session_data['name'] = None
+                            socketio.emit('session_name_update', {'name': None}, to=session_id)
 
                     if action == 'load_session' and tool_result.get('status') == 'success':
                         history = tool_result.get('history')

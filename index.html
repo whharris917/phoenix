@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Agent Control</title>
+    <title>Agent Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -81,9 +81,9 @@
         }
         details > summary::-webkit-details-marker { display: none; }
         details > summary::before {
-            content: '►';
+            content: '\203a';
             margin-right: 0.5rem;
-            font-size: 0.7rem;
+            font-size: 1.2rem;
             display: inline-block;
             transition: transform 0.2s;
         }
@@ -107,7 +107,7 @@
         <div class="flex items-center space-x-8">
             <h1 class="text-xl font-bold" style="color: var(--text-color);">Gemini Agent</h1>
             <nav class="flex items-center space-x-2">
-                <a href="/" class="nav-link active py-2 px-3 rounded-md text-xs font-medium">Agent Control</a>
+                <a href="/" class="nav-link active py-2 px-3 rounded-md text-xs font-medium">Agent Chat</a>
                 <a href="/docs" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Documentation</a>
                 <a href="/workshop" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Workshop</a>
                 <div class="relative" id="commands-dropdown-container">
@@ -196,17 +196,11 @@
                     <p class="text-gray-400 text-center text-[10px] pt-2">Based on Gemini 1.5 Pro pricing.</p>
                 </div>
             </details>
-            <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
-                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Agent Action Log</summary>
-                <div id="agent-log" class="p-4 border-t space-y-2" style="border-color: var(--border-color);">
-                    <p id="agent-log-placeholder" class="text-xs text-gray-500">Agent actions will appear here...</p>
-                </div>
-            </details>
         </div>
         
         <div class="w-full md:w-1/2 rounded-lg shadow-lg p-6 flex flex-col min-h-0" style="background-color: var(--panel-bg);">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold" style="color: var(--text-color);">Mission Control</h2>
+                <h2 class="text-lg font-semibold" style="color: var(--text-color);">Agent Chat</h2>
                 <span id="session-name-display" class="text-sm font-mono px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">[New Session]</span>
             </div>
             <div id="conversation-log" class="flex-grow overflow-y-auto mb-4 pr-2 flex flex-col"></div>
@@ -230,7 +224,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- Element Selectors ---
-            const agentLog = document.getElementById('agent-log');
             const conversationLog = document.getElementById('conversation-log');
             const promptInput = document.getElementById('prompt-input');
             const sendBtn = document.getElementById('send-prompt');
@@ -262,9 +255,10 @@
             const totalTokensEl = document.getElementById('total-tokens');
             const estCostEl = document.getElementById('est-cost');
 
-            // --- Constants ---
+            // --- State & Constants ---
             const SERVER_URL = window.location.origin;
             const socket = io(SERVER_URL);
+            let currentSessionName = '[New Session]';
             
             const userIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>`;
             const orchestratorIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z"></path></svg>`;
@@ -291,15 +285,34 @@
                     formattedMessage = message.replace(/\n/g, '<br>');
                 }
 
-                let typeDisplay, icon;
+                let typeDisplay, icon, titleHTML;
                 switch(type) {
-                    case 'user': typeDisplay = 'You'; icon = userIcon; break;
-                    case 'system': typeDisplay = 'Orchestrator'; icon = orchestratorIcon; break;
-                    case 'thought': typeDisplay = 'Agent Thought'; icon = agentIcon; break;
-                    default: typeDisplay = 'Agent Response'; icon = agentIcon;
+                    case 'user':
+                        typeDisplay = 'You';
+                        icon = userIcon;
+                        titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
+                        break;
+                    case 'system':
+                        typeDisplay = 'Orchestrator';
+                        icon = orchestratorIcon;
+                        titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
+                        break;
+                    case 'thought':
+                        typeDisplay = 'Agent Thought';
+                        icon = agentIcon;
+                        titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
+                        break;
+                    case 'final_answer':
+                        typeDisplay = currentSessionName;
+                        icon = agentIcon;
+                        titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
+                        break;
+                    default:
+                        typeDisplay = 'System Message';
+                        icon = orchestratorIcon;
+                        titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
                 }
                 
-                const titleHTML = type === 'final_answer' ? '' : `<strong class="text-white/80">${typeDisplay}:</strong>`;
                 const content = `<div class="flex items-start">${icon}<div class="flex-1">${titleHTML}<div class="mt-1 text-sm message-body">${formattedMessage}</div></div></div>`;
                 const entry = document.createElement('div');
                 entry.className = `log-entry log-entry-${type}`;
@@ -311,27 +324,6 @@
 
                 conversationLog.appendChild(entry);
                 conversationLog.scrollTop = conversationLog.scrollHeight;
-            };
-            
-            const addAgentActionLog = (message, type) => {
-                document.getElementById('agent-log-placeholder')?.remove();
-                const details = document.createElement('details');
-                details.className = `bg-gray-100 dark:bg-gray-700/50 rounded-md text-xs mb-2`;
-                
-                const summary = document.createElement('summary');
-                summary.className = 'p-1 px-2 font-semibold w-full';
-                summary.textContent = type;
-                
-                const pre = document.createElement('pre');
-                pre.className = 'whitespace-pre-wrap p-2 border-t text-gray-600 dark:text-gray-300 overflow-x-auto'
-                pre.style.borderColor = 'var(--border-color)';
-                pre.style.wordWrap = 'break-word';
-                pre.textContent = JSON.stringify(message, null, 2);
-
-                details.appendChild(summary);
-                details.appendChild(pre);
-                agentLog.appendChild(details);
-                agentLog.scrollTop = agentLog.scrollHeight;
             };
 
             const requestSessionList = () => {
@@ -365,6 +357,7 @@
                 agentText.textContent = 'Agent Online';
                 requestSessionList();
                 socket.emit('request_api_stats');
+                socket.emit('request_session_name'); // Get current session name on connect
             });
 
             socket.on('disconnect', () => {
@@ -376,7 +369,6 @@
             });
 
             socket.on('log_message', (msg) => addConversationLog(msg.data, msg.type));
-            socket.on('agent_action', (msg) => addAgentActionLog(msg.data, msg.type));
             
             socket.on('request_user_confirmation', (data) => {
                 addConversationLog(data.prompt, 'system');
@@ -398,7 +390,8 @@
             });
             
             socket.on('session_name_update', (data) => {
-                sessionNameDisplay.textContent = data.name || '[New Session]';
+                currentSessionName = data.name || '[New Session]';
+                sessionNameDisplay.textContent = currentSessionName;
             });
 
             socket.on('api_usage_update', (stats) => {
@@ -409,17 +402,15 @@
                 conversationLog.innerHTML = ''; 
                 if (data && data.history) {
                     data.history.forEach(item => {
-                        // --- ROBUSTNESS FIX ---
-                        // Safely check if the message part exists and has text before processing.
-                        if (item.parts && Array.isArray(item.parts) && item.parts.length > 0 && item.parts[0].text) {
-                            const text = item.parts[0].text;
+                        if (item.parts && Array.isArray(item.parts) && item.parts.length > 0) {
+                            const text = (item.parts[0].text || item.parts[0]).trim();
 
                             if (item.role === 'user') {
                                 if (!text.startsWith('TOOL_RESULT:')) {
                                     addConversationLog(text, 'user');
                                 }
                             } else if (item.role === 'model') {
-                                const isToolCommand = text.trim().startsWith('```json');
+                                const isToolCommand = text.startsWith('```json');
                                 if (!isToolCommand) {
                                     addConversationLog(text, 'final_answer');
                                 }
