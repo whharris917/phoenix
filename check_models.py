@@ -1,7 +1,14 @@
 import google.generativeai as genai
 
-# Make sure to replace this with your key
-API_KEY = 'AIzaSyALFegx2Gslr5a-xzx1sLWFOzB1EQ0xVZY' 
+# --- Function to load API key from a file ---
+def load_api_key():
+    try:
+        key_path = os.path.join(os.path.dirname(__file__), 'private_data', 'Gemini_API_Key.txt')
+        with open(key_path, 'r') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return None
+        
 genai.configure(api_key=API_KEY)
 
 print("Available Gemini Models:")

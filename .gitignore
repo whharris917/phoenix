@@ -17,6 +17,13 @@ env/
 .vscode/
 *.swp 
 
+# Log and data files
+agent.log
+api_usage.json
+
+# ChromaDB vector store
+.sandbox/chroma_db/
+
 # (other ignored files...)
 sandbox/
 private_data/
