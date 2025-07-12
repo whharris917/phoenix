@@ -55,5 +55,7 @@ You will receive two distinct types of input. Input that is a direct message fro
     *   JSON: `{"action": "load_session", "parameters": {"session_name": "<name_to_load>"}}`
 14. **`delete_session`**: Deletes a saved session.
     *   JSON: `{"action": "delete_session", "parameters": {"session_name": "<name_to_delete>"}}`
-15. **`request_confirmation`**: Asks the user for a yes/no confirmation.
+15. **`import_legacy_sessions`**: Imports sessions from the old sessions.json file into the new database.
+    *   JSON: `{"action": "import_legacy_sessions", "parameters": {}}`
+16. **`request_confirmation`**: Asks the user for a yes/no confirmation.
     *   JSON: `{"action": "request_confirmation", "parameters": {"prompt": "<question_for_the_user>"}}`

@@ -1,3 +1,5 @@
+# tool_agent.py
+
 import os
 import io
 import sys
@@ -5,11 +7,15 @@ from contextlib import redirect_stdout
 import json
 import logging
 from eventlet import tpool
-# --- NEW: Import the code parser ---
+import chromadb # Import chromadb at the top
+import uuid
+
 from code_parser import analyze_codebase, generate_mermaid_diagram
 
 # --- Constants ---
-SESSIONS_FILE = os.path.join(os.path.dirname(__file__), 'sandbox', 'sessions', 'sessions.json')
+LEGACY_SESSIONS_FILE = os.path.join(os.path.dirname(__file__), 'sandbox', 'sessions', 'sessions.json')
+CHROMA_DB_PATH = os.path.join(os.path.dirname(__file__), '.sandbox', 'chroma_db') # Use the same path as MemoryManager
+
 ALLOWED_PROJECT_FILES = [
     'app.py',
     'orchestrator.py',
@@ -18,11 +24,11 @@ ALLOWED_PROJECT_FILES = [
     'index.html',
     'workshop.html',
     'documentation_viewer.html',
-    'code_parser.py' # Add the new file to the allowed list
+    'code_parser.py'
 ]
 
-# --- Helper functions (no changes) ---
-
+# --- Helper functions ---
+# ... (all helper functions like _execute_script, _write_file, etc. remain the same) ...
 def _execute_script(script_content):
     string_io = io.StringIO()
     try:
@@ -65,8 +71,12 @@ def _list_directory(path):
     try:
         file_list = []
         for root, dirs, files in os.walk(path):
-            if 'sessions' in dirs:
+            # Exclude the chroma_db directory from the listing
+            if 'chroma_db' in dirs:
+                dirs.remove('chroma_db')
+            if 'sessions' in dirs: # Also keep excluding old sessions dir
                 dirs.remove('sessions')
+
             for name in files:
                 relative_path = os.path.relpath(os.path.join(root, name), path)
                 file_list.append(relative_path.replace('\\', '/'))
@@ -74,21 +84,6 @@ def _list_directory(path):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-def _read_sessions_file(path):
-    try:
-        with open(path, 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-
-def _write_sessions_file(path, data):
-    try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w') as f:
-            json.dump(data, f, indent=4)
-        return {"status": "success"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
 
 # --- Core Tooling Logic ---
 
@@ -108,7 +103,9 @@ def execute_tool_command(command, session_id, chat_sessions, model):
     action = command.get('action')
     params = command.get('parameters', {})
     try:
-        # ... (all other actions remain the same)
+        # Initialize ChromaDB client for session tools
+        chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+
         if action == 'create_file':
             filename = params.get('filename', 'default.txt')
             content = params.get('content', '') 
@@ -167,7 +164,6 @@ def execute_tool_command(command, session_id, chat_sessions, model):
             else:
                 return {"status": "error", "message": f"An error occurred in script: {result['message']}"}
 
-        # --- NEW VISUALIZER TOOL ---
         elif action == 'generate_code_diagram':
             try:
                 project_root = os.path.dirname(__file__)
@@ -192,63 +188,133 @@ def execute_tool_command(command, session_id, chat_sessions, model):
                 logging.error(f"Error generating code diagram: {e}")
                 return {"status": "error", "message": str(e)}
 
-        # ... (session management tools remain the same)
+        # --- REFACTORED SESSION MANAGEMENT TOOLS ---
+
         elif action == 'save_session':
             session_name = params.get('session_name')
+            if not session_name:
+                return {"status": "error", "message": "Session name not provided."}
+
             session_data = chat_sessions.get(session_id)
-            if not session_name or not session_data:
-                return {"status": "error", "message": "Session name or active chat not found."}
-            chat = session_data.get('chat') if isinstance(session_data, dict) else session_data
-            if not chat:
-                 return {"status": "error", "message": "Chat object not found in session."}
-            history_to_save = []
-            for part in chat.history:
-                history_to_save.append({
-                    "role": part.role,
-                    "parts": [{'text': p.text} for p in part.parts]
-                })
-            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE)
-            all_sessions[session_name] = {"summary": "Saved Session", "history": history_to_save}
-            write_result = tpool.execute(_write_sessions_file, SESSIONS_FILE, all_sessions)
-            if write_result['status'] == 'success':
-                return {"status": "success", "message": f"Session '{session_name}' saved."}
-            else:
-                return {"status": "error", "message": f"Failed to save session: {write_result['message']}"}
+            if not session_data or 'memory' not in session_data:
+                return {"status": "error", "message": "Active memory session not found."}
+            
+            memory = session_data['memory']
+            current_collection = memory.collection
+            if not current_collection:
+                 return {"status": "error", "message": "ChromaDB collection not found for this session."}
+
+            # Rename the current collection to the user-provided name
+            current_collection.modify(name=session_name)
+            
+            # Update the memory manager to point to the renamed collection
+            memory.collection = chroma_client.get_collection(name=session_name)
+            
+            return {"status": "success", "message": f"Session '{session_name}' saved."}
 
         elif action == 'list_sessions':
-            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE)
-            session_list = []
-            for name, data in all_sessions.items():
-                if isinstance(data, dict):
-                    summary = data.get("summary", "No summary available.")
-                    session_list.append({"name": name, "summary": summary})
-            return {"status": "success", "sessions": session_list}
+            collections = chroma_client.list_collections()
+            # Filter out the temporary, session_id based collections
+            named_sessions = [c.name for c in collections if not c.name.startswith('session_')]
+            return {"status": "success", "sessions": [{"name": name, "summary": "Saved Session"} for name in named_sessions]}
 
         elif action == 'load_session':
             session_name = params.get('session_name')
-            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE)
-            session_data_to_load = all_sessions.get(session_name)
-            if not session_data_to_load:
-                return {"status": "error", "message": f"Session '{session_name}' not found."}
-            history = session_data_to_load.get('history', [])
-            chat_sessions[session_id] = {
-                "chat": model.start_chat(history=history),
-                "name": session_name
-            }
-            return {"status": "success", "message": f"Session '{session_name}' loaded.", "history": history}
+            if not session_name:
+                return {"status": "error", "message": "Session name not provided."}
+                
+            try:
+                collection = chroma_client.get_collection(name=session_name)
+                # Retrieve all documents and metadata
+                history_data = collection.get(include=["documents", "metadatas"])
+                
+                if not history_data or not history_data['ids']:
+                    return {"status": "success", "message": f"Session '{session_name}' loaded but is empty.", "history": []}
+
+                # --- NEW: Sort by timestamp in metadata ---
+                history_tuples = sorted(
+                    zip(history_data['documents'], history_data['metadatas']), 
+                    key=lambda x: x[1].get('timestamp', 0) # Sort by timestamp, default to 0 if missing
+                )
+
+                history = []
+                for doc, meta in history_tuples:
+                    # Reconstruct the chat history format
+                    role = meta.get('role', 'unknown')
+                    # The doc is "role: content", but we can just use the content part
+                    # to avoid potential splitting errors if content contains ':'
+                    content = doc.split(':', 1)[1] if ':' in doc else doc
+                    history.append({"role": role, "parts": [{'text': content.strip()}]})
+
+                # Re-initialize the chat session with the loaded history
+                chat_sessions[session_id] = {
+                    "chat": model.start_chat(history=history),
+                    "memory": chat_sessions[session_id]['memory'], 
+                    "name": session_name
+                }
+                # Update the memory manager's collection to the one we just loaded
+                chat_sessions[session_id]['memory'].collection = collection
+                chat_sessions[session_id]['memory'].conversational_buffer = history
+
+                return {"status": "success", "message": f"Session '{session_name}' loaded.", "history": history}
+            except ValueError:
+                 return {"status": "error", "message": f"Session '{session_name}' not found."}
+            except Exception as e:
+                logging.error(f"Error loading session '{session_name}': {e}")
+                return {"status": "error", "message": f"Could not load session: {e}"}
         
         elif action == 'delete_session':
             session_name = params.get('session_name')
-            all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE)
-            if session_name not in all_sessions:
-                 return {"status": "error", "message": f"Session '{session_name}' not found."}
-            del all_sessions[session_name]
-            write_result = tpool.execute(_write_sessions_file, SESSIONS_FILE, all_sessions)
-            if write_result['status'] == 'success':
+            if not session_name:
+                return {"status": "error", "message": "Session name not provided."}
+            try:
+                chroma_client.delete_collection(name=session_name)
                 return {"status": "success", "message": f"Session '{session_name}' deleted."}
-            else:
-                return {"status": "error", "message": f"Failed to delete session: {write_result['message']}"}
+            except ValueError:
+                 return {"status": "error", "message": f"Session '{session_name}' not found."}
+            except Exception as e:
+                logging.error(f"Error deleting session '{session_name}': {e}")
+                return {"status": "error", "message": f"Could not delete session: {e}"}
         
+        # --- NEW: Tool to import legacy sessions ---
+        elif action == 'import_legacy_sessions':
+            try:
+                with open(LEGACY_SESSIONS_FILE, 'r') as f:
+                    legacy_sessions = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                return {"status": "error", "message": "Legacy sessions.json file not found or is invalid."}
+
+            imported_count = 0
+            for session_name, data in legacy_sessions.items():
+                try:
+                    # Create a new collection for each legacy session
+                    collection = chroma_client.get_or_create_collection(name=session_name)
+                    
+                    history = data.get('history', [])
+                    docs_to_add = []
+                    metadatas_to_add = []
+                    ids_to_add = []
+
+                    for turn in history:
+                        role = turn.get('role')
+                        content = turn.get('parts', [{}])[0].get('text', '')
+                        if role and content:
+                            docs_to_add.append(f"{role}: {content}")
+                            metadatas_to_add.append({'role': role})
+                            ids_to_add.append(str(uuid.uuid4()))
+                    
+                    if docs_to_add:
+                        collection.add(
+                            documents=docs_to_add,
+                            metadatas=metadatas_to_add,
+                            ids=ids_to_add
+                        )
+                    imported_count += 1
+                except Exception as e:
+                    logging.error(f"Could not import legacy session '{session_name}': {e}")
+            
+            return {"status": "success", "message": f"Successfully imported {imported_count} legacy sessions into ChromaDB."}
+
         else:
             return {"status": "error", "message": "Unknown action"}
 

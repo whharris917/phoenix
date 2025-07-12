@@ -73,8 +73,10 @@ class MemoryManager:
         Adds a new turn to the memory, updating both Tier 1 and Tier 3.
         Role is 'user' or 'model'.
         """
+        import time # Add time import for timestamp
+
         # Tier 1: Update Conversational Buffer
-        turn = {"role": role, "parts": [content]}
+        turn = {"role": role, "parts": [{'text': content}]} # Correctly format the turn
         self.conversational_buffer.append(turn)
         if len(self.conversational_buffer) > self.max_buffer_size:
             self.conversational_buffer.pop(0)
@@ -83,12 +85,12 @@ class MemoryManager:
         if self.collection:
             try:
                 doc_id = str(uuid.uuid4())
-                metadata = {'role': role}
+                # --- NEW: Add timestamp to metadata ---
+                metadata = {'role': role, 'timestamp': time.time()}
                 
                 # Storing 'role: content' for better semantic meaning
                 doc_content = f"{role}: {content}"
                 
-                # This 'add' operation will now use the pre-loaded embedding function.
                 self.collection.add(
                     documents=[doc_content],
                     metadatas=[metadata],
@@ -96,7 +98,6 @@ class MemoryManager:
                 )
                 logging.info(f"Successfully added document to ChromaDB collection for session {self.session_id}.")
             except Exception as e:
-                # Any error here is now more likely to be a database issue than an embedding issue.
                 logging.error(f"Could not add document to ChromaDB for session {self.session_id}: {e}")
 
     def get_context_for_prompt(self, prompt, n_results=3):

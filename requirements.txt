@@ -6,3 +6,4 @@ tiktoken
 pydantic
 sentence-transformers
 ipython
+pandas

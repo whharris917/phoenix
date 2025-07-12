@@ -226,20 +226,38 @@
                     
                     if (item.role === 'user') {
                         const trimmedText = rawText.trim();
-                        if (trimmedText.startsWith('TOOL_RESULT:')) {
+                        // Check for both the old and new tool result formats
+                        if (trimmedText.startsWith('TOOL_RESULT:') || trimmedText.startsWith('OBSERVATION:')) {
                             try {
                                 const jsonString = trimmedText.substring(trimmedText.indexOf('{'));
                                 const resultObj = JSON.parse(jsonString);
-                                const result_for_log = { ...resultObj }; // Clone
-                                const keys_to_redact = ['content', 'output', 'history', 'allowed_files', 'files'];
+                                
+                                // Clone the object to avoid modifying the original
+                                const result_for_log = { ...resultObj };
+
+                                // Define keys that might contain very large content
+                                const keys_to_redact = ['content', 'output', 'history', 'allowed_files', 'files', 'sessions'];
+
+                                // Replace the value of large fields with "..."
                                 for (const key of keys_to_redact) {
                                     if (key in result_for_log) {
                                         result_for_log[key] = '...';
                                     }
                                 }
-                                addConversationLog(`TOOL_RESULT: ${JSON.stringify(result_for_log)}`, 'tool_result');
+
+                                // --- NEW LOGIC ---
+                                // Manually format the object to avoid quotes on keys
+                                const formattedEntries = Object.entries(result_for_log).map(([key, value]) => {
+                                    // Use JSON.stringify on the value to correctly handle strings, numbers, booleans, etc.
+                                    return `${key}: ${JSON.stringify(value)}`;
+                                });
+                                const formattedString = `{ ${formattedEntries.join(', ')} }`;
+                                const displayMessage = `[TOOL RESULT: ${formattedString}]`;
+                                
+                                addConversationLog(displayMessage, 'tool_result');
+                                // --- END NEW LOGIC ---
                             } catch (e) {
-                                addConversationLog(rawText, 'tool_result'); // Fallback
+                                addConversationLog("[Tool action completed]", 'tool_result'); // A cleaner fallback
                             }
                         } else if (!trimmedText.startsWith('USER_CONFIRMATION:')) {
                             addConversationLog(rawText, 'user');
