@@ -2072,3 +2072,77 @@ google.api_core.exceptions.InternalServerError: 500 An internal error has occurr
 2025-07-11 20:17:21,121 - INFO - Agent initiated task_complete. Ending loop for session nsvbJn0rcOnhuO7UAAAH.
 2025-07-11 20:20:25,196 - INFO - Agent initiated task_complete. Ending loop for session nsvbJn0rcOnhuO7UAAAH.
 2025-07-11 20:21:43,970 - INFO - Agent initiated task_complete. Ending loop for session nsvbJn0rcOnhuO7UAAAH.
+2025-07-11 20:22:12,998 - INFO - Gemini API configured successfully.
+2025-07-11 20:22:13,003 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 20:22:13,084 - INFO - Client connected: PUmQieh1Or5FhcoeAAAB
+2025-07-11 20:22:13,087 - INFO - Chat session created for PUmQieh1Or5FhcoeAAAB
+2025-07-11 20:22:22,182 - INFO - Client disconnected: PUmQieh1Or5FhcoeAAAB
+2025-07-11 20:22:22,629 - INFO - Client connected: 8h8BfpnTh2ed0_S7AAAD
+2025-07-11 20:22:22,630 - INFO - Chat session created for 8h8BfpnTh2ed0_S7AAAD
+2025-07-11 20:25:40,339 - INFO - Agent initiated task_complete. Ending loop for session 8h8BfpnTh2ed0_S7AAAD.
+2025-07-11 20:26:54,697 - INFO - Agent initiated task_complete. Ending loop for session 8h8BfpnTh2ed0_S7AAAD.
+2025-07-11 20:28:10,168 - INFO - Client disconnected: 8h8BfpnTh2ed0_S7AAAD
+2025-07-11 20:28:10,527 - INFO - Client connected: tgAVmJtXVVAsApomAAAF
+2025-07-11 20:28:10,527 - INFO - Chat session created for tgAVmJtXVVAsApomAAAF
+2025-07-11 20:28:57,293 - INFO - Client disconnected: tgAVmJtXVVAsApomAAAF
+2025-07-11 20:28:57,781 - INFO - Client connected: HFP9J2G2v20NlvRwAAAH
+2025-07-11 20:28:57,783 - INFO - Chat session created for HFP9J2G2v20NlvRwAAAH
+2025-07-11 20:48:19,545 - INFO - Agent initiated task_complete. Ending loop for session HFP9J2G2v20NlvRwAAAH.
+2025-07-11 20:48:33,473 - INFO - Agent initiated task_complete. Ending loop for session HFP9J2G2v20NlvRwAAAH.
+2025-07-11 20:50:10,245 - INFO - Agent initiated task_complete. Ending loop for session HFP9J2G2v20NlvRwAAAH.
+2025-07-11 20:54:51,454 - INFO - Client disconnected: HFP9J2G2v20NlvRwAAAH
+2025-07-11 20:54:51,935 - INFO - Client connected: klKWzWqIOHSU1dQ1AAAJ
+2025-07-11 20:54:51,937 - INFO - Chat session created for klKWzWqIOHSU1dQ1AAAJ
+2025-07-11 20:55:32,103 - INFO - Agent initiated task_complete. Ending loop for session klKWzWqIOHSU1dQ1AAAJ.
+2025-07-11 21:19:01,965 - INFO - Client connected: s8P27lMfhjyq4TQ6AAAL
+2025-07-11 21:19:01,966 - INFO - Chat session created for s8P27lMfhjyq4TQ6AAAL
+2025-07-11 21:19:14,302 - INFO - Agent initiated task_complete. Ending loop for session klKWzWqIOHSU1dQ1AAAJ.
+2025-07-11 21:20:56,943 - INFO - Client disconnected: s8P27lMfhjyq4TQ6AAAL
+2025-07-11 21:20:57,583 - INFO - Client connected: lN9Or6XzAfRZWG0UAAAN
+2025-07-11 21:20:57,584 - INFO - Chat session created for lN9Or6XzAfRZWG0UAAAN
+2025-07-11 21:24:03,781 - INFO - Agent initiated task_complete. Ending loop for session lN9Or6XzAfRZWG0UAAAN.
+2025-07-11 21:31:35,554 - INFO - Agent initiated task_complete. Ending loop for session lN9Or6XzAfRZWG0UAAAN.
+2025-07-11 21:31:42,844 - INFO - Client disconnected: klKWzWqIOHSU1dQ1AAAJ
+2025-07-11 21:31:42,847 - INFO - Client disconnected: lN9Or6XzAfRZWG0UAAAN
+2025-07-11 21:31:42,851 - INFO - API usage statistics saved.
+2025-07-11 21:34:02,560 - INFO - Gemini API configured successfully.
+2025-07-11 21:34:02,571 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 21:34:02,753 - INFO - Client connected: NNELpwwdweWtg6wdAAAC
+2025-07-11 21:34:02,753 - INFO - Chat session created for NNELpwwdweWtg6wdAAAC
+2025-07-11 21:34:02,760 - INFO - Client connected: ZlS_jM6ZwyjKUluLAAAD
+2025-07-11 21:34:02,760 - INFO - Chat session created for ZlS_jM6ZwyjKUluLAAAD
+2025-07-11 21:34:20,845 - INFO - Gemini API configured successfully.
+2025-07-11 21:34:20,849 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 21:34:22,225 - INFO - Client connected: I_pREhEw6L2_IorsAAAB
+2025-07-11 21:34:22,225 - INFO - Chat session created for I_pREhEw6L2_IorsAAAB
+2025-07-11 21:34:23,730 - INFO - Client connected: M6TCM41semi3QXE6AAAD
+2025-07-11 21:34:23,732 - INFO - Chat session created for M6TCM41semi3QXE6AAAD
+2025-07-11 21:34:45,926 - INFO - Client disconnected: M6TCM41semi3QXE6AAAD
+2025-07-11 21:34:45,930 - INFO - Client disconnected: I_pREhEw6L2_IorsAAAB
+2025-07-12 07:40:51,387 - INFO - Client connected: cITe7u8MET8wGjI_AAAG
+2025-07-12 07:40:51,387 - INFO - Chat session created for cITe7u8MET8wGjI_AAAG
+2025-07-12 07:40:51,388 - INFO - Client connected: pqgy8D9OxTEIm_aJAAAH
+2025-07-12 07:40:51,388 - INFO - Chat session created for pqgy8D9OxTEIm_aJAAAH
+2025-07-12 08:11:29,595 - INFO - Client disconnected: cITe7u8MET8wGjI_AAAG
+2025-07-12 08:11:30,293 - INFO - Client connected: vZrdja42hn0wekioAAAJ
+2025-07-12 08:11:30,318 - INFO - Chat session created for vZrdja42hn0wekioAAAJ
+2025-07-12 08:11:36,319 - INFO - Client disconnected: vZrdja42hn0wekioAAAJ
+2025-07-12 08:11:41,482 - INFO - Client disconnected: pqgy8D9OxTEIm_aJAAAH
+2025-07-12 08:11:41,861 - INFO - Client connected: CbJ7SHHwJiuLmn_IAAAL
+2025-07-12 08:11:41,862 - INFO - Chat session created for CbJ7SHHwJiuLmn_IAAAL
+2025-07-12 08:13:53,535 - ERROR - Protocol Violation: My response was not valid JSON. Error: Invalid control character at: line 1 column 2058 (char 2057). Full response: I understand. Waiting for logs can be slow. I can take a more proactive approach.
+
+The most likely point of failure is the initialization of the `chromadb` database. This could be due to a missing dependency, a problem during installation, or a file permission issue.
+
+I will write a small, self-contained Python script to test only the ChromaDB initialization. This will isolate the problem and tell us if the issue is with the database itself or with how it's integrated into the main application.
+
+Please execute this script. The result will tell us exactly what's going on.
+
+{"action": "create_file", "parameters": {"filename": "chroma_test.py", "content": "import chromadb\nimport os\nimport shutil\n\nprint(\"--- ChromaDB Diagnostic Script ---\")\n\n# Define the path for the test database\n# This should be a temporary directory we can safely delete.\nTEST_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.sandbox', 'chroma_test_db')\nprint(f\"Using temporary database path: {TEST_DB_PATH}\")\n\n# Clean up any previous test runs\nif os.path.exists(TEST_DB_PATH):\n    print(\"Found old test directory. Deleting it now.\")\n    try:\n        shutil.rmtree(TEST_DB_PATH)\n        print(\"Old directory deleted.\")\n    except Exception as e:\n        print(f\"Error deleting old directory: {e}\")\n        print(\"Please manually delete the '.sandbox/chroma_test_db' directory and try again.\")\n        exit()\n\ntry:\n    # 1. Test creating a PersistentClient\n    print(\"\\nStep 1: Initializing PersistentClient...\")\n    client = chromadb.PersistentClient(path=TEST_DB_PATH)\n    print(\"SUCCESS: PersistentClient initialized.\")\n\n    # 2. Test creating a collection\n    print(\"\\nStep 2: Creating a new collection...\")\n    collection_name = \"test_collection\"\n    collection = client.get_or_create_collection(name=collection_name)\n    print(f\"SUCCESS: Collection '{collection_name}' created.\")\n\n    # 3. Test adding data to the collection\n    print(\"\\nStep 3: Adding a test document...\")\n    collection.add(\n        documents=[\"This is a test document\"],\n        metadatas=[{\"source\": \"test\"}],\n        ids=[\"id1\"]\n    )\n    print(\"SUCCESS: Test document added.\")\n\n    # 4. Test querying the collection\n    print(\"\\nStep 4: Querying the test document...\")\n    results = collection.query(\n        query_texts=[\"test\"],\n        n_results=1\n    )\n    print(f\"SUCCESS: Query returned: {results['documents']}\")\n\n    print(\"\\n--- DIAGNOSTIC COMPLETE: ChromaDB is working correctly! ---\")\n\nexcept Exception as e:\n    print(f\"\\n--- DIAGNOSTIC FAILED ---
+\")\n    print(\"An error occurred during the test:\")\n    import traceback\n    traceback.print_exc()\n\nfinally:\n    # Clean up the test database\n    if os.path.exists(TEST_DB_PATH):\n        try:\n            shutil.rmtree(TEST_DB_PATH)\n            print(\"\\nCleanup: Test database deleted.\")\n        except Exception as e:\n            print(f\"\\nCleanup Error: Could not delete test database directory at {TEST_DB_PATH}. Error: {e}\")\n\n"}}
+2025-07-12 08:15:47,702 - INFO - Agent initiated task_complete. Ending loop for session CbJ7SHHwJiuLmn_IAAAL.
+2025-07-12 08:19:35,666 - INFO - Agent initiated task_complete. Ending loop for session CbJ7SHHwJiuLmn_IAAAL.
+2025-07-12 08:22:37,331 - INFO - Agent initiated task_complete. Ending loop for session CbJ7SHHwJiuLmn_IAAAL.
+2025-07-12 08:25:57,802 - INFO - Agent initiated task_complete. Ending loop for session CbJ7SHHwJiuLmn_IAAAL.
+2025-07-12 08:26:12,114 - INFO - Client disconnected: CbJ7SHHwJiuLmn_IAAAL
+2025-07-12 08:26:12,116 - INFO - API usage statistics saved.
