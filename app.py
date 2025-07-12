@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, request
+from flask import Flask, render_template, send_from_directory, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
 import google.generativeai as genai
@@ -7,7 +7,7 @@ import logging
 import json
 import atexit # To save stats on exit
 from orchestrator import execute_reasoning_loop, confirmation_events
-from tool_agent import execute_tool_command
+from tool_agent import execute_tool_command, get_safe_path
 
 # --- Function to load API key from a file ---
 def load_api_key():
@@ -87,6 +87,24 @@ def serve_markdown():
 def serve_workshop():
     return send_from_directory('.', 'workshop.html')
 
+# --- NEW: Visualizer Routes ---
+@app.route('/visualizer')
+def serve_visualizer():
+    # CORRECTED: Serve the visualizer from the project root
+    return send_from_directory('.', 'code_visualizer.html')
+
+@app.route('/get_diagram')
+def get_diagram_file():
+    try:
+        # Securely serve the generated diagram from the sandbox
+        diagram_path = get_safe_path('code_flow.md')
+        if os.path.exists(diagram_path):
+            return send_from_directory(os.path.dirname(diagram_path), os.path.basename(diagram_path))
+        else:
+            return "Diagram not found. Please generate it first.", 404
+    except Exception as e:
+        return str(e), 500
+
 @socketio.on('connect')
 def handle_connect():
     app.logger.info(f"Client connected: {request.sid}")
@@ -116,7 +134,7 @@ def handle_start_task(data):
     session_id = request.sid
     session_data = chat_sessions.get(session_id)
     if prompt and session_data:
-        socketio.emit('log_message', {'type': 'system', 'data': 'Task received. Starting reasoning process...'})
+        # No initial system message to reduce noise
         socketio.start_background_task(execute_reasoning_loop, socketio, session_data, prompt, session_id, chat_sessions, model, api_stats)
     elif not session_data:
         socketio.emit('log_message', {'type': 'error', 'data': 'No active AI session. Please refresh.'}, to=request.sid)

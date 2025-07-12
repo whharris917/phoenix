@@ -1885,3 +1885,190 @@ I will now retry loading the "Phoenix" session.```json
 2025-07-11 12:07:54,123 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
 2025-07-11 12:08:04,669 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
 2025-07-11 12:13:08,059 - INFO - Agent initiated task_complete. Ending loop for session K_GFNAcgCWyD-ELnAAAD.
+2025-07-11 12:16:12,283 - INFO - Agent initiated task_complete. Ending loop for session K_GFNAcgCWyD-ELnAAAD.
+2025-07-11 12:18:00,121 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:18:10,250 - INFO - Agent initiated task_complete. Ending loop for session K_GFNAcgCWyD-ELnAAAD.
+2025-07-11 12:23:04,659 - INFO - Agent initiated task_complete. Ending loop for session K_GFNAcgCWyD-ELnAAAD.
+2025-07-11 12:29:18,728 - INFO - Agent initiated task_complete. Ending loop for session K_GFNAcgCWyD-ELnAAAD.
+2025-07-11 12:31:18,620 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:34:04,954 - INFO - Agent initiated task_complete. Ending loop for session K_GFNAcgCWyD-ELnAAAD.
+2025-07-11 12:43:09,934 - INFO - Gemini API configured successfully.
+2025-07-11 12:43:09,934 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 12:44:06,049 - INFO - Client connected: kqaIJw29KFJR0RyhAAAC
+2025-07-11 12:44:06,049 - INFO - Chat session created for kqaIJw29KFJR0RyhAAAC
+2025-07-11 12:44:06,107 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:44:21,860 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:44:51,096 - INFO - Client disconnected: kqaIJw29KFJR0RyhAAAC
+2025-07-11 12:44:52,148 - INFO - API usage statistics saved.
+2025-07-11 12:44:57,757 - INFO - Gemini API configured successfully.
+2025-07-11 12:44:57,760 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 12:44:58,038 - INFO - Client connected: St6d4ZJynRIWs1prAAAC
+2025-07-11 12:44:58,039 - INFO - Chat session created for St6d4ZJynRIWs1prAAAC
+2025-07-11 12:44:58,083 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:45:07,514 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:46:34,131 - INFO - Agent initiated task_complete. Ending loop for session St6d4ZJynRIWs1prAAAC.
+2025-07-11 12:53:38,803 - INFO - Agent initiated task_complete. Ending loop for session St6d4ZJynRIWs1prAAAC.
+2025-07-11 12:54:35,209 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 12:54:47,311 - INFO - Agent initiated task_complete. Ending loop for session St6d4ZJynRIWs1prAAAC.
+2025-07-11 12:59:58,381 - INFO - Client disconnected: St6d4ZJynRIWs1prAAAC
+2025-07-11 12:59:58,805 - INFO - Client connected: 3K50vUCPyHiUh8fEAAAE
+2025-07-11 12:59:58,806 - INFO - Chat session created for 3K50vUCPyHiUh8fEAAAE
+2025-07-11 12:59:58,849 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:00:13,705 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:06:02,718 - INFO - Agent initiated task_complete. Ending loop for session 3K50vUCPyHiUh8fEAAAE.
+2025-07-11 13:08:22,019 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:08:27,765 - INFO - Agent initiated task_complete. Ending loop for session 3K50vUCPyHiUh8fEAAAE.
+2025-07-11 13:09:54,529 - INFO - Client disconnected: 3K50vUCPyHiUh8fEAAAE
+2025-07-11 13:09:54,994 - INFO - Client connected: JqxJfrkFczHEWvnAAAAG
+2025-07-11 13:09:54,995 - INFO - Chat session created for JqxJfrkFczHEWvnAAAAG
+2025-07-11 13:09:55,048 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:10:06,402 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:11:00,816 - INFO - Gemini API configured successfully.
+2025-07-11 13:11:00,820 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 13:11:02,471 - INFO - Client connected: -Y4UT0VQXVS7IsP_AAAB
+2025-07-11 13:11:02,472 - INFO - Chat session created for -Y4UT0VQXVS7IsP_AAAB
+2025-07-11 13:11:02,750 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:11:14,047 - INFO - Client disconnected: -Y4UT0VQXVS7IsP_AAAB
+2025-07-11 13:11:14,502 - INFO - Client connected: iTVTjZQUU2thzoyqAAAD
+2025-07-11 13:11:14,503 - INFO - Chat session created for iTVTjZQUU2thzoyqAAAD
+2025-07-11 13:11:14,542 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:11:24,352 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:12:10,694 - INFO - Agent initiated task_complete. Ending loop for session iTVTjZQUU2thzoyqAAAD.
+2025-07-11 13:14:50,343 - INFO - Agent initiated task_complete. Ending loop for session iTVTjZQUU2thzoyqAAAD.
+2025-07-11 13:19:21,708 - INFO - Agent initiated task_complete. Ending loop for session iTVTjZQUU2thzoyqAAAD.
+2025-07-11 13:23:08,532 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:23:13,963 - INFO - Agent initiated task_complete. Ending loop for session iTVTjZQUU2thzoyqAAAD.
+2025-07-11 13:26:46,202 - INFO - Client disconnected: iTVTjZQUU2thzoyqAAAD
+2025-07-11 13:26:46,576 - INFO - Client connected: EiDJMj9BkL28Vxm6AAAF
+2025-07-11 13:26:46,576 - INFO - Chat session created for EiDJMj9BkL28Vxm6AAAF
+2025-07-11 13:26:46,625 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:26:56,016 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:27:28,324 - INFO - Agent initiated task_complete. Ending loop for session EiDJMj9BkL28Vxm6AAAF.
+2025-07-11 13:39:51,381 - INFO - Agent initiated task_complete. Ending loop for session EiDJMj9BkL28Vxm6AAAF.
+2025-07-11 13:52:47,488 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:53:31,821 - INFO - Agent initiated task_complete. Ending loop for session EiDJMj9BkL28Vxm6AAAF.
+2025-07-11 13:55:06,455 - INFO - Gemini API configured successfully.
+2025-07-11 13:55:06,459 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 13:55:06,511 - INFO - Client connected: -uSv3hHtQ3R1O_LfAAAB
+2025-07-11 13:55:06,512 - INFO - Chat session created for -uSv3hHtQ3R1O_LfAAAB
+2025-07-11 13:55:06,538 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:55:21,699 - INFO - Client disconnected: -uSv3hHtQ3R1O_LfAAAB
+2025-07-11 13:55:22,768 - INFO - Client connected: mrSOTda3gE9xyzHXAAAD
+2025-07-11 13:55:22,768 - INFO - Chat session created for mrSOTda3gE9xyzHXAAAD
+2025-07-11 13:55:22,803 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:55:34,743 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 13:56:20,484 - INFO - Agent initiated task_complete. Ending loop for session mrSOTda3gE9xyzHXAAAD.
+2025-07-11 13:57:16,811 - INFO - Agent initiated task_complete. Ending loop for session mrSOTda3gE9xyzHXAAAD.
+2025-07-11 14:03:45,595 - INFO - Agent initiated task_complete. Ending loop for session mrSOTda3gE9xyzHXAAAD.
+2025-07-11 14:04:08,516 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 14:04:32,634 - INFO - Agent initiated task_complete. Ending loop for session mrSOTda3gE9xyzHXAAAD.
+2025-07-11 15:53:56,115 - INFO - Agent initiated task_complete. Ending loop for session mrSOTda3gE9xyzHXAAAD.
+2025-07-11 15:54:36,359 - INFO - Agent initiated task_complete. Ending loop for session mrSOTda3gE9xyzHXAAAD.
+2025-07-11 15:59:31,960 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 15:59:37,136 - INFO - Agent initiated task_complete. Ending loop for session mrSOTda3gE9xyzHXAAAD.
+2025-07-11 16:06:42,412 - INFO - Agent initiated task_complete. Ending loop for session mrSOTda3gE9xyzHXAAAD.
+2025-07-11 16:10:59,439 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 16:11:04,530 - INFO - Agent initiated task_complete. Ending loop for session mrSOTda3gE9xyzHXAAAD.
+2025-07-11 16:21:59,177 - INFO - Client disconnected: mrSOTda3gE9xyzHXAAAD
+2025-07-11 18:14:04,318 - INFO - Client connected: BugkD4lTq5gwYX65AAAF
+2025-07-11 18:14:04,318 - INFO - Chat session created for BugkD4lTq5gwYX65AAAF
+2025-07-11 18:14:04,586 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 18:20:34,849 - INFO - Agent initiated task_complete. Ending loop for session BugkD4lTq5gwYX65AAAF.
+2025-07-11 18:21:29,123 - INFO - Agent initiated task_complete. Ending loop for session BugkD4lTq5gwYX65AAAF.
+2025-07-11 18:24:00,363 - INFO - Gemini API configured successfully.
+2025-07-11 18:24:00,367 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 18:24:02,055 - INFO - Client connected: niVPcNmZpnrnGfuRAAAB
+2025-07-11 18:24:02,056 - INFO - Chat session created for niVPcNmZpnrnGfuRAAAB
+2025-07-11 18:24:02,086 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 18:24:02,814 - INFO - Client disconnected: niVPcNmZpnrnGfuRAAAB
+2025-07-11 18:24:03,498 - INFO - Client connected: 6h0acSxgv_-nm0CBAAAD
+2025-07-11 18:24:03,498 - INFO - Chat session created for 6h0acSxgv_-nm0CBAAAD
+2025-07-11 18:24:03,538 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 18:24:13,415 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 18:26:42,582 - INFO - Agent initiated task_complete. Ending loop for session 6h0acSxgv_-nm0CBAAAD.
+2025-07-11 18:34:58,101 - INFO - Agent initiated task_complete. Ending loop for session 6h0acSxgv_-nm0CBAAAD.
+2025-07-11 18:38:10,323 - INFO - Agent initiated task_complete. Ending loop for session 6h0acSxgv_-nm0CBAAAD.
+2025-07-11 18:39:33,267 - ERROR - Error executing tool command: 'list' object has no attribute 'get'
+2025-07-11 18:39:36,959 - INFO - Agent initiated task_complete. Ending loop for session 6h0acSxgv_-nm0CBAAAD.
+2025-07-11 18:39:50,581 - INFO - Gemini API configured successfully.
+2025-07-11 18:39:50,584 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 18:39:51,835 - INFO - Client connected: m1dAmFZB1hVkz0uNAAAB
+2025-07-11 18:39:51,836 - INFO - Chat session created for m1dAmFZB1hVkz0uNAAAB
+2025-07-11 18:39:53,516 - INFO - Client disconnected: m1dAmFZB1hVkz0uNAAAB
+2025-07-11 18:39:53,950 - INFO - Client connected: 5jTyr7AOidv1kAs2AAAD
+2025-07-11 18:39:53,952 - INFO - Chat session created for 5jTyr7AOidv1kAs2AAAD
+2025-07-11 18:40:26,009 - INFO - Agent initiated task_complete. Ending loop for session 5jTyr7AOidv1kAs2AAAD.
+2025-07-11 18:44:07,817 - INFO - Agent initiated task_complete. Ending loop for session 5jTyr7AOidv1kAs2AAAD.
+2025-07-11 18:55:37,404 - INFO - Agent initiated task_complete. Ending loop for session 5jTyr7AOidv1kAs2AAAD.
+2025-07-11 19:16:03,824 - INFO - Agent initiated task_complete. Ending loop for session 5jTyr7AOidv1kAs2AAAD.
+2025-07-11 19:19:23,911 - INFO - Gemini API configured successfully.
+2025-07-11 19:19:23,915 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 19:19:25,115 - INFO - Client connected: Yr6KunME2xpv_GIbAAAC
+2025-07-11 19:19:25,117 - INFO - Chat session created for Yr6KunME2xpv_GIbAAAC
+2025-07-11 19:19:29,961 - INFO - Client disconnected: Yr6KunME2xpv_GIbAAAC
+2025-07-11 19:19:32,285 - INFO - Client connected: gVR4xeVyV3mu-uGHAAAE
+2025-07-11 19:19:32,287 - INFO - Chat session created for gVR4xeVyV3mu-uGHAAAE
+2025-07-11 19:21:14,594 - INFO - Agent initiated task_complete. Ending loop for session gVR4xeVyV3mu-uGHAAAE.
+2025-07-11 19:21:41,113 - INFO - Agent initiated task_complete. Ending loop for session gVR4xeVyV3mu-uGHAAAE.
+2025-07-11 19:49:14,015 - INFO - Agent initiated task_complete. Ending loop for session gVR4xeVyV3mu-uGHAAAE.
+2025-07-11 19:49:43,254 - INFO - Gemini API configured successfully.
+2025-07-11 19:49:43,254 - INFO - Starting Unified Agent Server on http://127.0.0.1:5001
+2025-07-11 19:49:44,778 - INFO - Client connected: -n0zANY-t5liah-fAAAB
+2025-07-11 19:49:44,778 - INFO - Chat session created for -n0zANY-t5liah-fAAAB
+2025-07-11 19:49:49,286 - INFO - Client disconnected: -n0zANY-t5liah-fAAAB
+2025-07-11 19:49:49,770 - INFO - Client connected: AsJhUQKPGO8fSKeqAAAD
+2025-07-11 19:49:49,771 - INFO - Chat session created for AsJhUQKPGO8fSKeqAAAD
+2025-07-11 19:50:52,733 - INFO - Agent initiated task_complete. Ending loop for session AsJhUQKPGO8fSKeqAAAD.
+2025-07-11 19:51:50,082 - INFO - Agent initiated task_complete. Ending loop for session AsJhUQKPGO8fSKeqAAAD.
+2025-07-11 20:09:08,250 - INFO - Agent initiated task_complete. Ending loop for session AsJhUQKPGO8fSKeqAAAD.
+2025-07-11 20:10:44,420 - INFO - Agent initiated task_complete. Ending loop for session AsJhUQKPGO8fSKeqAAAD.
+2025-07-11 20:10:54,358 - INFO - Client disconnected: AsJhUQKPGO8fSKeqAAAD
+2025-07-11 20:10:54,796 - INFO - Client connected: Csg65rppms0sNAqTAAAF
+2025-07-11 20:10:54,797 - INFO - Chat session created for Csg65rppms0sNAqTAAAF
+2025-07-11 20:12:04,601 - ERROR - An error occurred in the reasoning loop.
+Traceback (most recent call last):
+  File "C:\Users\wilha\projects\gemini-local-agent\orchestrator.py", line 27, in execute_reasoning_loop
+    response = tpool.execute(chat.send_message, current_prompt)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\eventlet\tpool.py", line 125, in execute
+    raise e.with_traceback(tb)
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\eventlet\tpool.py", line 82, in tworker
+    rv = meth(*args, **kwargs)
+         ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\generativeai\generative_models.py", line 578, in send_message
+    response = self.model.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\generativeai\generative_models.py", line 331, in generate_content
+    response = self._client.generate_content(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\client.py", line 835, in generate_content
+    response = rpc(
+               ^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\gapic_v1\method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\retry\retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+           ^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\retry\retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\retry\retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\retry\retry_unary.py", line 147, in retry_target
+    result = target()
+             ^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\wilha\anaconda3\envs\gemini-agent\Lib\site-packages\google\api_core\grpc_helpers.py", line 78, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
+google.api_core.exceptions.InternalServerError: 500 An internal error has occurred. Please retry or report in https://developers.generativeai.google/guide/troubleshooting
+2025-07-11 20:12:26,623 - INFO - Client disconnected: Csg65rppms0sNAqTAAAF
+2025-07-11 20:12:27,031 - INFO - Client connected: nsvbJn0rcOnhuO7UAAAH
+2025-07-11 20:12:27,031 - INFO - Chat session created for nsvbJn0rcOnhuO7UAAAH
+2025-07-11 20:13:11,362 - INFO - Agent initiated task_complete. Ending loop for session nsvbJn0rcOnhuO7UAAAH.
+2025-07-11 20:13:45,866 - INFO - Agent initiated task_complete. Ending loop for session nsvbJn0rcOnhuO7UAAAH.
+2025-07-11 20:17:21,121 - INFO - Agent initiated task_complete. Ending loop for session nsvbJn0rcOnhuO7UAAAH.
+2025-07-11 20:20:25,196 - INFO - Agent initiated task_complete. Ending loop for session nsvbJn0rcOnhuO7UAAAH.
+2025-07-11 20:21:43,970 - INFO - Agent initiated task_complete. Ending loop for session nsvbJn0rcOnhuO7UAAAH.

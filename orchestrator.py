@@ -21,7 +21,7 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
             socketio.emit('log_message', {'type': 'error', 'data': 'Critical error: Chat session object not found.'}, to=session_id)
             return
 
-        for i in range(15): # Increased loop limit for more complex tasks
+        for i in range(15):
             socketio.sleep(0)
             
             response = tpool.execute(chat.send_message, current_prompt)
@@ -34,40 +34,31 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
             
             response_text = response.text
 
-            # --- NEW JSON-ONLY PROTOCOL ---
             try:
-                """
-                socketio.emit('log_message', {'type': 'WIL', 'data': "THIS IS THE RESPONSE WHICH WAS SUPPOSED TO BE A JSON OBJECT!"})
-                socketio.emit('log_message', {'type': 'WIL', 'data': "A!"})
-                socketio.emit('log_message', {'type': 'WIL', 'data': response_text})
-                socketio.emit('log_message', {'type': 'WIL', 'data': "B!"})
-                socketio.emit('log_message', {'type': 'WIL', 'data': response_text.strip()})
-                socketio.emit('log_message', {'type': 'WIL', 'data': "C!"})
-                command_json = json.loads(response_text.strip())
-                """
                 command_json = json.loads(response_text[response_text.find('{'):response_text.rfind('}')+1])
             except json.JSONDecodeError as e:
                 error_message = f"Protocol Violation: My response was not valid JSON. Error: {e}. Full response: {response_text}"
                 logging.error(error_message)
-                # We will inform the user and then retry, giving the agent a chance to fix its mistake.
                 socketio.emit('log_message', {'type': 'error', 'data': error_message})
                 current_prompt = f"TOOL_RESULT: {json.dumps({'status': 'error', 'message': error_message})}"
-                continue # Retry the loop
+                continue
             
             action = command_json.get("action")
 
-            # --- Handle Conversational Actions ---
             if action == 'respond':
                 response_to_user = command_json.get('parameters', {}).get('response', '')
                 socketio.emit('log_message', {'type': 'final_answer', 'data': response_to_user})
                 current_prompt = f"TOOL_RESULT: {json.dumps({'status': 'success', 'message': 'Your response was delivered to the user.'})}"
                 continue
             
+            # --- MODIFIED: Enhanced task_complete action ---
             if action == 'task_complete':
+                final_response = command_json.get('parameters', {}).get('response')
+                if final_response:
+                    socketio.emit('log_message', {'type': 'final_answer', 'data': final_response})
                 logging.info(f"Agent initiated task_complete. Ending loop for session {session_id}.")
-                return # End the reasoning loop
+                return
 
-            # --- Handle Destructive Action Confirmation ---
             destructive_actions = ['delete_file', 'delete_session']
             if action in destructive_actions and not destruction_confirmed:
                 err_msg = f"Action '{action}' is destructive and requires user confirmation. I must use 'request_confirmation' first."
@@ -90,16 +81,15 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 current_prompt = f"USER_CONFIRMATION: '{user_response}'"
                 continue
 
-            # --- Handle All Other Tool Actions ---
-            socketio.emit('log_message', {'type': 'thought', 'data': f"Executing '{action}' tool."})
-            
+            # --- MODIFIED: Silent Operator tool execution ---
             tool_result = execute_tool_command(command_json, session_id, chat_sessions, model)
+            destruction_confirmed = False
 
-            destruction_confirmed = False # Reset confirmation after any tool use
+            # --- NEW: Emit tool_log on success ---
+            if tool_result.get('status') == 'success':
+                log_message = tool_result.get('message', f"Tool '{action}' executed successfully.")
+                socketio.emit('tool_log', {'data': f"[{log_message}]"}, to=session_id)
             
-            socketio.emit('agent_action', {'type': 'Result', 'data': tool_result})
-            
-            # Update UI for session management tools
             if action in ['save_session', 'load_session', 'delete_session']:
                 sessions_result = execute_tool_command({'action': 'list_sessions'}, session_id, chat_sessions, model)
                 socketio.emit('session_list_update', sessions_result, to=session_id)

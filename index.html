@@ -12,13 +12,13 @@
         html.dark {
             --bg-color: #111827; --text-color: #d1d5db; --panel-bg: #1f2937;
             --header-bg: #1f2937; --border-color: #374151; --input-bg: #374151;
-            --code-bg: #374151;
+            --code-bg: #374151; --tool-log-color: #4b5563;
         }
         html {
             --bg-color: #f9fafb; --text-color: #374151; --panel-bg: #ffffff;
             --header-bg: #ffffff; --border-color: #e5e7eb; --input-bg: #f3f4f6;
             --message-text-color: #ffffff; 
-            --code-bg: #e5e7eb;
+            --code-bg: #e5e7eb; --tool-log-color: #9ca3af;
         }
         body { 
             font-family: 'Inter', sans-serif;
@@ -30,30 +30,38 @@
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
             margin-bottom: 0.5rem;
-            color: var(--message-text-color); 
         }
         .log-entry-user {
             background-color: #2563EB;
             border-left: 3px solid #1D4ED8;
             align-self: flex-end;
+            color: var(--message-text-color);
         }
-        .log-entry-system {
-            background-color: #D97706; 
-            border-left: 3px solid #B45309;
-            align-self: flex-start;
-        }
-        html.dark .log-entry-system {
-            background-color: #92400E;
-            border-left: 3px solid #B45309;
-        }
-        .log-entry-thought, .log-entry-final_answer, .log-entry-error {
+        .log-entry-final_answer {
             background-color: #8B5CF6;
             border-left: 3px solid #6D28D9;
             align-self: flex-start;
+            color: var(--message-text-color);
         }
-        html.dark .log-entry-thought, html.dark .log-entry-final_answer, html.dark .log-entry-error {
+        html.dark .log-entry-final_answer {
             background-color: #7C3AED;
             border-left: 3px solid #5B21B6;
+        }
+        .tool-log-entry, .tool-result-entry {
+            text-align: center;
+            font-size: 0.75rem; /* 12px */
+            font-style: italic;
+            color: var(--tool-log-color);
+            padding: 0.25rem 0;
+            margin-bottom: 0.5rem;
+            align-self: center;
+            width: 100%;
+        }
+        .tool-result-entry > div { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 0.5rem; 
         }
         .message-body {
             color: var(--message-text-color);
@@ -74,156 +82,37 @@
         .nav-link { transition: all 0.2s ease-in-out; }
         .nav-link.active { background-color: #4F46E5; color: white; }
         html:not(.dark) .nav-link.active { color: white; }
-        details > summary {
-            cursor: pointer;
-            list-style: none;
-            width: 100%;
-        }
-        details > summary::-webkit-details-marker { display: none; }
-        details > summary::before {
-            content: '\203a';
-            margin-right: 0.5rem;
-            font-size: 1.2rem;
-            display: inline-block;
-            transition: transform 0.2s;
-        }
-        details[open] > summary::before { transform: rotate(90deg); }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--input-bg); }
-        ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-        
-        #prompt-input {
-            resize: none;
-            overflow-y: hidden;
-            line-height: 1.5;
-            max-height: calc(1.5em * 7);
-        }
     </style>
 </head>
 <body class="flex flex-col h-screen">
 
-    <header class="p-4 flex justify-between items-center border-b flex-shrink-0" style="background-color: var(--header-bg); border-color: var(--border-color);">
-        <div class="flex items-center space-x-8">
-            <h1 class="text-xl font-bold" style="color: var(--text-color);">Gemini Agent</h1>
-            <nav class="flex items-center space-x-2">
-                <a href="/" class="nav-link active py-2 px-3 rounded-md text-xs font-medium">Agent Chat</a>
-                <a href="/docs" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Documentation</a>
-                <a href="/workshop" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Workshop</a>
-                <div class="relative" id="commands-dropdown-container">
-                    <button id="commands-dropdown-btn" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center">
-                        Available Commands
-                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
-                    <div id="commands-dropdown-menu" class="absolute left-0 mt-2 w-56 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 hidden z-10" style="background-color: var(--panel-bg);">
-                        <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                            <span class="block px-4 py-2 text-xs text-gray-400">File System Tools</span>
-                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">create_file</a>
-                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">read_file</a>
-                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">read_project_file</a>
-                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">list_allowed_project_files</a>
-                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">list_directory</a>
-                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">delete_file</a>
-                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">execute_python_script</a>
-                            <div class="border-t my-1" style="border-color: var(--border-color);"></div>
-                            <span class="block px-4 py-2 text-xs text-gray-400">Memory Tools</span>
-                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">save_session</a>
-                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">list_sessions</a>
-                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">load_session</a>
-                            <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem">delete_session</a>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-        </div>
-        <div class="flex items-center space-x-6">
-            <button id="agent-thoughts-toggle" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700" data-state="visible" title="Toggle Agent Thoughts">
-                <span id="thoughts-visible-icon">
-                    <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 4l-6 10h12L10 4z"/></svg>
-                </span>
-                <span id="thoughts-hidden-icon" class="hidden">
-                     <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 16l6-10H4l6 10z"/></svg>
-                </span>
-            </button>
-            <button id="theme-toggle" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700">
-                <svg id="theme-icon-light" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-1.414 8.486a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"></path></svg>
-                <svg id="theme-icon-dark" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-            </button>
-            <div class="flex items-center space-x-2">
-                <div id="orchestrator-status" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
-                <span id="orchestrator-text" class="text-xs text-gray-400">Orchestrator Offline</span>
-            </div>
-            <div class="flex items-center space-x-2">
-                <div id="agent-status" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
-                <span id="agent-text" class="text-xs text-gray-400">Agent Online</span>
-            </div>
-        </div>
+    <header class="p-4 flex justify-between items-center border-b flex-shrink-0" style="background-color: var(--header-bg); border-color: var(--border-color);"> 
+        <div class="flex items-center space-x-8"> 
+            <h1 class="text-xl font-bold" style="color: var(--text-color);">Gemini Agent</h1> 
+            <nav class="flex items-center space-x-2"> 
+                <a href="/" class="nav-link active py-2 px-3 rounded-md text-xs font-medium">Agent Chat</a> 
+                <a href="/docs" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Documentation</a> 
+                <a href="/workshop" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Workshop</a> 
+                <a href="/visualizer" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Visualizer</a>
+            </nav> 
+        </div> 
+        <div class="flex items-center space-x-6"> 
+            <button id="theme-toggle" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"> <svg id="theme-icon-light" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-1.414 8.486a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"></path></svg> <svg id="theme-icon-dark" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg> </button> <div class="flex items-center space-x-2"> <div id="orchestrator-status" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div> <span id="orchestrator-text" class="text-xs text-gray-400">Orchestrator Offline</span> </div> <div class="flex items-center space-x-2"> <div id="agent-status" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div> <span id="agent-text" class="text-xs text-gray-400">Agent Online</span> </div> </div> 
     </header>
-
     <main class="flex-grow flex flex-col md:flex-row p-4 gap-4 overflow-hidden">
         <div class="w-full md:w-1/4 flex flex-col gap-4">
-            <details class="rounded-lg shadow-lg" style="background-color: var(--panel-bg);" open>
-                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Session Management</summary>
-                <div class="p-4 border-t" style="border-color: var(--border-color);">
-                    <div class="space-y-3">
-                        <div>
-                            <label for="session-list" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Load / Delete Session</label>
-                            <div class="flex space-x-2">
-                                <select id="session-list" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" style="background-color: var(--input-bg);"></select>
-                                <button id="load-session-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Load</button>
-                                <button id="delete-session-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Delete</button>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="save-session-name" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Save Current Session</label>
-                            <div class="flex space-x-2">
-                                <input type="text" id="save-session-name" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="New session name..." style="background-color: var(--input-bg);">
-                                <button id="save-session-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Save</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </details>
-            <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);">
-                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">API Usage Stats</summary>
-                <div id="api-stats-container" class="p-4 border-t text-xs space-y-2" style="border-color: var(--border-color);">
-                    <div class="flex justify-between"><span>Total API Calls:</span><span id="api-calls">0</span></div>
-                    <div class="flex justify-between"><span>Prompt Tokens:</span><span id="prompt-tokens">0</span></div>
-                    <div class="flex justify-between"><span>Completion Tokens:</span><span id="completion-tokens">0</span></div>
-                    <div class="flex justify-between"><span>Total Tokens:</span><span id="total-tokens">0</span></div>
-                    <div class="border-t my-1" style="border-color: var(--border-color);"></div>
-                    <div class="flex justify-between font-semibold"><span>Est. MTD Cost:</span><span id="est-cost">$0.00</span></div>
-                    <p class="text-gray-400 text-center text-[10px] pt-2">Based on Gemini 1.5 Pro pricing.</p>
-                </div>
-            </details>
+             <details class="rounded-lg shadow-lg" style="background-color: var(--panel-bg);" open> <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Session Management</summary> <div class="p-4 border-t" style="border-color: var(--border-color);"> <div class="space-y-3"> <div> <label for="session-list" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Load / Delete Session</label> <div class="flex space-x-2"> <select id="session-list" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" style="background-color: var(--input-bg);"></select> <button id="load-session-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Load</button> <button id="delete-session-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Delete</button> </div> </div> <div> <label for="save-session-name" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Save Current Session</label> <div class="flex space-x-2"> <input type="text" id="save-session-name" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="New session name..." style="background-color: var(--input-bg);"> <button id="save-session-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Save</button> </div> </div> </div> </div> </details>
+             <details class="accordion-panel rounded-lg shadow-lg" style="background-color: var(--panel-bg);"> <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">API Usage Stats</summary> <div id="api-stats-container" class="p-4 border-t text-xs space-y-2" style="border-color: var(--border-color);"> <div class="flex justify-between"><span>Total API Calls:</span><span id="api-calls">0</span></div> <div class="flex justify-between"><span>Prompt Tokens:</span><span id="prompt-tokens">0</span></div> <div class="flex justify-between"><span>Completion Tokens:</span><span id="completion-tokens">0</span></div> <div class="flex justify-between"><span>Total Tokens:</span><span id="total-tokens">0</span></div> <div class="border-t my-1" style="border-color: var(--border-color);"></div> <div class="flex justify-between font-semibold"><span>Est. MTD Cost:</span><span id="est-cost">$0.00</span></div> <p class="text-gray-400 text-center text-[10px] pt-2">Based on Gemini 1.5 Pro pricing.</p> </div> </details>
         </div>
-        
-        <div class="w-full md:w-1/2 rounded-lg shadow-lg p-6 flex flex-col min-h-0" style="background-color: var(--panel-bg);">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold" style="color: var(--text-color);">Agent Chat</h2>
-                <span id="session-name-display" class="text-sm font-mono px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">[New Session]</span>
-            </div>
+        <div class="w-full md:w-3/4 rounded-lg shadow-lg p-6 flex flex-col min-h-0" style="background-color: var(--panel-bg);">
+            <div class="flex justify-between items-center mb-4"> <h2 class="text-lg font-semibold" style="color: var(--text-color);">Agent Chat</h2> <span id="session-name-display" class="text-sm font-mono px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">[New Session]</span> </div>
             <div id="conversation-log" class="flex-grow overflow-y-auto mb-4 pr-2 flex flex-col"></div>
-            <div id="confirmation-container" class="hidden flex justify-center space-x-4 my-4">
-                <button id="confirm-yes" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-md">Yes</button>
-                <button id="confirm-no" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-md">No</button>
-            </div>
-            <div class="mt-auto flex items-center border-t pt-4 flex-shrink-0" style="border-color: var(--border-color);">
-                <textarea id="prompt-input" class="w-full rounded-l-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your command... (Shift+Enter for new line)" rows="1" style="background-color: var(--input-bg);"></textarea>
-                <button id="send-prompt" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-r-md transition-colors self-stretch">Send</button>
-            </div>
-        </div>
-
-        <div class="w-full md:w-1/4 rounded-lg shadow-lg p-6 flex flex-col min-h-0" style="background-color: var(--panel-bg);">
-             <h2 class="text-lg font-semibold mb-4" style="color: var(--text-color);">Right Panel</h2>
-             <div class="flex-grow overflow-y-auto mb-4 pr-2">
-                <p class="text-xs text-gray-500">Content for the new right panel.</p>
-             </div>
+            <div id="confirmation-container" class="hidden flex justify-center space-x-4 my-4"> <button id="confirm-yes" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-md">Yes</button> <button id="confirm-no" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-md">No</button> </div>
+            <div class="mt-auto flex items-center border-t pt-4 flex-shrink-0" style="border-color: var(--border-color);"> <textarea id="prompt-input" class="w-full rounded-l-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your command... (Shift+Enter for new line)" rows="1" style="background-color: var(--input-bg);"></textarea> <button id="send-prompt" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-r-md transition-colors self-stretch">Send</button> </div>
         </div>
     </main>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Element Selectors ---
             const conversationLog = document.getElementById('conversation-log');
             const promptInput = document.getElementById('prompt-input');
             const sendBtn = document.getElementById('send-prompt');
@@ -232,197 +121,149 @@
             const saveSessionNameInput = document.getElementById('save-session-name');
             const saveSessionBtn = document.getElementById('save-session-btn');
             const deleteSessionBtn = document.getElementById('delete-session-btn');
-            const commandsDropdownBtn = document.getElementById('commands-dropdown-btn');
-            const commandsDropdownMenu = document.getElementById('commands-dropdown-menu');
             const confirmationContainer = document.getElementById('confirmation-container');
             const confirmYesBtn = document.getElementById('confirm-yes');
             const confirmNoBtn = document.getElementById('confirm-no');
             const themeToggleBtn = document.getElementById('theme-toggle');
-            const lightIcon = document.getElementById('theme-icon-light');
-            const darkIcon = document.getElementById('theme-icon-dark');
-            const accordionPanels = document.querySelectorAll('.accordion-panel');
-            const agentThoughtsToggle = document.getElementById('agent-thoughts-toggle');
             const sessionNameDisplay = document.getElementById('session-name-display');
-            
             const orchestratorStatus = document.getElementById('orchestrator-status');
             const orchestratorText = document.getElementById('orchestrator-text');
             const agentStatus = document.getElementById('agent-status');
             const agentText = document.getElementById('agent-text');
-
             const apiCallsEl = document.getElementById('api-calls');
             const promptTokensEl = document.getElementById('prompt-tokens');
             const completionTokensEl = document.getElementById('completion-tokens');
             const totalTokensEl = document.getElementById('total-tokens');
             const estCostEl = document.getElementById('est-cost');
 
-            // --- State & Constants ---
             const SERVER_URL = window.location.origin;
             const socket = io(SERVER_URL);
             let currentSessionName = '[New Session]';
             
             const userIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>`;
-            const orchestratorIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z"></path></svg>`;
             const agentIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C3.732 4.943 9.5 3 10 3s6.268 1.943 9.542 7c-3.274 5.057-9.5 7-9.542 7S3.732 15.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>`;
-
-            // --- Core Functions ---
-            const updateConversationVisibility = () => {
-                const thoughtsAreVisible = agentThoughtsToggle.dataset.state === 'visible';
-                const messages = conversationLog.querySelectorAll('.log-entry');
-                const typesToHide = ['system', 'thought'];
-
-                messages.forEach(msg => {
-                    const shouldBeHidden = typesToHide.some(type => msg.classList.contains(`log-entry-${type}`));
-                    msg.style.display = (!thoughtsAreVisible && shouldBeHidden) ? 'none' : '';
-                });
-                conversationLog.scrollTop = conversationLog.scrollHeight;
-            };
-
+            const gearIcon = `<svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path></svg>`;
+            
             const addConversationLog = (message, type) => {
-                let formattedMessage;
-                if (type === 'final_answer' || type === 'user') {
-                    formattedMessage = marked.parse(message, { gfm: true, breaks: true });
-                } else {
-                    formattedMessage = message.replace(/\n/g, '<br>');
+                 if (type === 'tool_result') {
+                    const entry = document.createElement('div');
+                    entry.className = 'tool-result-entry';
+                    entry.innerHTML = `<div>${gearIcon}<span>${message}</span></div>`;
+                    conversationLog.appendChild(entry);
+                    conversationLog.scrollTop = conversationLog.scrollHeight;
+                    return;
                 }
 
+                let formattedMessage = marked.parse(message, { gfm: true, breaks: true });
                 let typeDisplay, icon, titleHTML;
                 switch(type) {
-                    case 'user':
-                        typeDisplay = 'You';
-                        icon = userIcon;
-                        titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
-                        break;
-                    case 'system':
-                        typeDisplay = 'Orchestrator';
-                        icon = orchestratorIcon;
-                        titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
-                        break;
-                    case 'thought':
-                        typeDisplay = 'Agent Thought';
-                        icon = agentIcon;
-                        titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
-                        break;
-                    case 'final_answer':
-                        typeDisplay = currentSessionName;
-                        icon = agentIcon;
-                        titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
-                        break;
-                    default:
-                        typeDisplay = 'System Message';
-                        icon = orchestratorIcon;
-                        titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
+                    case 'user': typeDisplay = 'You'; icon = userIcon; break;
+                    case 'final_answer': typeDisplay = currentSessionName || 'Phoenix'; icon = agentIcon; break;
                 }
-                
+                titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
                 const content = `<div class="flex items-start">${icon}<div class="flex-1">${titleHTML}<div class="mt-1 text-sm message-body">${formattedMessage}</div></div></div>`;
                 const entry = document.createElement('div');
                 entry.className = `log-entry log-entry-${type}`;
                 entry.innerHTML = content;
-
-                if (agentThoughtsToggle.dataset.state === 'hidden' && (type === 'system' || type === 'thought')) {
-                    entry.style.display = 'none';
-                }
-
                 conversationLog.appendChild(entry);
                 conversationLog.scrollTop = conversationLog.scrollHeight;
             };
 
-            const requestSessionList = () => {
-                if (socket.connected) socket.emit('request_session_list');
+            const addToolLog = (message) => {
+                const entry = document.createElement('div');
+                entry.className = 'tool-log-entry';
+                entry.textContent = message;
+                conversationLog.appendChild(entry);
+                conversationLog.scrollTop = conversationLog.scrollHeight;
             };
 
+            const requestSessionList = () => { if (socket.connected) socket.emit('request_session_list'); };
             const updateApiStats = (stats) => {
-                const INPUT_PRICE_PER_MILLION = 3.50; 
-                const OUTPUT_PRICE_PER_MILLION = 10.50;
-
-                const promptTokens = stats.total_prompt_tokens || 0;
-                const completionTokens = stats.total_completion_tokens || 0;
-                const totalTokens = promptTokens + completionTokens;
-
-                const cost = (promptTokens / 1000000 * INPUT_PRICE_PER_MILLION) + 
-                             (completionTokens / 1000000 * OUTPUT_PRICE_PER_MILLION);
-
-                apiCallsEl.textContent = stats.total_calls || 0;
-                promptTokensEl.textContent = promptTokens.toLocaleString();
-                completionTokensEl.textContent = completionTokens.toLocaleString();
-                totalTokensEl.textContent = totalTokens.toLocaleString();
-                estCostEl.textContent = `$${cost.toFixed(4)}`;
+                 const INPUT_PRICE_PER_MILLION = 3.50; const OUTPUT_PRICE_PER_MILLION = 10.50;
+                 const promptTokens = stats.total_prompt_tokens || 0; const completionTokens = stats.total_completion_tokens || 0; const totalTokens = promptTokens + completionTokens;
+                 const cost = (promptTokens / 1000000 * INPUT_PRICE_PER_MILLION) + (completionTokens / 1000000 * OUTPUT_PRICE_PER_MILLION);
+                 apiCallsEl.textContent = stats.total_calls || 0; promptTokensEl.textContent = promptTokens.toLocaleString(); completionTokensEl.textContent = completionTokens.toLocaleString(); totalTokensEl.textContent = totalTokens.toLocaleString(); estCostEl.textContent = `$${cost.toFixed(4)}`;
             };
 
-
-            // --- Socket Event Handlers ---
             socket.on('connect', () => {
-                orchestratorStatus.className = 'w-3 h-3 rounded-full bg-green-500';
-                orchestratorText.textContent = 'Orchestrator Online';
-                agentStatus.className = 'w-3 h-3 rounded-full bg-green-500';
-                agentText.textContent = 'Agent Online';
-                requestSessionList();
-                socket.emit('request_api_stats');
-                socket.emit('request_session_name'); // Get current session name on connect
+                orchestratorStatus.className = 'w-3 h-3 rounded-full bg-green-500'; orchestratorText.textContent = 'Orchestrator Online';
+                agentStatus.className = 'w-3 h-3 rounded-full bg-green-500'; agentText.textContent = 'Agent Online';
+                requestSessionList(); socket.emit('request_api_stats'); socket.emit('request_session_name');
             });
-
             socket.on('disconnect', () => {
-                orchestratorStatus.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse';
-                orchestratorText.textContent = 'Orchestrator Offline';
-                agentStatus.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse';
-                agentText.textContent = 'Agent Offline';
-                addConversationLog("Connection to server lost.", 'error');
+                orchestratorStatus.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse'; orchestratorText.textContent = 'Orchestrator Offline';
+                agentStatus.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse'; agentText.textContent = 'Agent Offline';
             });
 
             socket.on('log_message', (msg) => addConversationLog(msg.data, msg.type));
-            
-            socket.on('request_user_confirmation', (data) => {
-                addConversationLog(data.prompt, 'system');
-                confirmationContainer.classList.remove('hidden');
-                promptInput.disabled = true;
-                sendBtn.disabled = true;
-            });
+            socket.on('tool_log', (msg) => addToolLog(msg.data));
 
+            socket.on('request_user_confirmation', (data) => {
+                addConversationLog(data.prompt, 'system_confirm'); // A new type for clarity
+                confirmationContainer.classList.remove('hidden');
+                promptInput.disabled = true; sendBtn.disabled = true;
+            });
             socket.on('session_list_update', (result) => {
                 sessionList.innerHTML = '';
-                const placeholder = new Option('Choose session...', '', true, true);
-                placeholder.disabled = true;
-                sessionList.add(placeholder);
-                if (result?.status === 'success' && result.sessions) {
-                    result.sessions.forEach(session => {
-                        sessionList.add(new Option(session.name, session.name));
-                    });
-                }
+                const placeholder = new Option('Choose session...', '', true, true); placeholder.disabled = true; sessionList.add(placeholder);
+                if (result?.status === 'success' && result.sessions) { result.sessions.forEach(session => { sessionList.add(new Option(session.name, session.name)); }); }
             });
-            
             socket.on('session_name_update', (data) => {
                 currentSessionName = data.name || '[New Session]';
                 sessionNameDisplay.textContent = currentSessionName;
             });
-
-            socket.on('api_usage_update', (stats) => {
-                updateApiStats(stats);
-            });
+            socket.on('api_usage_update', (stats) => { updateApiStats(stats); });
 
             socket.on('load_chat_history', (data) => {
-                conversationLog.innerHTML = ''; 
-                if (data && data.history) {
-                    data.history.forEach(item => {
-                        if (item.parts && Array.isArray(item.parts) && item.parts.length > 0) {
-                            const text = (item.parts[0].text || item.parts[0]).trim();
-
-                            if (item.role === 'user') {
-                                if (!text.startsWith('TOOL_RESULT:')) {
-                                    addConversationLog(text, 'user');
+                conversationLog.innerHTML = '';
+                if (!data || !data.history) return;
+                data.history.forEach(item => {
+                    if (!item.parts || !Array.isArray(item.parts) || item.parts.length === 0) return;
+                    let rawText = '';
+                    if (typeof item.parts[0] === 'string') { rawText = item.parts[0];
+                    } else if (item.parts[0] && typeof item.parts[0].text === 'string') { rawText = item.parts[0].text; }
+                    if (!rawText) return;
+                    
+                    if (item.role === 'user') {
+                        const trimmedText = rawText.trim();
+                        if (trimmedText.startsWith('TOOL_RESULT:')) {
+                            try {
+                                const jsonString = trimmedText.substring(trimmedText.indexOf('{'));
+                                const resultObj = JSON.parse(jsonString);
+                                const result_for_log = { ...resultObj }; // Clone
+                                const keys_to_redact = ['content', 'output', 'history', 'allowed_files', 'files'];
+                                for (const key of keys_to_redact) {
+                                    if (key in result_for_log) {
+                                        result_for_log[key] = '...';
+                                    }
                                 }
-                            } else if (item.role === 'model') {
-                                const isToolCommand = text.startsWith('```json');
-                                if (!isToolCommand) {
-                                    addConversationLog(text, 'final_answer');
-                                }
+                                addConversationLog(`TOOL_RESULT: ${JSON.stringify(result_for_log)}`, 'tool_result');
+                            } catch (e) {
+                                addConversationLog(rawText, 'tool_result'); // Fallback
                             }
+                        } else if (!trimmedText.startsWith('USER_CONFIRMATION:')) {
+                            addConversationLog(rawText, 'user');
                         }
-                    });
-                    conversationLog.scrollTop = conversationLog.scrollHeight;
-                }
+                    } else if (item.role === 'model') {
+                        let messageToRender = null;
+                        const jsonStartIndex = rawText.indexOf('{');
+                        const jsonEndIndex = rawText.lastIndexOf('}');
+                        if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
+                            const jsonString = rawText.substring(jsonStartIndex, jsonEndIndex + 1);
+                            try {
+                                const parsedJson = JSON.parse(jsonString);
+                                const action = parsedJson.action; const params = parsedJson.parameters;
+                                if (action === 'respond' && params && params.response) { messageToRender = params.response; }
+                                else if (action === 'task_complete' && params && params.response) { messageToRender = params.response; }
+                            } catch (e) { messageToRender = rawText; }
+                        } else { messageToRender = rawText; }
+                        if (messageToRender && messageToRender.trim().startsWith('```json')) { messageToRender = null; }
+                        if (messageToRender) { addConversationLog(messageToRender, 'final_answer'); }
+                    }
+                });
+                conversationLog.scrollTop = conversationLog.scrollHeight;
             });
 
-
-            // --- UI Event Handlers ---
             const handleUserPrompt = () => {
                 const prompt = promptInput.value.trim();
                 if (!prompt) return;
@@ -431,116 +272,58 @@
                 adjustTextareaHeight();
                 socket.emit('start_task', { prompt });
             };
-            
             const handleSaveSession = () => {
                 const name = saveSessionNameInput.value.trim();
                 if (!name) return alert("Please enter a name for the session.");
-                socket.emit('start_task', { prompt: `Save this session as "${name}"` });
+                socket.emit('start_task', { prompt: `save this session as "${name}"` });
                 saveSessionNameInput.value = '';
             };
-
             const handleLoadSession = () => {
                 if (!sessionList.value) return alert("Please select a session to load.");
-                socket.emit('start_task', { prompt: `Load the session named "${sessionList.value}"` });
+                socket.emit('start_task', { prompt: `load the session named "${sessionList.value}"` });
             };
-
             const handleDeleteSession = () => {
                 if (!sessionList.value) return alert("Please select a session to delete.");
-                socket.emit('start_task', { prompt: `Delete the session named "${sessionList.value}"` });
+                socket.emit('start_task', { prompt: `delete the session named "${sessionList.value}"` });
             };
-
             const handleConfirmation = (response) => {
                 socket.emit('user_confirmation', { response });
                 confirmationContainer.classList.add('hidden');
-                promptInput.disabled = false;
-                sendBtn.disabled = false;
-                promptInput.focus();
+                promptInput.disabled = false; sendBtn.disabled = false; promptInput.focus();
             };
-
             const setupTheme = () => {
                 if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                     document.documentElement.classList.add('dark');
-                    darkIcon.classList.remove('hidden');
-                    lightIcon.classList.add('hidden');
                 } else {
                     document.documentElement.classList.remove('dark');
-                    lightIcon.classList.remove('hidden');
-                    darkIcon.classList.add('hidden');
                 }
+                const isDark = document.documentElement.classList.contains('dark');
+                document.getElementById('theme-icon-dark').classList.toggle('hidden', !isDark);
+                document.getElementById('theme-icon-light').classList.toggle('hidden', isDark);
             };
-
             const toggleTheme = () => {
                 document.documentElement.classList.toggle('dark');
                 localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
                 setupTheme();
             };
-            
-            const handleToggleAgentThoughts = () => {
-                const thoughtsVisibleIcon = document.getElementById('thoughts-visible-icon');
-                const thoughtsHiddenIcon = document.getElementById('thoughts-hidden-icon');
-                const currentState = agentThoughtsToggle.dataset.state;
-
-                if (currentState === 'visible') {
-                    agentThoughtsToggle.dataset.state = 'hidden';
-                    thoughtsVisibleIcon.classList.add('hidden');
-                    thoughtsHiddenIcon.classList.remove('hidden');
-                } else {
-                    agentThoughtsToggle.dataset.state = 'visible';
-                    thoughtsVisibleIcon.classList.remove('hidden');
-                    thoughtsHiddenIcon.classList.add('hidden');
-                }
-                updateConversationVisibility();
-            };
-            
             const adjustTextareaHeight = () => {
                 promptInput.style.height = 'auto';
                 promptInput.style.height = `${promptInput.scrollHeight}px`;
-                if (promptInput.scrollHeight > parseFloat(getComputedStyle(promptInput).maxHeight)) {
-                    promptInput.style.overflowY = 'auto';
-                } else {
-                    promptInput.style.overflowY = 'hidden';
-                }
+                if (promptInput.scrollHeight > parseFloat(getComputedStyle(promptInput).maxHeight)) { promptInput.style.overflowY = 'auto';
+                } else { promptInput.style.overflowY = 'hidden'; }
             };
 
-            // --- Initial Setup ---
             sendBtn.addEventListener('click', handleUserPrompt);
-            promptInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleUserPrompt();
-                }
-            });
+            promptInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserPrompt(); } });
             promptInput.addEventListener('input', adjustTextareaHeight);
-
             saveSessionBtn.addEventListener('click', handleSaveSession);
             loadSessionBtn.addEventListener('click', handleLoadSession);
             deleteSessionBtn.addEventListener('click', handleDeleteSession);
             confirmYesBtn.addEventListener('click', () => handleConfirmation('yes'));
             confirmNoBtn.addEventListener('click', () => handleConfirmation('no'));
-            agentThoughtsToggle.addEventListener('click', handleToggleAgentThoughts);
             themeToggleBtn.addEventListener('click', toggleTheme);
             
-            commandsDropdownBtn.addEventListener('click', () => {
-                commandsDropdownMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', (e) => {
-                if (!document.getElementById('commands-dropdown-container').contains(e.target)) {
-                    commandsDropdownMenu.classList.add('hidden');
-                }
-            });
-
-            accordionPanels.forEach(panel => {
-                panel.addEventListener('toggle', (event) => {
-                    if (panel.open) {
-                        accordionPanels.forEach(otherPanel => {
-                            if (otherPanel !== panel) otherPanel.open = false;
-                        });
-                    }
-                });
-            });
-            
-            setupTheme();
-            adjustTextareaHeight();
+            setupTheme(); adjustTextareaHeight();
         });
     </script>
 </body>

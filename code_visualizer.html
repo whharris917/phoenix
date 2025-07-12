@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Flow Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f9fafb; }
+        .mermaid {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="p-8">
+    <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Live Code Flow Diagram</h1>
+    
+    <div class="flex justify-center mb-4">
+        <button id="refresh-btn" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75">
+            Refresh Diagram
+        </button>
+    </div>
+
+    <div id="diagram-container" class="mermaid w-full h-full"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+        const diagramContainer = document.getElementById('diagram-container');
+        const refreshBtn = document.getElementById('refresh-btn');
+
+        const renderDiagram = async () => {
+            try {
+                // We fetch from a new endpoint that will serve the file from the sandbox
+                const response = await fetch('/get_diagram');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const mermaidCode = await response.text();
+                
+                const { svg } = await mermaid.render('mermaid-graph', mermaidCode);
+                diagramContainer.innerHTML = svg;
+
+            } catch (error) {
+                console.error('Error fetching or rendering diagram:', error);
+                diagramContainer.innerHTML = `<p class="text-red-500">Could not load diagram. Have you generated it yet? Error: ${error.message}</p>`;
+            }
+        };
+
+        refreshBtn.addEventListener('click', () => {
+            // First, ask the agent to regenerate the file to ensure it's up to date
+            // This assumes a socket connection is available, but for simplicity we will just re-render
+            // A more advanced version would use websockets to request regeneration
+            diagramContainer.innerHTML = '<p>Refreshing...</p>';
+            renderDiagram();
+        });
+
+        // Initial render
+        renderDiagram();
+    </script>
+</body>
+</html>

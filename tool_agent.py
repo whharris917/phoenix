@@ -5,6 +5,8 @@ from contextlib import redirect_stdout
 import json
 import logging
 from eventlet import tpool
+# --- NEW: Import the code parser ---
+from code_parser import analyze_codebase, generate_mermaid_diagram
 
 # --- Constants ---
 SESSIONS_FILE = os.path.join(os.path.dirname(__file__), 'sandbox', 'sessions', 'sessions.json')
@@ -15,13 +17,13 @@ ALLOWED_PROJECT_FILES = [
     'public_data/system_prompt.txt',
     'index.html',
     'workshop.html',
-    'documentation_viewer.html'
+    'documentation_viewer.html',
+    'code_parser.py' # Add the new file to the allowed list
 ]
 
-# --- Helper functions that run in the Process Pool ---
+# --- Helper functions (no changes) ---
 
 def _execute_script(script_content):
-    """Executes a python script and captures its stdout."""
     string_io = io.StringIO()
     try:
         restricted_globals = {"__builtins__": {"print": print, "range": range, "len": len, "str": str, "int": int, "float": float, "list": list, "dict": dict, "set": set, "abs": abs, "max": max, "min": min, "sum": sum}}
@@ -32,8 +34,8 @@ def _execute_script(script_content):
         return {"status": "error", "message": str(e)}
 
 def _write_file(path, content):
-    """Writes content to a file."""
     try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as f:
             f.write(content)
         return {"status": "success"}
@@ -41,7 +43,6 @@ def _write_file(path, content):
         return {"status": "error", "message": str(e)}
 
 def _read_file(path):
-    """Reads content from a file."""
     try:
         if not os.path.exists(path):
             return {"status": "error", "message": "File not found."}
@@ -52,7 +53,6 @@ def _read_file(path):
         return {"status": "error", "message": str(e)}
 
 def _delete_file(path):
-    """Deletes a file."""
     try:
         if not os.path.exists(path):
             return {"status": "error", "message": "File not found."}
@@ -62,7 +62,6 @@ def _delete_file(path):
         return {"status": "error", "message": str(e)}
 
 def _list_directory(path):
-    """Lists files in a directory, excluding the 'sessions' subdirectory."""
     try:
         file_list = []
         for root, dirs, files in os.walk(path):
@@ -76,7 +75,6 @@ def _list_directory(path):
         return {"status": "error", "message": str(e)}
 
 def _read_sessions_file(path):
-    """Reads the JSON sessions file."""
     try:
         with open(path, 'r') as f:
             return json.load(f)
@@ -84,7 +82,6 @@ def _read_sessions_file(path):
         return {}
 
 def _write_sessions_file(path, data):
-    """Writes data to the JSON sessions file."""
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as f:
@@ -111,6 +108,7 @@ def execute_tool_command(command, session_id, chat_sessions, model):
     action = command.get('action')
     params = command.get('parameters', {})
     try:
+        # ... (all other actions remain the same)
         if action == 'create_file':
             filename = params.get('filename', 'default.txt')
             content = params.get('content', '') 
@@ -168,37 +166,50 @@ def execute_tool_command(command, session_id, chat_sessions, model):
                 return {"status": "success", "message": "Script executed.", "output": result['output']}
             else:
                 return {"status": "error", "message": f"An error occurred in script: {result['message']}"}
-        
+
+        # --- NEW VISUALIZER TOOL ---
+        elif action == 'generate_code_diagram':
+            try:
+                project_root = os.path.dirname(__file__)
+                files_to_analyze = [
+                    os.path.join(project_root, 'app.py'),
+                    os.path.join(project_root, 'orchestrator.py'),
+                    os.path.join(project_root, 'tool_agent.py')
+                ]
+                
+                code_structure = analyze_codebase(files_to_analyze)
+                mermaid_code = generate_mermaid_diagram(code_structure)
+                
+                output_filename = 'code_flow.md'
+                safe_output_path = get_safe_path(output_filename)
+                write_result = tpool.execute(_write_file, safe_output_path, mermaid_code)
+
+                if write_result['status'] == 'success':
+                    return {"status": "success", "message": f"Code flow diagram generated and saved to '{output_filename}'."}
+                else:
+                    return {"status": "error", "message": f"Failed to save diagram: {write_result['message']}"}
+            except Exception as e:
+                logging.error(f"Error generating code diagram: {e}")
+                return {"status": "error", "message": str(e)}
+
+        # ... (session management tools remain the same)
         elif action == 'save_session':
             session_name = params.get('session_name')
             session_data = chat_sessions.get(session_id)
             if not session_name or not session_data:
                 return {"status": "error", "message": "Session name or active chat not found."}
-            
             chat = session_data.get('chat') if isinstance(session_data, dict) else session_data
             if not chat:
                  return {"status": "error", "message": "Chat object not found in session."}
-
-            # --- THE BUG FIX IS HERE ---
-            # The history must be saved in the exact format the API expects, 
-            # which is a list of dictionaries, not a list of raw strings.
             history_to_save = []
             for part in chat.history:
-                # Ensure parts are correctly formatted as a list of dicts
                 history_to_save.append({
                     "role": part.role,
                     "parts": [{'text': p.text} for p in part.parts]
                 })
-
-            summary_chat = model.start_chat(history=history_to_save)
-            summary_prompt = "Please provide a very short, one-line summary of this conversation."
-            summary_response = summary_chat.send_message(summary_prompt)
-            summary = summary_response.text
-
             all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE)
-            all_sessions[session_name] = {"summary": summary, "history": history_to_save}
+            all_sessions[session_name] = {"summary": "Saved Session", "history": history_to_save}
             write_result = tpool.execute(_write_sessions_file, SESSIONS_FILE, all_sessions)
-            
             if write_result['status'] == 'success':
                 return {"status": "success", "message": f"Session '{session_name}' saved."}
             else:
@@ -206,7 +217,11 @@ def execute_tool_command(command, session_id, chat_sessions, model):
 
         elif action == 'list_sessions':
             all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE)
-            session_list = [{"name": name, "summary": data.get("summary")} for name, data in all_sessions.items()]
+            session_list = []
+            for name, data in all_sessions.items():
+                if isinstance(data, dict):
+                    summary = data.get("summary", "No summary available.")
+                    session_list.append({"name": name, "summary": summary})
             return {"status": "success", "sessions": session_list}
 
         elif action == 'load_session':
@@ -215,9 +230,7 @@ def execute_tool_command(command, session_id, chat_sessions, model):
             session_data_to_load = all_sessions.get(session_name)
             if not session_data_to_load:
                 return {"status": "error", "message": f"Session '{session_name}' not found."}
-            
-            history = [{'role': item['role'], 'parts': item['parts']} for item in session_data_to_load['history']]
-            
+            history = session_data_to_load.get('history', [])
             chat_sessions[session_id] = {
                 "chat": model.start_chat(history=history),
                 "name": session_name
@@ -229,10 +242,8 @@ def execute_tool_command(command, session_id, chat_sessions, model):
             all_sessions = tpool.execute(_read_sessions_file, SESSIONS_FILE)
             if session_name not in all_sessions:
                  return {"status": "error", "message": f"Session '{session_name}' not found."}
-
             del all_sessions[session_name]
             write_result = tpool.execute(_write_sessions_file, SESSIONS_FILE, all_sessions)
-
             if write_result['status'] == 'success':
                 return {"status": "success", "message": f"Session '{session_name}' deleted."}
             else:
