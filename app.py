@@ -9,6 +9,7 @@ import atexit
 from orchestrator import execute_reasoning_loop, confirmation_events
 from tool_agent import execute_tool_command, get_safe_path
 from memory_manager import MemoryManager
+from audit_logger import audit_log # --- Import the audit logger ---
 
 # --- Function to load API key from a file ---
 def load_api_key():
@@ -63,7 +64,6 @@ else:
 
 # --- API Usage Tracking ---
 def load_api_stats():
-    """Loads API usage stats from a JSON file."""
     try:
         with open(API_STATS_FILE, 'r') as f:
             return json.load(f)
@@ -71,7 +71,7 @@ def load_api_stats():
         return {'total_calls': 0, 'total_prompt_tokens': 0, 'total_completion_tokens': 0}
 
 def save_api_stats():
-    """Saves the current API usage stats to a JSON file."""
+    audit_log.log_event("Server Shutdown", source="System")
     with open(API_STATS_FILE, 'w') as f:
         json.dump(api_stats, f, indent=4)
     logging.info("API usage statistics saved.")
@@ -116,6 +116,7 @@ def get_diagram_file():
 @socketio.on('connect')
 def handle_connect():
     session_id = request.sid
+    audit_log.log_event("Client Connected", session_id=session_id, source="Server")
     app.logger.info(f"Client connected: {session_id}")
     if model:
         try:
@@ -126,55 +127,84 @@ def handle_connect():
                 "name": None
             }
             app.logger.info(f"Chat and MemoryManager session created for {session_id}")
+            audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, source="Server", details={'name': None})
             socketio.emit('session_name_update', {'name': None}, to=session_id)
         except Exception as e:
             app.logger.exception(f"Could not create chat session for {session_id}.")
+            audit_log.log_event("Socket.IO Emit: log_message", session_id=session_id, source="Server", details={'type': 'error', 'data': 'Failed to initialize AI session.'})
             socketio.emit('log_message', {'type': 'error', 'data': 'Failed to initialize AI session.'}, to=session_id)
     else:
+        audit_log.log_event("Socket.IO Emit: log_message", session_id=request.sid, source="Server", details={'type': 'error', 'data': 'AI model not available.'})
         socketio.emit('log_message', {'type': 'error', 'data': 'AI model not available.'}, to=request.sid)
 
 @socketio.on('disconnect')
 def handle_disconnect():
     session_id = request.sid
+    session_name = chat_sessions.get(session_id, {}).get('name')
+    audit_log.log_event("Client Disconnected", session_id=session_id, session_name=session_name, source="Server")
     app.logger.info(f"Client disconnected: {session_id}")
-    # --- BUG FIX: REMOVED a call to memory.clear() that was wiping long-term memory on every disconnect. ---
-    # session_data = chat_sessions.get(session_id)
-    # if session_data and session_data.get('memory'):
-    #     session_data['memory'].clear()
-    #     app.logger.info(f"Cleared memory for session {session_id}")
     chat_sessions.pop(session_id, None)
     confirmation_events.pop(session_id, None)
 
 @socketio.on('start_task')
 def handle_start_task(data):
-    prompt = data.get('prompt')
     session_id = request.sid
+    session_name = chat_sessions.get(session_id, {}).get('name')
+    audit_log.log_event("Socket.IO Event Received: start_task", session_id=session_id, session_name=session_name, source="Client", details=data)
+    prompt = data.get('prompt')
     session_data = chat_sessions.get(session_id)
     if prompt and session_data:
+        # Pass the raw socketio object
         socketio.start_background_task(execute_reasoning_loop, socketio, session_data, prompt, session_id, chat_sessions, model, api_stats)
     elif not session_data:
+        audit_log.log_event("Socket.IO Emit: log_message", session_id=request.sid, source="Server", details={'type': 'error', 'data': 'No active AI session. Please refresh.'})
         socketio.emit('log_message', {'type': 'error', 'data': 'No active AI session. Please refresh.'}, to=request.sid)
+
+@socketio.on('log_audit_event')
+def handle_audit_event(data):
+    session_id = request.sid
+    session_name = chat_sessions.get(session_id, {}).get('name')
+    audit_log.log_event(
+        event=data.get('event'),
+        session_id=session_id,
+        session_name=session_name,
+        source="Client",
+        details=data.get('details')
+    )
 
 @socketio.on('request_session_list')
 def handle_session_list_request():
+    session_id = request.sid
+    session_name = chat_sessions.get(session_id, {}).get('name')
+    audit_log.log_event("Socket.IO Event Received: request_session_list", session_id=session_id, session_name=session_name, source="Client")
     result = execute_tool_command({'action': 'list_sessions'}, None, None, None)
+    audit_log.log_event("Socket.IO Emit: session_list_update", session_id=session_id, session_name=session_name, source="Server", details=result)
     socketio.emit('session_list_update', result, to=request.sid)
 
 @socketio.on('request_api_stats')
 def handle_api_stats_request():
+    session_id = request.sid
+    session_name = chat_sessions.get(session_id, {}).get('name')
+    audit_log.log_event("Socket.IO Event Received: request_api_stats", session_id=session_id, session_name=session_name, source="Client")
+    audit_log.log_event("Socket.IO Emit: api_usage_update", session_id=session_id, session_name=session_name, source="Server", details=api_stats)
     socketio.emit('api_usage_update', api_stats, to=request.sid)
 
 @socketio.on('request_session_name')
 def handle_session_name_request():
     session_id = request.sid
+    session_name = chat_sessions.get(session_id, {}).get('name')
+    audit_log.log_event("Socket.IO Event Received: request_session_name", session_id=session_id, session_name=session_name, source="Client")
     session_data = chat_sessions.get(session_id)
     if session_data:
         name = session_data.get('name')
+        audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=name, source="Server", details={'name': name})
         socketio.emit('session_name_update', {'name': name}, to=request.sid)
 
 @socketio.on('user_confirmation')
 def handle_user_confirmation(data):
     session_id = request.sid
+    session_name = chat_sessions.get(session_id, {}).get('name')
+    audit_log.log_event("Socket.IO Event Received: user_confirmation", session_id=session_id, session_name=session_name, source="Client", details=data)
     event = confirmation_events.get(session_id)
     if event:
         event.send(data.get('response'))
@@ -184,4 +214,5 @@ if __name__ == '__main__':
         app.logger.critical("Server startup failed: API key is missing.")
     else:
         app.logger.info("Starting Unified Agent Server on http://127.0.0.1:5001")
+        audit_log.log_event("SocketIO Server Started", source="System")
         socketio.run(app, port=5001)

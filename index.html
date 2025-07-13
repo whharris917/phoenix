@@ -139,6 +139,10 @@
             const SERVER_URL = window.location.origin;
             const socket = io(SERVER_URL);
             let currentSessionName = '[New Session]';
+
+            const logClientEvent = (eventName, details = {}) => {
+                socket.emit('log_audit_event', { event: eventName, details: details });
+            };
             
             const userIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>`;
             const agentIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C3.732 4.943 9.5 3 10 3s6.268 1.943 9.542 7c-3.274 5.057-9.5 7-9.542 7S3.732 15.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>`;
@@ -177,7 +181,10 @@
                 conversationLog.scrollTop = conversationLog.scrollHeight;
             };
 
-            const requestSessionList = () => { if (socket.connected) socket.emit('request_session_list'); };
+            const requestSessionList = () => { 
+                logClientEvent("Socket.IO Emit: request_session_list");
+                if (socket.connected) socket.emit('request_session_list'); 
+            };
             const updateApiStats = (stats) => {
                  const INPUT_PRICE_PER_MILLION = 3.50; const OUTPUT_PRICE_PER_MILLION = 10.50;
                  const promptTokens = stats.total_prompt_tokens || 0; const completionTokens = stats.total_completion_tokens || 0; const totalTokens = promptTokens + completionTokens;
@@ -188,7 +195,11 @@
             socket.on('connect', () => {
                 orchestratorStatus.className = 'w-3 h-3 rounded-full bg-green-500'; orchestratorText.textContent = 'Orchestrator Online';
                 agentStatus.className = 'w-3 h-3 rounded-full bg-green-500'; agentText.textContent = 'Agent Online';
-                requestSessionList(); socket.emit('request_api_stats'); socket.emit('request_session_name');
+                requestSessionList(); 
+                logClientEvent("Socket.IO Emit: request_api_stats");
+                socket.emit('request_api_stats'); 
+                logClientEvent("Socket.IO Emit: request_session_name");
+                socket.emit('request_session_name');
             });
             socket.on('disconnect', () => {
                 orchestratorStatus.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse'; orchestratorText.textContent = 'Orchestrator Offline';
@@ -199,7 +210,7 @@
             socket.on('tool_log', (msg) => addToolLog(msg.data));
 
             socket.on('request_user_confirmation', (data) => {
-                addConversationLog(data.prompt, 'system_confirm'); // A new type for clarity
+                addConversationLog(data.prompt, 'system_confirm');
                 confirmationContainer.classList.remove('hidden');
                 promptInput.disabled = true; sendBtn.disabled = true;
             });
@@ -226,38 +237,25 @@
                     
                     if (item.role === 'user') {
                         const trimmedText = rawText.trim();
-                        // Check for both the old and new tool result formats
                         if (trimmedText.startsWith('TOOL_RESULT:') || trimmedText.startsWith('OBSERVATION:')) {
                             try {
                                 const jsonString = trimmedText.substring(trimmedText.indexOf('{'));
                                 const resultObj = JSON.parse(jsonString);
-                                
-                                // Clone the object to avoid modifying the original
                                 const result_for_log = { ...resultObj };
-
-                                // Define keys that might contain very large content
                                 const keys_to_redact = ['content', 'output', 'history', 'allowed_files', 'files', 'sessions'];
-
-                                // Replace the value of large fields with "..."
                                 for (const key of keys_to_redact) {
                                     if (key in result_for_log) {
                                         result_for_log[key] = '...';
                                     }
                                 }
-
-                                // --- NEW LOGIC ---
-                                // Manually format the object to avoid quotes on keys
                                 const formattedEntries = Object.entries(result_for_log).map(([key, value]) => {
-                                    // Use JSON.stringify on the value to correctly handle strings, numbers, booleans, etc.
                                     return `${key}: ${JSON.stringify(value)}`;
                                 });
                                 const formattedString = `{ ${formattedEntries.join(', ')} }`;
                                 const displayMessage = `[TOOL RESULT: ${formattedString}]`;
-                                
                                 addConversationLog(displayMessage, 'tool_result');
-                                // --- END NEW LOGIC ---
                             } catch (e) {
-                                addConversationLog("[Tool action completed]", 'tool_result'); // A cleaner fallback
+                                addConversationLog("[Tool action completed]", 'tool_result');
                             }
                         } else if (!trimmedText.startsWith('USER_CONFIRMATION:')) {
                             addConversationLog(rawText, 'user');
@@ -283,29 +281,44 @@
             });
 
             const handleUserPrompt = () => {
+                logClientEvent("Event Handler Triggered: handleUserPrompt");
                 const prompt = promptInput.value.trim();
                 if (!prompt) return;
                 addConversationLog(prompt, 'user');
                 promptInput.value = '';
                 adjustTextareaHeight();
-                socket.emit('start_task', { prompt });
+                const payload = { prompt };
+                logClientEvent("Socket.IO Emit: start_task", payload);
+                socket.emit('start_task', payload);
             };
             const handleSaveSession = () => {
+                logClientEvent("Event Handler Triggered: handleSaveSession");
                 const name = saveSessionNameInput.value.trim();
                 if (!name) return alert("Please enter a name for the session.");
-                socket.emit('start_task', { prompt: `save this session as "${name}"` });
+                const payload = { prompt: `save this session as "${name}"` };
+                logClientEvent("Socket.IO Emit: start_task", payload);
+                socket.emit('start_task', payload);
                 saveSessionNameInput.value = '';
             };
             const handleLoadSession = () => {
+                logClientEvent("Event Handler Triggered: handleLoadSession");
                 if (!sessionList.value) return alert("Please select a session to load.");
-                socket.emit('start_task', { prompt: `load the session named "${sessionList.value}"` });
+                const payload = { prompt: `load the session named "${sessionList.value}"` };
+                logClientEvent("Socket.IO Emit: start_task", payload);
+                socket.emit('start_task', payload);
             };
             const handleDeleteSession = () => {
+                logClientEvent("Event Handler Triggered: handleDeleteSession");
                 if (!sessionList.value) return alert("Please select a session to delete.");
-                socket.emit('start_task', { prompt: `delete the session named "${sessionList.value}"` });
+                const payload = { prompt: `delete the session named "${sessionList.value}"` };
+                logClientEvent("Socket.IO Emit: start_task", payload);
+                socket.emit('start_task', payload);
             };
             const handleConfirmation = (response) => {
-                socket.emit('user_confirmation', { response });
+                logClientEvent("Event Handler Triggered: handleConfirmation", { response });
+                const payload = { response };
+                logClientEvent("Socket.IO Emit: user_confirmation", payload);
+                socket.emit('user_confirmation', payload);
                 confirmationContainer.classList.add('hidden');
                 promptInput.disabled = false; sendBtn.disabled = false; promptInput.focus();
             };
@@ -320,6 +333,7 @@
                 document.getElementById('theme-icon-light').classList.toggle('hidden', isDark);
             };
             const toggleTheme = () => {
+                logClientEvent("Event Handler Triggered: toggleTheme");
                 document.documentElement.classList.toggle('dark');
                 localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
                 setupTheme();
