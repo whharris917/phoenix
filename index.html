@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Moved Socket.IO back to head, as DOMContentLoaded handles timing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -111,7 +112,9 @@
             <div class="mt-auto flex items-center border-t pt-4 flex-shrink-0" style="border-color: var(--border-color);"> <textarea id="prompt-input" class="w-full rounded-l-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your command... (Shift+Enter for new line)" rows="1" style="background-color: var(--input-bg);"></textarea> <button id="send-prompt" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-r-md transition-colors self-stretch">Send</button> </div>
         </div>
     </main>
+
     <script>
+        // --- FIX: Re-wrapped entire script in DOMContentLoaded listener ---
         document.addEventListener('DOMContentLoaded', () => {
             const conversationLog = document.getElementById('conversation-log');
             const promptInput = document.getElementById('prompt-input');
@@ -141,7 +144,13 @@
             let currentSessionName = '[New Session]';
 
             const logClientEvent = (eventName, details = {}) => {
-                socket.emit('log_audit_event', { event: eventName, details: details });
+                socket.emit('log_audit_event', { 
+                    event: eventName, 
+                    details: details,
+                    source: "Client",
+                    destination: "Server",
+                    observers: ["User", "Orchestrator"]
+                });
             };
             
             const userIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>`;
