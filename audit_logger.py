@@ -4,6 +4,7 @@ import csv
 import os
 from datetime import datetime
 import threading
+import json # Import json at the top
 
 class AuditLogger:
     def __init__(self, filename="audit_trail.csv"):
@@ -19,7 +20,6 @@ class AuditLogger:
             with open(self.filepath, 'a', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 if not file_exists or os.path.getsize(self.filepath) == 0:
-                    # --- NEW HEADER ---
                     header = ["Timestamp", "Event", "SessionID", "SessionName", "LoopID", "Source", "Destination", "Observer", "Details"]
                     writer.writerow(header)
 
@@ -30,13 +30,11 @@ class AuditLogger:
         """
         timestamp = datetime.now().isoformat()
         
-        if isinstance(details, dict) or isinstance(details, list):
-            import json
-            details_str = json.dumps(details)
-        else:
-            details_str = str(details) if details is not None else ""
+        # --- FIX: ALWAYS use json.dumps to sanitize the details field ---
+        # This properly escapes all special characters (quotes, newlines, commas)
+        # ensuring the data is contained within a single CSV cell.
+        details_str = json.dumps(details) if details is not None else ""
         
-        # If observers is a list, join it into a string, otherwise use it as is
         observer_str = ", ".join(observers) if isinstance(observers, list) else (observers or "N/A")
 
         with self.lock:
@@ -54,5 +52,5 @@ class AuditLogger:
                     details_str
                 ])
 
-# Create a single, global instance
+# Create a single, global instance to be used by the entire application
 audit_log = AuditLogger()

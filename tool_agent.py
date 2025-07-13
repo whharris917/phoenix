@@ -10,6 +10,8 @@ from eventlet import tpool
 import chromadb # Import chromadb at the top
 import uuid
 
+# --- MODIFIED: Import audit_log ---
+from audit_logger import audit_log 
 from code_parser import analyze_codebase, generate_mermaid_diagram
 
 # --- Constants ---
@@ -99,7 +101,8 @@ def get_safe_path(filename, base_dir_name='sandbox'):
         raise ValueError("Attempted path traversal outside of allowed directory.")
     return requested_path
 
-def execute_tool_command(command, session_id, chat_sessions, model):
+# --- MODIFIED: Function signature now accepts socketio ---
+def execute_tool_command(command, socketio, session_id, chat_sessions, model):
     action = command.get('action')
     params = command.get('parameters', {})
     try:
@@ -188,7 +191,7 @@ def execute_tool_command(command, session_id, chat_sessions, model):
                 logging.error(f"Error generating code diagram: {e}")
                 return {"status": "error", "message": str(e)}
 
-        # --- REFACTORED SESSION MANAGEMENT TOOLS ---
+        # --- REFACTORED AND MODIFIED SESSION MANAGEMENT TOOLS ---
 
         elif action == 'save_session':
             session_name = params.get('session_name')
@@ -199,6 +202,7 @@ def execute_tool_command(command, session_id, chat_sessions, model):
             if not session_data or 'memory' not in session_data:
                 return {"status": "error", "message": "Active memory session not found."}
             
+            old_session_name = session_data.get('name')
             memory = session_data['memory']
             current_collection = memory.collection
             if not current_collection:
@@ -210,7 +214,16 @@ def execute_tool_command(command, session_id, chat_sessions, model):
             # Update the memory manager to point to the renamed collection
             memory.collection = chroma_client.get_collection(name=session_name)
             
-            return {"status": "success", "message": f"Session '{session_name}' saved."}
+            # --- MODIFICATION START ---
+            # 1. Update the name in the server's active session dictionary
+            session_data['name'] = session_name
+
+            # 2. Emit an event to the client to update the UI
+            audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User", "Orchestrator"], details={'name': session_name, 'previous_name': old_session_name})
+            socketio.emit('session_name_update', {'name': session_name}, to=session_id)
+            # --- MODIFICATION END ---
+            
+            return {"status": "success", "message": f"Session '{session_name}' saved and session state updated."}
 
         elif action == 'list_sessions':
             collections = chroma_client.list_collections()
@@ -255,6 +268,12 @@ def execute_tool_command(command, session_id, chat_sessions, model):
                 # Update the memory manager's collection to the one we just loaded
                 chat_sessions[session_id]['memory'].collection = collection
                 chat_sessions[session_id]['memory'].conversational_buffer = history
+                
+                # --- MODIFICATION START ---
+                # Emit an event to the client to update the UI with the new name
+                audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User", "Orchestrator"], details={'name': session_name})
+                socketio.emit('session_name_update', {'name': session_name}, to=session_id)
+                # --- MODIFICATION END ---
 
                 return {"status": "success", "message": f"Session '{session_name}' loaded.", "history": history}
             except ValueError:

@@ -11,9 +11,13 @@ confirmation_events = {}
 def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):
     # --- NEW: Generate a unique ID for this specific reasoning loop ---
     loop_id = str(uuid.uuid4())
-    session_name = chat_sessions.get(session_id, {}).get('name')
     
-    audit_log.log_event("Reasoning Loop Started", session_id=session_id, session_name=session_name, loop_id=loop_id, source="Orchestrator", destination="Orchestrator", observers=["Orchestrator"], details={"initial_prompt": initial_prompt})
+    # --- MODIFIED: Get session_name from chat_sessions AFTER a potential update ---
+    # This ensures that if a tool changes the session name, subsequent logs in the same loop reflect the new name.
+    def get_current_session_name():
+        return chat_sessions.get(session_id, {}).get('name')
+
+    audit_log.log_event("Reasoning Loop Started", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Orchestrator", observers=["Orchestrator"], details={"initial_prompt": initial_prompt})
     
     try:
         current_prompt = initial_prompt
@@ -57,9 +61,9 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
 
             memory.add_turn("user", current_prompt)
 
-            audit_log.log_event("Gemini API Call Sent", session_id=session_id, session_name=session_name, loop_id=loop_id, source="Orchestrator", destination="Model", observers=["Orchestrator", "Model"], details={"prompt": final_prompt})
+            audit_log.log_event("Gemini API Call Sent", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Model", observers=["Orchestrator", "Model"], details={"prompt": final_prompt})
             response = tpool.execute(chat.send_message, final_prompt)
-            audit_log.log_event("Gemini API Response Received", session_id=session_id, session_name=session_name, loop_id=loop_id, source="Model", destination="Orchestrator", observers=["Orchestrator", "Model"], details={"response_text": response.text})
+            audit_log.log_event("Gemini API Response Received", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Model", destination="Orchestrator", observers=["Orchestrator", "Model"], details={"response_text": response.text})
 
             if response.usage_metadata:
                 api_stats['total_calls'] += 1
@@ -90,7 +94,7 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
 
             if action == 'respond':
                 response_to_user = command_json.get('parameters', {}).get('response', '')
-                audit_log.log_event("Socket.IO Emit: log_message", session_id=session_id, session_name=session_name, loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'type': 'final_answer', 'data': response_to_user})
+                audit_log.log_event("Socket.IO Emit: log_message", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'type': 'final_answer', 'data': response_to_user})
                 socketio.emit('log_message', {'type': 'final_answer', 'data': response_to_user}, to=session_id)
                 result_payload = {'status': 'success', 'action_taken': 'respond', 'details': 'The message was successfully sent to the user.'}
                 current_prompt = observation_template.format(tool_result_json=json.dumps(result_payload))
@@ -99,7 +103,7 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
             if action == 'task_complete':
                 final_response = command_json.get('parameters', {}).get('response')
                 if final_response:
-                    audit_log.log_event("Socket.IO Emit: log_message", session_id=session_id, session_name=session_name, loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'type': 'final_answer', 'data': final_response})
+                    audit_log.log_event("Socket.IO Emit: log_message", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'type': 'final_answer', 'data': final_response})
                     socketio.emit('log_message', {'type': 'final_answer', 'data': final_response}, to=session_id)
                 logging.info(f"Agent initiated task_complete. Ending loop for session {session_id}.")
                 return
@@ -117,7 +121,7 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 prompt_text = command_json.get('parameters', {}).get('prompt', 'Are you sure?')
                 confirmation_event = Event()
                 confirmation_events[session_id] = confirmation_event
-                audit_log.log_event("Socket.IO Emit: request_user_confirmation", session_id=session_id, session_name=session_name, loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'prompt': prompt_text})
+                audit_log.log_event("Socket.IO Emit: request_user_confirmation", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'prompt': prompt_text})
                 socketio.emit('request_user_confirmation', {'prompt': prompt_text}, to=session_id)
                 user_response = confirmation_event.wait()
                 confirmation_events.pop(session_id, None)
@@ -128,15 +132,18 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 current_prompt = f"USER_CONFIRMATION: '{user_response}'"
                 continue
 
-            audit_log.log_event("Tool Agent Call Sent", session_id=session_id, session_name=session_name, loop_id=loop_id, source="Orchestrator", destination="Tool Agent", observers=["Orchestrator", "Tool Agent"], details=command_json)
-            tool_result = execute_tool_command(command_json, session_id, chat_sessions, model)
-            audit_log.log_event("Tool Agent Execution Finished", session_id=session_id, session_name=session_name, loop_id=loop_id, source="Tool Agent", destination="Orchestrator", observers=["Orchestrator", "Tool Agent"], details=tool_result)
+            audit_log.log_event("Tool Agent Call Sent", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Tool Agent", observers=["Orchestrator", "Tool Agent"], details=command_json)
+            
+            # --- MODIFIED: Pass the socketio object to the tool command executor ---
+            tool_result = execute_tool_command(command_json, socketio, session_id, chat_sessions, model)
+            
+            audit_log.log_event("Tool Agent Execution Finished", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Tool Agent", destination="Orchestrator", observers=["Orchestrator", "Tool Agent"], details=tool_result)
 
             destruction_confirmed = False
 
             if tool_result.get('status') == 'success':
                 log_message = tool_result.get('message', f"Tool '{action}' executed successfully.")
-                audit_log.log_event("Socket.IO Emit: tool_log", session_id=session_id, session_name=session_name, loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'data': f"[{log_message}]"})
+                audit_log.log_event("Socket.IO Emit: tool_log", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'data': f"[{log_message}]"})
                 socketio.emit('tool_log', {'data': f"[{log_message}]"}, to=session_id)
             
             # ... (rest of the tool handling logic remains the same) ...
@@ -147,4 +154,4 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
         logging.exception("An error occurred in the reasoning loop.")
         socketio.emit('log_message', {'type': 'error', 'data': f"An error occurred during reasoning: {str(e)}"}, to=session_id)
     finally:
-        audit_log.log_event("Reasoning Loop Ended", session_id=session_id, session_name=session_name, loop_id=loop_id, source="Orchestrator", destination="Orchestrator", observers=["Orchestrator"])
+        audit_log.log_event("Reasoning Loop Ended", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Orchestrator", observers=["Orchestrator"])
