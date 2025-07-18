@@ -1,5 +1,3 @@
-# tool_agent.py
-
 import os
 import io
 import sys
@@ -7,10 +5,8 @@ from contextlib import redirect_stdout
 import json
 import logging
 from eventlet import tpool
-import chromadb # Import chromadb at the top
+import chromadb
 import uuid
-
-# --- MODIFIED: Import audit_log ---
 from audit_logger import audit_log 
 from code_parser import analyze_codebase, generate_mermaid_diagram
 
@@ -19,18 +15,24 @@ LEGACY_SESSIONS_FILE = os.path.join(os.path.dirname(__file__), 'sandbox', 'sessi
 CHROMA_DB_PATH = os.path.join(os.path.dirname(__file__), '.sandbox', 'chroma_db') # Use the same path as MemoryManager
 
 ALLOWED_PROJECT_FILES = [
+    'index.html',
     'app.py',
     'orchestrator.py',
     'tool_agent.py',
+    'memory_manager.py',
+    'audit_logger.py',
     'public_data/system_prompt.txt',
-    'index.html',
+    'requirements.txt',
     'workshop.html',
     'documentation_viewer.html',
-    'code_parser.py'
+    'code_parser.py',
+    'code_visualizer.py',
+    'inspect_db.py',
+    'api_usage.py'
 ]
 
 # --- Helper functions ---
-# ... (all helper functions like _execute_script, _write_file, etc. remain the same) ...
+
 def _execute_script(script_content):
     string_io = io.StringIO()
     try:
@@ -101,7 +103,6 @@ def get_safe_path(filename, base_dir_name='sandbox'):
         raise ValueError("Attempted path traversal outside of allowed directory.")
     return requested_path
 
-# --- MODIFIED: Function signature now accepts socketio ---
 def execute_tool_command(command, socketio, session_id, chat_sessions, model):
     action = command.get('action')
     params = command.get('parameters', {})

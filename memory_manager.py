@@ -1,10 +1,7 @@
-# memory_manager.py_proposed
-
 import chromadb
 import logging
 import uuid
 import os
-# NEW: Import the embedding function utility from ChromaDB
 import chromadb.utils.embedding_functions as embedding_functions
 
 # This script will be in the project root. The sandbox is a subdirectory.

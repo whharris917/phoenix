@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Audit Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body { background-color: #FFFFFF; color: #d1d5db; }
+        .mermaid svg {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <h1 class="text-2xl font-bold text-center mb-4">Live Audit Sequence Diagram</h1>
+    <div class="flex justify-center mb-4">
+        <button id="clear-diagram" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md">Clear Diagram</button>
+    </div>
+    <div id="diagram-container" class="mermaid w-full h-full">
+        <!-- Mermaid diagram will be rendered here -->
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'redux-color' });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const diagramContainer = document.getElementById('diagram-container');
+            const clearBtn = document.getElementById('clear-diagram');
+            const socket = io(window.location.origin);
+
+            const participantMap = {
+                'Client': 'Client (Browser)',
+                'Server': 'app.py (SocketIO)',
+                'Application': 'app.py (SocketIO)',
+                'Orchestrator': 'orchestrator.py',
+                'Model': 'Gemini API',
+                'Tool Agent': 'tool_agent.py',
+                'System': 'System',
+                'Memory Manager': 'memory_manager.py',
+                'ChromaDB': 'ChromaDB'
+            };
+
+            let diagramHeader = '';
+            let diagramBody = '';
+            let activeLoopId = null;
+            
+            // --- NEW: Queue-based system to prevent race conditions ---
+            let eventQueue = [];
+            let isProcessing = false;
+
+            const initializeDiagram = () => {
+                eventQueue = []; // Clear the queue
+                diagramHeader = 'sequenceDiagram\n';
+                Object.values(participantMap).forEach(name => {
+                    diagramHeader += `    participant ${name}\n`;
+                });
+                diagramBody = ''; // Reset the body
+                renderDiagram();
+            };
+
+            const renderDiagram = async () => {
+                try {
+                    const fullSyntax = diagramHeader + diagramBody;
+                    // It's crucial to use the 'element' reference directly
+                    const { svg } = await mermaid.render('mermaid-svg-' + Date.now(), fullSyntax);
+                    diagramContainer.innerHTML = svg;
+                } catch (e) {
+                    // Don't log the "element not in render tree" error as it's a common race condition artifact
+                    if (e && e.message && !e.message.includes('element not in render tree')) {
+                         console.error("Mermaid rendering error:", e);
+                    }
+                }
+            };
+            
+            const processQueue = async () => {
+                if (isProcessing || eventQueue.length === 0) {
+                    return;
+                }
+                isProcessing = true;
+
+                // Process all events currently in the queue in one batch
+                const eventsToProcess = eventQueue.splice(0, eventQueue.length);
+                let syntaxBatch = '';
+
+                eventsToProcess.forEach(data => {
+                    let newEventSyntax = '';
+                    if (data.loop_id && data.loop_id !== activeLoopId) {
+                        activeLoopId = data.loop_id;
+                        newEventSyntax += `\n    rect rgb(100, 100, 100)\n`;
+                        newEventSyntax += `        Note over ${participantMap['Orchestrator']}: New Reasoning Loop Started (ID: ${activeLoopId.substring(0, 8)}...)\n`;
+                        newEventSyntax += `    end\n\n`;
+                    }
+
+                    if (data.event === 'Reasoning Loop Started') {
+                        newEventSyntax += `    ${participantMap['Orchestrator']}->>${participantMap['Memory Manager']}: memory.add_turn("user", ...)\n`;
+                    }
+
+                    if (data.event === 'Gemini API Call Sent' && data.source === 'Orchestrator') {
+                        newEventSyntax += `    Note over ${participantMap['Orchestrator']}: Retrieving long-term memory...\n`;
+                        newEventSyntax += `    ${participantMap['Orchestrator']}->>${participantMap['Memory Manager']}: get_context_for_prompt(...)\n`;
+                        newEventSyntax += `    ${participantMap['Memory Manager']}->>${participantMap['ChromaDB']}: query(vector)\n`;
+                        newEventSyntax += `    ${participantMap['ChromaDB']}-->>${participantMap['Memory Manager']}: returns docs\n`;
+                        newEventSyntax += `    ${participantMap['Memory Manager']}-->>${participantMap['Orchestrator']}: returns context string\n`;
+                    }
+                    
+                    const source = participantMap[data.source] || data.source;
+                    const dest = participantMap[data.destination] || data.destination;
+                    const event = data.event.replace(/"/g, '#quot;').replace(/\n/g, '<br/>');
+
+                    if (source && dest) {
+                        newEventSyntax += `    ${source}->>${dest}: ${event}\n`;
+                    }
+
+                    if (data.event === 'Gemini API Response Received' && data.source === 'Model') {
+                         newEventSyntax += `    ${participantMap['Orchestrator']}->>${participantMap['Memory Manager']}: memory.add_turn("model", ...)\n`;
+                    }
+                    syntaxBatch += newEventSyntax;
+                });
+
+                diagramBody = syntaxBatch + diagramBody;
+                await renderDiagram();
+                
+                isProcessing = false;
+
+                // If new events arrived while processing, run again
+                if (eventQueue.length > 0) {
+                    // Use a small timeout to allow the browser to breathe
+                    setTimeout(processQueue, 50);
+                }
+            };
+
+            socket.on('connect', () => {
+                console.log('Connected to server for audit events.');
+                initializeDiagram();
+            });
+
+            socket.on('new_audit_event', (data) => {
+                eventQueue.push(data);
+                processQueue();
+            });
+
+            clearBtn.addEventListener('click', initializeDiagram);
+
+            initializeDiagram();
+        });
+    </script>
+</body>
+</html>

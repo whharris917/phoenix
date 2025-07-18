@@ -4,7 +4,7 @@ from eventlet import tpool
 from eventlet.event import Event
 from tool_agent import execute_tool_command
 from audit_logger import audit_log
-import uuid # --- NEW: Import uuid for loop IDs ---
+import uuid
 
 confirmation_events = {}
 
@@ -47,7 +47,9 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
         for i in range(15):
             socketio.sleep(0)
             
+            # Retrieval of Tier 1 Memory
             retrieved_context = memory.get_context_for_prompt(current_prompt)
+
             final_prompt = current_prompt
             if retrieved_context:
                 context_str = "\n".join(retrieved_context)
@@ -74,8 +76,9 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
             response_text = response.text
             memory.add_turn("model", response_text)
 
-            # ... (Tier 2 memory summarization logic remains the same) ...
+            # TO DO: Creation of Tier 2 Memory
 
+            # Parse model's response JSON
             try:
                 start_index = response_text.find('{')
                 end_index = response_text.rfind('}') + 1
@@ -98,7 +101,7 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 socketio.emit('log_message', {'type': 'final_answer', 'data': response_to_user}, to=session_id)
                 result_payload = {'status': 'success', 'action_taken': 'respond', 'details': 'The message was successfully sent to the user.'}
                 current_prompt = observation_template.format(tool_result_json=json.dumps(result_payload))
-                continue
+                return ######## changed from continue to return
             
             if action == 'task_complete':
                 final_response = command_json.get('parameters', {}).get('response')
@@ -134,9 +137,7 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
 
             audit_log.log_event("Tool Agent Call Sent", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Tool Agent", observers=["Orchestrator", "Tool Agent"], details=command_json)
             
-            # --- MODIFIED: Pass the socketio object to the tool command executor ---
-            tool_result = execute_tool_command(command_json, socketio, session_id, chat_sessions, model)
-            
+            tool_result = execute_tool_command(command_json, socketio, session_id, chat_sessions, model)            
             audit_log.log_event("Tool Agent Execution Finished", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Tool Agent", destination="Orchestrator", observers=["Orchestrator", "Tool Agent"], details=tool_result)
 
             destruction_confirmed = False
@@ -146,9 +147,9 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 audit_log.log_event("Socket.IO Emit: tool_log", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'data': f"[{log_message}]"})
                 socketio.emit('tool_log', {'data': f"[{log_message}]"}, to=session_id)
             
-            # ... (rest of the tool handling logic remains the same) ...
-
             current_prompt = observation_template.format(tool_result_json=json.dumps(tool_result))
+
+            # End of one iteration of the reasoning loop
 
     except Exception as e:
         logging.exception("An error occurred in the reasoning loop.")

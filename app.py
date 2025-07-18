@@ -6,7 +6,7 @@ import os
 import logging
 import json
 import atexit
-from datetime import datetime # --- NEW: Import datetime ---
+from datetime import datetime
 from orchestrator import execute_reasoning_loop, confirmation_events
 from tool_agent import execute_tool_command, get_safe_path
 from memory_manager import MemoryManager
@@ -28,7 +28,7 @@ def load_system_prompt():
         with open(prompt_path, 'r') as f:
             return f.read()
     except FileNotFoundError:
-        return "You are a helpful assistant but were unable to locate system_prompt.txt, and thus do not have access to your core directives."
+        return "You are a helpful assistant but were unable to locate or open system_prompt.txt, and thus do not have access to your core directives."
 
 # --- CONFIGURATION ---
 API_KEY = load_api_key()
@@ -37,6 +37,9 @@ API_STATS_FILE = os.path.join(os.path.dirname(__file__), 'api_usage.json')
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+
+# --- NEW: Register socketio with the audit logger ---
+audit_log.register_socketio(socketio)
 
 # --- Setup Logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler("agent.log"), logging.StreamHandler()])
@@ -87,7 +90,11 @@ chat_sessions = {}
 def serve_index():
     return send_from_directory('.', 'index.html')
 
-# ... (other routes remain the same) ...
+# --- NEW: Add route for the audit visualizer ---
+@app.route('/audit_visualizer')
+def serve_audit_visualizer():
+    return send_from_directory('.', 'audit_visualizer.html')
+
 @app.route('/docs')
 def serve_docs():
     return send_from_directory('.', 'documentation_viewer.html')
@@ -115,15 +122,15 @@ def get_diagram_file():
     except Exception as e:
         return str(e), 500
 
+# The following functions handle emissions to the application from the client and orchestrator
 
 @socketio.on('connect')
 def handle_connect():
     session_id = request.sid
-    # --- NEW: Generate timestamped session name ---
     timestamp = datetime.now().strftime("%d%b%Y_%I%M%S%p").upper()
     new_session_name = f"New_Session_{timestamp}"
     
-    audit_log.log_event("Client Connected", session_id=session_id, session_name=new_session_name, source="Client", destination="Server", observers=["Orchestrator"])
+    audit_log.log_event("Client Connected", session_id=session_id, session_name=new_session_name, source="Application", destination="Client", observers=["Application, Client"])
     app.logger.info(f"Client connected: {session_id}")
     if model:
         try:
@@ -134,7 +141,7 @@ def handle_connect():
                 "name": new_session_name # Use the new name
             }
             app.logger.info(f"Chat and MemoryManager session created for {session_id} with name {new_session_name}")
-            audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=new_session_name, source="Server", destination="Client", observers=["User", "Orchestrator"], details={'name': new_session_name})
+            audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=new_session_name, source="Application", destination="Client", observers=["User", "Orchestrator"], details={'name': new_session_name})
             socketio.emit('session_name_update', {'name': new_session_name}, to=session_id)
         except Exception as e:
             app.logger.exception(f"Could not create chat session for {session_id}.")
@@ -165,6 +172,7 @@ def handle_start_task(data):
 
 @socketio.on('log_audit_event')
 def handle_audit_event(data):
+    # This handler now implicitly broadcasts via the modified audit_log.log_event
     session_id = request.sid
     session_name = chat_sessions.get(session_id, {}).get('name')
     audit_log.log_event(
@@ -182,9 +190,9 @@ def handle_session_list_request():
     session_id = request.sid
     session_name = chat_sessions.get(session_id, {}).get('name')
     audit_log.log_event("Socket.IO Event Received: request_session_list", session_id=session_id, session_name=session_name, source="Client", destination="Server", observers=["Orchestrator"])
-    result = execute_tool_command({'action': 'list_sessions'}, session_id, chat_sessions, model)
-    audit_log.log_event("Socket.IO Emit: session_list_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User"], details=result)
-    socketio.emit('session_list_update', result, to=request.sid)
+    tool_result = execute_tool_command({'action': 'list_sessions'}, session_id, chat_sessions, model)
+    audit_log.log_event("Socket.IO Emit: session_list_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User"], details=tool_result)
+    socketio.emit('session_list_update', tool_result, to=request.sid)
 
 @socketio.on('request_api_stats')
 def handle_api_stats_request():

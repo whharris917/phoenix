@@ -95,6 +95,7 @@
                 <a href="/docs" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Documentation</a> 
                 <a href="/workshop" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Workshop</a> 
                 <a href="/visualizer" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Visualizer</a>
+                <a href="/audit_visualizer" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Audit Visualizer</a>
             </nav> 
         </div> 
         <div class="flex items-center space-x-6"> 
@@ -148,8 +149,8 @@
                     event: eventName, 
                     details: details,
                     source: "Client",
-                    destination: "Server",
-                    observers: ["User", "Orchestrator"]
+                    destination: "Application",
+                    observers: ["Client", "Application"]
                 });
             };
             
@@ -171,7 +172,7 @@
                 let typeDisplay, icon, titleHTML;
                 switch(type) {
                     case 'user': typeDisplay = 'You'; icon = userIcon; break;
-                    case 'final_answer': typeDisplay = currentSessionName || 'Phoenix'; icon = agentIcon; break;
+                    case 'final_answer': typeDisplay = currentSessionName; icon = agentIcon; break;
                 }
                 titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
                 const content = `<div class="flex items-start">${icon}<div class="flex-1">${titleHTML}<div class="mt-1 text-sm message-body">${formattedMessage}</div></div></div>`;

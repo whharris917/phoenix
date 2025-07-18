@@ -21,8 +21,8 @@ env/
 agent.log
 api_usage.json
 
-# ChromaDB vector store
-.sandbox/chroma_db/
+# ChromaDB vector store and audit trail
+.sandbox/
 
 # (other ignored files...)
 sandbox/
