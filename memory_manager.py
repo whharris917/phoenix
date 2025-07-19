@@ -2,6 +2,7 @@ import chromadb
 import logging
 import uuid
 import os
+import time
 import chromadb.utils.embedding_functions as embedding_functions
 
 # This script will be in the project root. The sandbox is a subdirectory.
@@ -36,66 +37,125 @@ class MemoryManager:
     Tier 1: Conversational Buffer (Short-Term Memory)
     Tier 3: Vector Store (Long-Term, Specific Recall)
     """
-    def __init__(self, session_id):
-        self.session_id = session_id
-        self.max_buffer_size = 12 # Number of conversational turns
+    def __init__(self, session_name):
+        """
+        Initializes the MemoryManager for a given session NAME.
+        This will create or load a persistent ChromaDB collection based on the name.
+        """
+        self.session_name = session_name
+        self.max_buffer_size = 20 # Increased buffer size for better context
 
         # Tier 1: Conversational Buffer
         self.conversational_buffer = []
 
         # Tier 3: Vector Store (ChromaDB)
         if embedding_function is None:
-            logging.error(f"Cannot initialize ChromaDB for session {self.session_id} because embedding function failed to load.")
+            logging.error(f"Cannot initialize ChromaDB for session '{self.session_name}' because embedding function failed to load.")
             self.collection = None
             return
 
         try:
             self.chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
-            
-            # Sanitize session_id for collection name
-            collection_name = f"session_{self.session_id.replace('-', '_').replace('.', '_')}"
-            
-            # --- MODIFIED: Pass the explicit embedding function ---
+
+            # Sanitize session_name to be a valid ChromaDB collection name.
+            # A valid name contains only alphanumeric characters, dots, dashes, and underscores,
+            # and is between 3 and 63 characters long.
+            sanitized_name = "".join(c for c in self.session_name if c.isalnum() or c in ['_', '-']).strip()
+            if len(sanitized_name) < 3:
+                sanitized_name = f"session-{sanitized_name}-{uuid.uuid4().hex[:8]}"
+            collection_name = sanitized_name[:63] # Enforce max length
+
             self.collection = self.chroma_client.get_or_create_collection(
                 name=collection_name,
-                embedding_function=embedding_function # Use our pre-loaded function
+                embedding_function=embedding_function
             )
-            logging.info(f"ChromaDB collection '{collection_name}' loaded/created for session {self.session_id}.")
+            logging.info(f"ChromaDB collection '{collection_name}' loaded/created for session '{self.session_name}'.")
+
+            # --- NEW: Repopulate buffer from DB on init ---
+            self._repopulate_buffer_from_db()
+
         except Exception as e:
-            logging.error(f"FATAL: Failed to initialize ChromaDB for session {self.session_id}: {e}")
+            logging.error(f"FATAL: Failed to initialize ChromaDB for session '{self.session_name}': {e}")
             self.collection = None
+
+    def _repopulate_buffer_from_db(self):
+        """
+        Loads the most recent history from the ChromaDB collection into the
+        conversational buffer to maintain context across sessions.
+        """
+        if not self.collection or self.collection.count() == 0:
+            logging.info(f"No history found in ChromaDB for session '{self.session_name}'.")
+            return
+
+        try:
+            history = self.collection.get(include=["metadatas", "documents"])
+
+            if not history or not history.get('ids'):
+                return
+
+            combined_history = []
+            for i, doc_id in enumerate(history['ids']):
+                meta = history['metadatas'][i]
+                doc = history['documents'][i]
+
+                try:
+                    # Document format is "role: content"
+                    role, content = doc.split(":", 1)
+                    content = content.strip()
+                    # Use the role from metadata if available, as it's more reliable
+                    role_to_use = meta.get('role', role)
+                    if role_to_use not in ['user', 'model']:
+                        logging.warning(f"Skipping document with invalid role '{role_to_use}' in session '{self.session_name}'.")
+                        continue
+                except ValueError:
+                    logging.warning(f"Skipping malformed document in DB: {doc}")
+                    continue
+
+                combined_history.append({
+                    'role': role_to_use,
+                    'timestamp': meta.get('timestamp', 0),
+                    'content': content
+                })
+
+            combined_history.sort(key=lambda x: x['timestamp'], reverse=True)
+            recent_turns = combined_history[:self.max_buffer_size]
+            recent_turns.reverse()
+
+            self.conversational_buffer = [
+                {"role": turn['role'], "parts": [{'text': turn['content']}]}
+                for turn in recent_turns
+            ]
+
+            logging.info(f"Repopulated buffer with {len(self.conversational_buffer)} turns from ChromaDB for session '{self.session_name}'.")
+
+        except Exception as e:
+            logging.error(f"Could not repopulate buffer from ChromaDB for session '{self.session_name}': {e}")
+            self.conversational_buffer = []
 
     def add_turn(self, role, content):
         """
         Adds a new turn to the memory, updating both Tier 1 and Tier 3.
         Role is 'user' or 'model'.
         """
-        import time # Add time import for timestamp
-
-        # Tier 1: Update Conversational Buffer
-        turn = {"role": role, "parts": [{'text': content}]} # Correctly format the turn
+        turn = {"role": role, "parts": [{'text': content}]}
         self.conversational_buffer.append(turn)
         if len(self.conversational_buffer) > self.max_buffer_size:
             self.conversational_buffer.pop(0)
 
-        # Tier 3: Add to Vector Store
         if self.collection:
             try:
                 doc_id = str(uuid.uuid4())
-                # --- NEW: Add timestamp to metadata ---
                 metadata = {'role': role, 'timestamp': time.time()}
-                
-                # Storing 'role: content' for better semantic meaning
                 doc_content = f"{role}: {content}"
-                
+
                 self.collection.add(
                     documents=[doc_content],
                     metadatas=[metadata],
                     ids=[doc_id]
                 )
-                logging.info(f"Successfully added document to ChromaDB collection for session {self.session_id}.")
+                logging.info(f"Added document to ChromaDB for session '{self.session_name}'.")
             except Exception as e:
-                logging.error(f"Could not add document to ChromaDB for session {self.session_id}: {e}")
+                logging.error(f"Could not add document to ChromaDB for session '{self.session_name}': {e}")
 
     def get_context_for_prompt(self, prompt, n_results=3):
         """
@@ -109,19 +169,19 @@ class MemoryManager:
                 query_texts=[prompt],
                 n_results=min(n_results, self.collection.count())
             )
-            
+
             if query_results and query_results['documents']:
-                logging.info(f"Retrieved {len(query_results['documents'][0])} relevant docs from ChromaDB.")
+                logging.info(f"Retrieved {len(query_results['documents'][0])} docs from ChromaDB for session '{self.session_name}'.")
                 return query_results['documents'][0]
             return []
         except Exception as e:
-            logging.error(f"Could not query ChromaDB for session {self.session_id}: {e}")
+            logging.error(f"Could not query ChromaDB for session '{self.session_name}': {e}")
             return []
 
     def get_full_history(self):
         """Returns the conversational buffer (Tier 1) for the chat history."""
         return self.conversational_buffer
-        
+
     def clear(self):
         """Clears the memory for the session by deleting the collection."""
         self.conversational_buffer = []
@@ -129,6 +189,6 @@ class MemoryManager:
             try:
                 collection_name = self.collection.name
                 self.chroma_client.delete_collection(name=collection_name)
-                logging.info(f"Cleared and deleted ChromaDB collection: {collection_name}")
+                logging.info(f"Cleared and deleted ChromaDB collection: {collection_name} for session '{self.session_name}'")
             except Exception as e:
-                logging.error(f"Error while clearing collection {self.collection.name}: {e}")
+                logging.error(f"Error clearing collection {self.collection.name} for session '{self.session_name}': {e}")

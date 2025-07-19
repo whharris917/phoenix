@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChromaDB Memory Viewer</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 2em;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1, h2 {
+            color: #444;
+        }
+        #controls {
+            margin-bottom: 1.5em;
+        }
+        label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        select {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            min-width: 350px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            word-wrap: break-word;
+            vertical-align: top;
+        }
+        th {
+            background-color: #e9ecef;
+        }
+        /* --- COLUMN WIDTH STYLES --- */
+        th:nth-child(1), td:nth-child(1) { width: 8%; } /* Timestamp */
+        th:nth-child(2), td:nth-child(2) { width: 15%; } /* ID */
+        th:nth-child(3), td:nth-child(3) { width: 5%; } /* Role */
+        th:nth-child(4), td:nth-child(4) { width: 72%; } /* Document */
+
+        pre {
+            white-space: pre-wrap; 
+            word-wrap: break-word;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ChromaDB Memory Viewer</h1>
+
+    <div id="controls">
+        <label for="collection-selector">Select a Collection (Sorted by Most Recent):</label>
+        <select id="collection-selector">
+            <option>Loading collections...</option>
+        </select>
+    </div>
+
+    <h2 id="table-title">No Collection Selected</h2>
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>ID</th>
+                <th>Role</th>
+                <th>Document (Memory Content)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="4">Select a collection to view its data.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const socket = io.connect(window.location.origin);
+            const selector = document.getElementById('collection-selector');
+            const tableBody = document.querySelector('#data-table tbody');
+            const tableTitle = document.getElementById('table-title');
+
+            socket.on('connect', () => {
+                console.log('Connected to server. Requesting collections...');
+                socket.emit('request_db_collections');
+            });
+
+            socket.on('db_collections_list', (collectionsJson) => {
+                console.log('Received collections:', collectionsJson);
+                const res = JSON.parse(collectionsJson);
+                selector.innerHTML = '<option value="">-- Select a Collection --</option>';
+
+                if (res.status === 'success' && res.collections && res.collections.length > 0) {
+                    // Backend now sends the list pre-sorted by last_modified
+                    res.collections.forEach(collection => {
+                        const option = document.createElement('option');
+                        option.value = collection.name;
+                        option.textContent = `${collection.name} (Count: ${collection.count})`;
+                        selector.appendChild(option);
+                    });
+                } else {
+                    selector.innerHTML = `<option>Error: ${res.message || 'No collections found'}</option>`;
+                }
+            });
+
+            selector.addEventListener('change', () => {
+                const collectionName = selector.value;
+                tableBody.innerHTML = '<tr><td colspan="4">Loading data...</td></tr>'; 
+                if (collectionName) {
+                    console.log(`Requesting data for collection: ${collectionName}`);
+                    tableTitle.textContent = `Data for: ${collectionName}`;
+                    socket.emit('request_db_collection_data', { collection_name: collectionName });
+                } else {
+                    tableTitle.textContent = 'No Collection Selected';
+                    tableBody.innerHTML = '<tr><td colspan="4">Select a collection to view its data.</td></tr>';
+                }
+            });
+
+            socket.on('db_collection_data', (dataJson) => {
+                console.log('Received data for collection.');
+                const res = JSON.parse(dataJson);
+                tableBody.innerHTML = ''; // Clear table
+
+                if (res.status === 'success' && res.data && res.data.length > 0) {
+                    // Backend sends data pre-sorted by timestamp
+                    res.data.forEach(item => {
+                        const row = tableBody.insertRow();
+                        row.insertCell(0).textContent = item.Timestamp || 'N/A';
+                        row.insertCell(1).textContent = item.ID || 'N/A';
+                        row.insertCell(2).textContent = item.Role || 'N/A';
+                        row.insertCell(3).textContent = item['Document (Memory Content)'] || 'N/A';
+                    });
+                } else if (res.status === 'error') {
+                    tableBody.innerHTML = `<tr><td colspan="4">Error loading data: ${res.message}</td></tr>`;
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="4">No data found in this collection.</td></tr>';
+                }
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server.');
+                tableTitle.textContent = 'Disconnected - Please reload';
+                selector.innerHTML = '<option>Disconnected</option>';
+            });
+        });
+    </script>
+
+</body>
+</html>

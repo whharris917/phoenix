@@ -7,3 +7,5 @@ pydantic
 sentence-transformers
 ipython
 pandas
+patch
+debugpy

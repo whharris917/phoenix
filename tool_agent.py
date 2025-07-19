@@ -9,26 +9,31 @@ import chromadb
 import uuid
 from audit_logger import audit_log 
 from code_parser import analyze_codebase, generate_mermaid_diagram
+import patcher
+import debugpy
 
 # --- Constants ---
 LEGACY_SESSIONS_FILE = os.path.join(os.path.dirname(__file__), 'sandbox', 'sessions', 'sessions.json')
-CHROMA_DB_PATH = os.path.join(os.path.dirname(__file__), '.sandbox', 'chroma_db') # Use the same path as MemoryManager
+CHROMA_DB_PATH = os.path.join(os.path.dirname(__file__), '.sandbox', 'chroma_db') 
 
 ALLOWED_PROJECT_FILES = [
-    'index.html',
+'public_data/system_prompt.txt', 
+    'api_usage.py',
     'app.py',
-    'orchestrator.py',
-    'tool_agent.py',
-    'memory_manager.py',
     'audit_logger.py',
-    'public_data/system_prompt.txt',
-    'requirements.txt',
-    'workshop.html',
-    'documentation_viewer.html',
+    'audit_visualizer.py',
     'code_parser.py',
     'code_visualizer.py',
+    'database_viewer.html',
+    'documentation_viewer.html',
+    'index.html',
     'inspect_db.py',
-    'api_usage.py'
+    'memory_manager.py',
+    'orchestrator.py',
+    'patcher.py',
+    'requirements.txt',
+    'tool_agent.py',
+    'workshop.html'
 ]
 
 # --- Helper functions ---
@@ -46,7 +51,7 @@ def _execute_script(script_content):
 def _write_file(path, content):
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
         return {"status": "success"}
     except Exception as e:
@@ -56,7 +61,7 @@ def _read_file(path):
     try:
         if not os.path.exists(path):
             return {"status": "error", "message": "File not found."}
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             content = f.read()
         return {"status": "success", "content": content}
     except Exception as e:
@@ -75,10 +80,9 @@ def _list_directory(path):
     try:
         file_list = []
         for root, dirs, files in os.walk(path):
-            # Exclude the chroma_db directory from the listing
             if 'chroma_db' in dirs:
                 dirs.remove('chroma_db')
-            if 'sessions' in dirs: # Also keep excluding old sessions dir
+            if 'sessions' in dirs:
                 dirs.remove('sessions')
 
             for name in files:
@@ -107,7 +111,6 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
     action = command.get('action')
     params = command.get('parameters', {})
     try:
-        # Initialize ChromaDB client for session tools
         chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
         if action == 'create_file':
@@ -192,8 +195,66 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
                 logging.error(f"Error generating code diagram: {e}")
                 return {"status": "error", "message": str(e)}
 
-        # --- REFACTORED AND MODIFIED SESSION MANAGEMENT TOOLS ---
+        # --- NEW: Patching Tool ---
+        elif action == 'apply_patch':
+            diff_filename = params.get('diff_filename')
+            if not diff_filename:
+                return {"status": "error", "message": "Missing required parameter: diff_filename."}
 
+            diff_path = get_safe_path(diff_filename)
+            diff_result = tpool.execute(_read_file, diff_path)
+            if diff_result['status'] == 'error':
+                return diff_result
+            diff_content_with_header = diff_result['content']
+
+            lines = diff_content_with_header.splitlines(keepends=True)
+            diff_start_index = -1
+            for i, line in enumerate(lines):
+                if line.startswith('--- a/'):
+                    diff_start_index = i
+                    break
+
+            if diff_start_index == -1:
+                clean_diff_content = diff_content_with_header
+            else:
+                clean_diff_content = "".join(lines[diff_start_index:])
+
+            target_filename = None
+            for line in clean_diff_content.splitlines():
+                if line.startswith('--- a/'):
+                    target_filename = line.split('--- a/')[1].strip()
+                    break
+            
+            if not target_filename:
+                return {"status": "error", "message": "Could not determine target filename from diff."}
+                
+            if target_filename not in ALLOWED_PROJECT_FILES:
+                return {"status": "error", "message": f"Access denied. Patching the project file '{target_filename}' is not permitted."}
+
+            project_file_path = os.path.join(os.path.dirname(__file__), target_filename)
+            read_result = tpool.execute(_read_file, project_file_path)
+            if read_result['status'] == 'error':
+                return read_result
+            original_content = read_result['content']
+
+            #debugpy.breakpoint()
+
+            # --- FIX: Pass the target_filename to the new patcher function ---
+            new_content, error_message = patcher.apply_patch(clean_diff_content, original_content, target_filename)
+            
+            if error_message:
+                return {"status": "error", "message": f"Failed to apply patch: {error_message}"}
+            
+            proposed_filename = f"{os.path.splitext(os.path.basename(target_filename))[0]}_proposed{os.path.splitext(os.path.basename(target_filename))[1]}"
+            proposed_save_path = get_safe_path(proposed_filename)
+
+            write_result = tpool.execute(_write_file, proposed_save_path, new_content)
+            if write_result['status'] == 'error':
+                return write_result
+
+            return {"status": "success", "message": f"Patch applied successfully. The new version has been saved to the sandbox as '{proposed_filename}'."}
+
+        # --- REFACTORED AND MODIFIED SESSION MANAGEMENT TOOLS ---
         elif action == 'save_session':
             session_name = params.get('session_name')
             if not session_name:
@@ -209,74 +270,115 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
             if not current_collection:
                  return {"status": "error", "message": "ChromaDB collection not found for this session."}
 
-            # Rename the current collection to the user-provided name
             current_collection.modify(name=session_name)
-            
-            # Update the memory manager to point to the renamed collection
             memory.collection = chroma_client.get_collection(name=session_name)
-            
-            # --- MODIFICATION START ---
-            # 1. Update the name in the server's active session dictionary
             session_data['name'] = session_name
 
-            # 2. Emit an event to the client to update the UI
             audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User", "Orchestrator"], details={'name': session_name, 'previous_name': old_session_name})
             socketio.emit('session_name_update', {'name': session_name}, to=session_id)
-            # --- MODIFICATION END ---
-            
+
             return {"status": "success", "message": f"Session '{session_name}' saved and session state updated."}
 
         elif action == 'list_sessions':
             collections = chroma_client.list_collections()
-            # Filter out the temporary, session_id based collections
-            named_sessions = [c.name for c in collections if not c.name.startswith('session_')]
-            return {"status": "success", "sessions": [{"name": name, "summary": "Saved Session"} for name in named_sessions]}
+            
+            session_list = []
+            for col in collections:
+                # Exclude temporary sessions
+                if col.name.startswith('New_Session_'):
+                    continue
+
+                last_modified = 0
+                metadata = col.get(include=["metadatas"]).get('metadatas')
+                if metadata:
+                    timestamps = [m.get('timestamp', 0) for m in metadata if m]
+                    if timestamps:
+                        last_modified = max(timestamps)
+                
+                session_list.append({
+                    'name': col.name,
+                    'last_modified': last_modified,
+                    'summary': "Saved Session" # Original field
+                })
+
+            # Sort sessions by last_modified timestamp, descending
+            session_list.sort(key=lambda x: x['last_modified'], reverse=True)
+
+            return {"status": "success", "sessions": session_list}
 
         elif action == 'load_session':
             session_name = params.get('session_name')
             if not session_name:
                 return {"status": "error", "message": "Session name not provided."}
-                
+
+            # --- NEW: Cleanup the old, unsaved session before loading a new one ---
+            current_session_data = chat_sessions.get(session_id)
+            if current_session_data:
+                current_session_name = current_session_data.get('name')
+                if current_session_name and current_session_name.startswith("New_Session_"):
+                    try:
+                        memory_to_clear = current_session_data.get('memory')
+                        if memory_to_clear:
+                            logging.info(f"Auto-deleting unsaved collection '{current_session_name}' before loading new session.")
+                            memory_to_clear.clear()
+                            audit_log.log_event(
+                                "DB Collection Deleted",
+                                session_id=session_id,
+                                session_name=current_session_name,
+                                source="System",
+                                destination="Database",
+                                observers=["Orchestrator"],
+                                details=f"Unsaved session '{current_session_name}' cleaned up before loading new session."
+                            )
+                    except Exception as e:
+                        logging.error(f"Error during automatic cleanup of session '{current_session_name}' before load: {e}")
+
             try:
                 collection = chroma_client.get_collection(name=session_name)
-                # Retrieve all documents and metadata
                 history_data = collection.get(include=["documents", "metadatas"])
                 
                 if not history_data or not history_data['ids']:
-                    return {"status": "success", "message": f"Session '{session_name}' loaded but is empty.", "history": []}
+                    # Still update the session name and UI even for an empty session
+                    chat_sessions[session_id]['name'] = session_name
+                    socketio.emit('session_name_update', {'name': session_name}, to=session_id)
+                    socketio.emit('load_chat_history', {'history': []}, to=session_id) # Clear the chat
+                    return {"status": "success", "message": f"Session '{session_name}' loaded but is empty."}
 
-                # --- NEW: Sort by timestamp in metadata ---
                 history_tuples = sorted(
                     zip(history_data['documents'], history_data['metadatas']), 
-                    key=lambda x: x[1].get('timestamp', 0) # Sort by timestamp, default to 0 if missing
+                    key=lambda x: x[1].get('timestamp', 0)
                 )
 
                 history = []
                 for doc, meta in history_tuples:
-                    # Reconstruct the chat history format
                     role = meta.get('role', 'unknown')
-                    # The doc is "role: content", but we can just use the content part
-                    # to avoid potential splitting errors if content contains ':'
                     content = doc.split(':', 1)[1] if ':' in doc else doc
                     history.append({"role": role, "parts": [{'text': content.strip()}]})
 
-                # Re-initialize the chat session with the loaded history
-                chat_sessions[session_id] = {
-                    "chat": model.start_chat(history=history),
-                    "memory": chat_sessions[session_id]['memory'], 
-                    "name": session_name
-                }
-                # Update the memory manager's collection to the one we just loaded
-                chat_sessions[session_id]['memory'].collection = collection
-                chat_sessions[session_id]['memory'].conversational_buffer = history
+                # Re-assign memory manager parts
+                memory_manager = chat_sessions[session_id]['memory']
+                memory_manager.collection = collection
+                memory_manager.conversational_buffer = history
+                memory_manager.session_name = session_name
                 
-                # --- MODIFICATION START ---
-                # Emit an event to the client to update the UI with the new name
+                # Update the main chat_sessions dictionary
+                chat_sessions[session_id]['chat'] = model.start_chat(history=history)
+                chat_sessions[session_id]['name'] = session_name
+                
+                # Update UI with the new session name and history
                 audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User", "Orchestrator"], details={'name': session_name})
                 socketio.emit('session_name_update', {'name': session_name}, to=session_id)
-                # --- MODIFICATION END ---
 
-                return {"status": "success", "message": f"Session '{session_name}' loaded.", "history": history}
+                audit_log.log_event("Socket.IO Emit: load_chat_history", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User"], details={'history_length': len(history)})
+                socketio.emit('load_chat_history', {'history': history}, to=session_id)
+
+                # --- NEW: Refresh the session list in the UI after loading ---
+                updated_list_result = execute_tool_command({'action': 'list_sessions'}, socketio, session_id, chat_sessions, model)
+                if updated_list_result.get('status') == 'success':
+                    audit_log.log_event("Socket.IO Emit: session_list_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User"], details="List refreshed after session load.")
+                    socketio.emit('session_list_update', updated_list_result, to=session_id)
+                
+                return {"status": "success", "message": f"Session '{session_name}' loaded."}
             except ValueError:
                  return {"status": "error", "message": f"Session '{session_name}' not found."}
             except Exception as e:
@@ -289,6 +391,11 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
                 return {"status": "error", "message": "Session name not provided."}
             try:
                 chroma_client.delete_collection(name=session_name)
+                # --- NEW: Refresh session list after deletion ---
+                updated_list_result = execute_tool_command({'action': 'list_sessions'}, socketio, session_id, chat_sessions, model)
+                if updated_list_result.get('status') == 'success':
+                    socketio.emit('session_list_update', updated_list_result, to=session_id)
+
                 return {"status": "success", "message": f"Session '{session_name}' deleted."}
             except ValueError:
                  return {"status": "error", "message": f"Session '{session_name}' not found."}
@@ -296,7 +403,6 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
                 logging.error(f"Error deleting session '{session_name}': {e}")
                 return {"status": "error", "message": f"Could not delete session: {e}"}
         
-        # --- NEW: Tool to import legacy sessions ---
         elif action == 'import_legacy_sessions':
             try:
                 with open(LEGACY_SESSIONS_FILE, 'r') as f:
@@ -307,7 +413,6 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
             imported_count = 0
             for session_name, data in legacy_sessions.items():
                 try:
-                    # Create a new collection for each legacy session
                     collection = chroma_client.get_or_create_collection(name=session_name)
                     
                     history = data.get('history', [])
