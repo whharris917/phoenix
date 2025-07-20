@@ -27,3 +27,4 @@ api_usage.json
 # (other ignored files...)
 sandbox/
 private_data/
+.ipynb_checkpoints/
