@@ -331,6 +331,7 @@ if __name__ == '__main__':
         app.logger.critical("Server startup failed: API key is missing.")
     else:
         # --- ACTIVATE THIS BLOCK FOR DEBUGGING ---
+        # use this: debugpy.breakpoint()
         if False:
             debugpy.listen(("0.0.0.0", 5678))
             app.logger.info("Debugpy server listening on port 5678. Waiting for debugger to attach...")

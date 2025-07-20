@@ -74,11 +74,33 @@
         .message-body ul { list-style-type: disc; }
         .message-body ol { list-style-type: decimal; }
         .message-body p { margin-bottom: 0.5rem; }
-        .message-body pre { background-color: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 0.375rem; margin: 0.5rem 0; overflow-x: auto; font-size: 0.875rem; }
+        .message-body pre {
+            background-color: rgba(0,0,0,0.2); 
+            padding: 0.75rem; 
+            border-radius: 0.375rem; 
+            margin: 0.5rem 0; 
+            font-size: 0.875rem;
+            white-space: pre-wrap;      /* FIX: Allow wrapping of preformatted text */
+            overflow-wrap: break-word;  /* FIX: Force break for long strings in code blocks */
+        }
         .message-body code { font-family: monospace; }
         .message-body pre code { background-color: transparent; padding: 0; }
         .message-body a { font-weight: 500; text-decoration: underline; }
-
+        .message-body {
+            color: var(--message-text-color);
+            overflow-wrap: break-word; /* FIX: Force wrap for all message types */
+        }
+        .tool-log-entry, .tool-result-entry {
+            text-align: center;
+            font-size: 0.75rem; /* 12px */
+            font-style: italic;
+            color: var(--tool-log-color);
+            padding: 0.25rem 0;
+            margin-bottom: 0.5rem;
+            align-self: center;
+            width: 100%;
+            overflow-wrap: break-word; /* FIX: Force wrap for long tool messages */
+        }
         .nav-link { transition: all 0.2s ease-in-out; }
         .nav-link.active { background-color: #4F46E5; color: white; }
         html:not(.dark) .nav-link.active { color: white; }
@@ -158,21 +180,22 @@
             const gearIcon = `<svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734-2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path></svg>`;
             
             const addConversationLog = (message, type) => {
-                if (!message || !type) {
-                 console.error("Attempted to log a message with missing message or type:", {message, type});
-                 return;
+                // *** FIX: Trim the message and check if it's empty before proceeding ***
+                const trimmedMessage = message ? message.trim() : '';
+                if (!trimmedMessage || !type) {
+                    return; // Do not render empty or typeless messages
                 }
 
                 if (type === 'tool_result') {
                     const entry = document.createElement('div');
                     entry.className = 'tool-result-entry';
-                    entry.innerHTML = `<div>${gearIcon}<span>${message}</span></div>`;
+                    entry.innerHTML = `<div>${gearIcon}<span>${trimmedMessage}</span></div>`;
                     conversationLog.appendChild(entry);
                     conversationLog.scrollTop = conversationLog.scrollHeight;
                     return;
                 }
 
-                let formattedMessage = marked.parse(message, { gfm: true, breaks: true });
+                let formattedMessage = marked.parse(trimmedMessage, { gfm: true, breaks: true });
                 let typeDisplay, icon, titleHTML;
                 switch(type) {
                     case 'user': typeDisplay = 'You'; icon = userIcon; break;
@@ -245,74 +268,9 @@
             });
             socket.on('api_usage_update', (stats) => { updateApiStats(stats); });
 
-            socket.on('load_chat_history', (data) => {
+            // --- NEW: Simplified history handling ---
+            socket.on('clear_chat_history', () => {
                 conversationLog.innerHTML = '';
-                if (!data || !data.history) return;
-                data.history.forEach(item => {
-                    if (!item.parts || !Array.isArray(item.parts) || item.parts.length === 0) return;
-                    let rawText = '';
-                    if (typeof item.parts[0] === 'string') { rawText = item.parts[0];
-                    } else if (item.parts[0] && typeof item.parts[0].text === 'string') { rawText = item.parts[0].text; }
-                    if (!rawText) return;
-                    
-                    if (item.role === 'user') {
-                        const trimmedText = rawText.trim();
-                        if (trimmedText.startsWith('TOOL_RESULT:') || trimmedText.startsWith('OBSERVATION:')) {
-                            try {
-                                const jsonString = trimmedText.substring(trimmedText.indexOf('{'));
-                                const resultObj = JSON.parse(jsonString);
-                                const result_for_log = { ...resultObj };
-                                const keys_to_redact = ['content', 'output', 'history', 'allowed_files', 'files', 'sessions'];
-                                for (const key of keys_to_redact) {
-                                    if (key in result_for_log) {
-                                        result_for_log[key] = '...';
-                                    }
-                                }
-                                const formattedEntries = Object.entries(result_for_log).map(([key, value]) => {
-                                    return `${key}: ${JSON.stringify(value)}`;
-                                });
-                                const formattedString = `{ ${formattedEntries.join(', ')} }`;
-                                const displayMessage = `[TOOL RESULT: ${formattedString}]`;
-                                addConversationLog(displayMessage, 'tool_result');
-                            } catch (e) {
-                                addConversationLog("[Tool action completed]", 'tool_result');
-                            }
-                        } else if (!trimmedText.startsWith('USER_CONFIRMATION:')) {
-                            addConversationLog(rawText, 'user');
-                        }
-                    } else if (item.role === 'model') {
-                        // --- NEW HISTORY RENDERING LOGIC ---
-                        const jsonStartIndex = rawText.indexOf('{');
-                        const jsonEndIndex = rawText.lastIndexOf('}') + 1;
-
-                        if (jsonStartIndex !== -1 && jsonEndIndex !== 0 && jsonEndIndex > jsonStartIndex) {
-                            const narration = rawText.substring(0, jsonStartIndex).trim();
-                            if (narration) {
-                                addConversationLog(narration, 'info');
-                            }
-
-                            const jsonString = rawText.substring(jsonStartIndex, jsonEndIndex);
-                            try {
-                                const command = JSON.parse(jsonString);
-                                const action = command.action;
-                                const params = command.parameters;
-
-                                if (action === 'respond' && params && params.response) {
-                                    addConversationLog(params.response, 'final_answer');
-                                } else if (action === 'task_complete' && params && params.response) {
-                                    addConversationLog(params.response, 'final_answer');
-                                } else if (action === 'request_confirmation' && params && params.prompt) {
-                                    addConversationLog(params.prompt, 'system_confirm');
-                                }
-                            } catch (e) {
-                                console.warn("Could not parse JSON from model history:", jsonString);
-                            }
-                        } else {
-                            addConversationLog(rawText, 'final_answer');
-                        }
-                    }
-                });
-                conversationLog.scrollTop = conversationLog.scrollHeight;
             });
 
             const handleUserPrompt = () => {

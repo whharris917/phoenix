@@ -237,9 +237,6 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
                 return read_result
             original_content = read_result['content']
 
-            #debugpy.breakpoint()
-
-            # --- FIX: Pass the target_filename to the new patcher function ---
             new_content, error_message = patcher.apply_patch(clean_diff_content, original_content, target_filename)
             
             if error_message:
@@ -284,7 +281,6 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
             
             session_list = []
             for col in collections:
-                # Exclude temporary sessions
                 if col.name.startswith('New_Session_'):
                     continue
 
@@ -298,20 +294,19 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
                 session_list.append({
                     'name': col.name,
                     'last_modified': last_modified,
-                    'summary': "Saved Session" # Original field
+                    'summary': "Saved Session"
                 })
 
-            # Sort sessions by last_modified timestamp, descending
             session_list.sort(key=lambda x: x['last_modified'], reverse=True)
 
             return {"status": "success", "sessions": session_list}
 
         elif action == 'load_session':
+            from orchestrator import replay_history_for_client
             session_name = params.get('session_name')
             if not session_name:
                 return {"status": "error", "message": "Session name not provided."}
 
-            # --- NEW: Cleanup the old, unsaved session before loading a new one ---
             current_session_data = chat_sessions.get(session_id)
             if current_session_data:
                 current_session_name = current_session_data.get('name')
@@ -321,61 +316,40 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
                         if memory_to_clear:
                             logging.info(f"Auto-deleting unsaved collection '{current_session_name}' before loading new session.")
                             memory_to_clear.clear()
-                            audit_log.log_event(
-                                "DB Collection Deleted",
-                                session_id=session_id,
-                                session_name=current_session_name,
-                                source="System",
-                                destination="Database",
-                                observers=["Orchestrator"],
-                                details=f"Unsaved session '{current_session_name}' cleaned up before loading new session."
-                            )
+                            audit_log.log_event("DB Collection Deleted", session_id=session_id, session_name=current_session_name, source="System", destination="Database", details=f"Unsaved session '{current_session_name}' cleaned up.")
                     except Exception as e:
-                        logging.error(f"Error during automatic cleanup of session '{current_session_name}' before load: {e}")
+                        logging.error(f"Error during auto-cleanup: {e}")
 
             try:
                 collection = chroma_client.get_collection(name=session_name)
                 history_data = collection.get(include=["documents", "metadatas"])
                 
-                if not history_data or not history_data['ids']:
-                    # Still update the session name and UI even for an empty session
-                    chat_sessions[session_id]['name'] = session_name
-                    socketio.emit('session_name_update', {'name': session_name}, to=session_id)
-                    socketio.emit('load_chat_history', {'history': []}, to=session_id) # Clear the chat
-                    return {"status": "success", "message": f"Session '{session_name}' loaded but is empty."}
-
-                history_tuples = sorted(
-                    zip(history_data['documents'], history_data['metadatas']), 
-                    key=lambda x: x[1].get('timestamp', 0)
-                )
-
                 history = []
-                for doc, meta in history_tuples:
-                    role = meta.get('role', 'unknown')
-                    content = doc.split(':', 1)[1] if ':' in doc else doc
-                    history.append({"role": role, "parts": [{'text': content.strip()}]})
+                if history_data and history_data['ids']:
+                    history_tuples = sorted(
+                        zip(history_data['documents'], history_data['metadatas']), 
+                        key=lambda x: x[1].get('timestamp', 0)
+                    )
+                    for doc, meta in history_tuples:
+                        role = meta.get('role', 'unknown')
+                        content = doc.split(':', 1)[1] if ':' in doc else doc
+                        history.append({"role": role, "parts": [{'text': content.strip()}]})
 
-                # Re-assign memory manager parts
                 memory_manager = chat_sessions[session_id]['memory']
                 memory_manager.collection = collection
                 memory_manager.conversational_buffer = history
                 memory_manager.session_name = session_name
                 
-                # Update the main chat_sessions dictionary
                 chat_sessions[session_id]['chat'] = model.start_chat(history=history)
                 chat_sessions[session_id]['name'] = session_name
                 
-                # Update UI with the new session name and history
-                audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User", "Orchestrator"], details={'name': session_name})
                 socketio.emit('session_name_update', {'name': session_name}, to=session_id)
 
-                audit_log.log_event("Socket.IO Emit: load_chat_history", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User"], details={'history_length': len(history)})
-                socketio.emit('load_chat_history', {'history': history}, to=session_id)
+                # *** NEW: Call the replay function ***
+                replay_history_for_client(socketio, session_id, session_name, history)
 
-                # --- NEW: Refresh the session list in the UI after loading ---
                 updated_list_result = execute_tool_command({'action': 'list_sessions'}, socketio, session_id, chat_sessions, model)
                 if updated_list_result.get('status') == 'success':
-                    audit_log.log_event("Socket.IO Emit: session_list_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User"], details="List refreshed after session load.")
                     socketio.emit('session_list_update', updated_list_result, to=session_id)
                 
                 return {"status": "success", "message": f"Session '{session_name}' loaded."}
@@ -391,7 +365,6 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
                 return {"status": "error", "message": "Session name not provided."}
             try:
                 chroma_client.delete_collection(name=session_name)
-                # --- NEW: Refresh session list after deletion ---
                 updated_list_result = execute_tool_command({'action': 'list_sessions'}, socketio, session_id, chat_sessions, model)
                 if updated_list_result.get('status') == 'success':
                     socketio.emit('session_list_update', updated_list_result, to=session_id)

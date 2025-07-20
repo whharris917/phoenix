@@ -9,3 +9,4 @@ ipython
 pandas
 patch
 debugpy
+jupyter
