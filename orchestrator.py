@@ -6,11 +6,36 @@ from tool_agent import execute_tool_command
 from audit_logger import audit_log
 import uuid
 import debugpy
+import re
+import os
 
 confirmation_events = {}
 
-import json
-import re
+def _log_turn_to_file(session_name, loop_id, turn_counter, role, content):
+    """
+    Logs the content of a turn to a structured file path in the .sandbox/TurnFiles directory.
+    Creates directories as needed.
+    """
+    try:
+        # Sanitize session_name to be a valid directory name
+        safe_session_name = "".join(c for c in session_name if c.isalnum() or c in ['_', '-']).strip()
+        if not safe_session_name:
+            safe_session_name = "unnamed_session"
+
+        # Define the directory path structure
+        base_dir = os.path.join('.sandbox', 'TurnFiles', safe_session_name, loop_id)
+        os.makedirs(base_dir, exist_ok=True)
+
+        # Define the filename structure
+        filename = f"{safe_session_name}_{loop_id}_{turn_counter}_{role}.txt"
+        filepath = os.path.join(base_dir, filename)
+
+        # Write the content to the file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+        logging.info(f"Successfully logged turn to {filepath}")
+    except Exception as e:
+        logging.error(f"Failed to log turn to file: {e}")
 
 def parse_agent_response(response_text: str) -> (str | None, dict | None):
     """
@@ -83,10 +108,24 @@ def _extract_json_with_fences(text: str) -> (str, str | None):
         if len(json_str) > len(largest_json_str):
             largest_json_str = json_str
             largest_match_obj = match
+            
     if largest_match_obj:
-        # The prose is everything outside the largest matched block.
-        prose = text.replace(largest_match_obj.group(0), "").strip()
-        return prose, largest_json_str
+        match_start = largest_match_obj.start()
+        match_end = largest_match_obj.end()
+
+        prose_before = text[:match_start]
+        prose_after = text[match_end:]
+
+        # If the text before the match ends with a newline and the text after also starts with one,
+        # we have a potential extra blank line.
+        if prose_before.endswith('\n') and prose_after.startswith(('\n', '\r\n')):
+            # Remove the leading newline(s) from the 'after' part to prevent a blank line.
+            prose = prose_before + prose_after.lstrip('\n\r')
+        else:
+            prose = prose_before + prose_after
+
+        return prose.strip(), largest_json_str
+        
     return text, None
 
 def _extract_json_with_brace_counting(text: str) -> (str, str | None):
@@ -189,10 +228,47 @@ def _clean_prose(prose: str | None) -> str | None:
         return prose.strip()
     return None
 
+def _handle_payloads(prose, command_json):
+    """
+    Checks for payload placeholders in command_json and replaces them with actual content,
+    as defined in the prose. Returns the stripped prose, updated command, and a list of placeholders that were found.
+    """
+    placeholders_found = []
+    if not command_json or 'parameters' not in command_json or not prose:
+        return prose, command_json, placeholders_found
+
+    params = command_json['parameters']
+    for key, value in params.items():
+        if isinstance(value, str) and value.startswith('@@'):
+            placeholder = value
+            start_marker = f"START {placeholder}"
+            end_marker = f"END {placeholder}"
+            
+            start_index = prose.find(start_marker)
+            end_index = prose.find(end_marker)
+            
+            if start_index != -1 and end_index != -1:
+                content_start = start_index + len(start_marker)
+                payload_content = prose[content_start:end_index].strip()
+                params[key] = payload_content
+                placeholders_found.append(placeholder)
+                logging.info(f"Successfully extracted payload for '{placeholder}'.")
+
+    if placeholders_found:
+        for placeholder in placeholders_found:
+            start_marker = f"START {placeholder}"
+            end_marker = f"END {placeholder}"
+            start_index = prose.find(start_marker)
+            if start_index != -1:
+                end_index = prose.find(end_marker, start_index)
+                if end_index != -1:
+                    prose = prose.replace(prose[start_index : end_index + len(end_marker)], "").strip()
+
+    return prose, command_json, placeholders_found
+
 def replay_history_for_client(socketio, session_id, session_name, history):
     """
-    Parses the raw chat history and emits granular rendering events to the client,
-    acting as a 'dry run' of the orchestrator's live logic.
+    Parses the raw chat history and emits granular rendering events to the client.
     """
     try:
         audit_log.log_event("History Replay Started", session_id=session_id, session_name=session_name, source="Orchestrator", destination="Client", details=f"Replaying {len(history)} turns.")
@@ -248,25 +324,55 @@ def replay_history_for_client(socketio, session_id, session_name, history):
 
 def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):
     loop_id = str(uuid.uuid4())
-    
+
     def get_current_session_name():
         return chat_sessions.get(session_id, {}).get('name')
-
-    audit_log.log_event("Reasoning Loop Started", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Orchestrator", details={"initial_prompt": initial_prompt})
     
+    audit_log.log_event(
+        event="Reasoning Loop Started",
+        session_id=session_id,
+        session_name=get_current_session_name(),
+        loop_id=loop_id,
+        source="Orchestrator",
+        destination="Orchestrator",
+        details={"initial_prompt": initial_prompt},
+        control_flow=None
+    )
+
     try:
         current_prompt = initial_prompt
         destruction_confirmed = False
 
         if not isinstance(session_data, dict):
             logging.error(f"Session data for {session_id} is not a dictionary.")
+            audit_log.log_event(
+                event="Socket.IO Emit: log_message",
+                session_id=session_id,
+                session_name=get_current_session_name(),
+                loop_id=loop_id,
+                source="Orchestrator",
+                destination="Client",
+                details={'type': 'error', 'data': f"Session data is not a dictionary."},
+                control_flow="Return"
+            )
+            socketio.emit('log_message', {'type': 'error', 'data': f"Session data is not a dictionary."}, to=session_id)
             return
 
         chat = session_data.get('chat')
         memory = session_data.get('memory')
 
         if not chat or not memory:
-            logging.error(f"Could not find chat or memory object for session {session_id}")
+            logging.error(f"Could not find chat or memory object for session {session_id}.")
+            audit_log.log_event(
+                event="Socket.IO Emit: log_message",
+                session_id=session_id,
+                session_name=get_current_session_name(),
+                loop_id=loop_id,
+                source="Orchestrator",
+                destination="Client",
+                details={'type': 'error', 'data': 'Critical error: Chat or Memory session object not found.'},
+                control_flow="Return"
+            )
             socketio.emit('log_message', {'type': 'error', 'data': 'Critical error: Chat or Memory session object not found.'}, to=session_id)
             return
 
@@ -275,6 +381,17 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
         for i in range(15):
             socketio.sleep(0)
             
+            audit_log.log_event(
+                event=f"Beginning iteration {i} of reasoning loop.",
+                session_id=session_id,
+                session_name=get_current_session_name(),
+                loop_id=loop_id,
+                source="Orchestrator",
+                destination="Orchestrator",
+                details={},
+                control_flow=None
+            )
+
             retrieved_context = memory.get_context_for_prompt(current_prompt)
 
             final_prompt = current_prompt
@@ -286,13 +403,57 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                     "Based on the above context, please respond to the following prompt:\n"
                     f"{current_prompt}"
                 )
-                logging.info(f"Augmented prompt with {len(retrieved_context)} documents from memory.")
+                log_message = f"Augmented prompt with {len(retrieved_context)} documents from memory."
+                logging.info(log_message)
+                audit_log.log_event(
+                    event=log_message,
+                    session_id=session_id,
+                    session_name=get_current_session_name(),
+                    loop_id=loop_id,
+                    source="Orchestrator",
+                    destination="Orchestrator",
+                    details={},
+                    control_flow=None
+                )
 
+            audit_log.log_event(
+                event='memory.add_turn("user", current_prompt)',
+                session_id=session_id,
+                session_name=get_current_session_name(),
+                loop_id=loop_id,
+                source="Orchestrator",
+                destination="Memory Manager",
+                details={"current_prompt": current_prompt},
+                control_flow=None
+            )
             memory.add_turn("user", current_prompt)
 
-            audit_log.log_event("Gemini API Call Sent", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Model", observers=["Orchestrator", "Model"], details={"prompt": final_prompt})
+            # Log the prompt sent to the agent
+            _log_turn_to_file(get_current_session_name(), loop_id, i, "user", final_prompt)
+
+            audit_log.log_event(
+                event="Gemini API Call Sent",
+                session_id=session_id,
+                session_name=get_current_session_name(),
+                loop_id=loop_id,
+                source="Orchestrator",
+                destination="Gemini",
+                details={"prompt": final_prompt},
+                control_flow="Send"
+            )
+
             response = tpool.execute(chat.send_message, final_prompt)
-            audit_log.log_event("Gemini API Response Received", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Model", destination="Orchestrator", observers=["Orchestrator", "Model"], details={"response_text": response.text})
+            
+            audit_log.log_event(
+                event="Gemini API Response Received",
+                session_id=session_id,
+                session_name=get_current_session_name(),
+                loop_id=loop_id,
+                source="Gemini",
+                destination="Orchestrator",
+                details={"response_text": response.text},
+                control_flow="Receive"
+            )
 
             if response.usage_metadata:
                 api_stats['total_calls'] += 1
@@ -301,39 +462,105 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 socketio.emit('api_usage_update', api_stats)
             
             response_text = response.text
+
+            # Log the raw response from the agent
+            _log_turn_to_file(get_current_session_name(), loop_id, i, "model", response_text)
+
+            audit_log.log_event(
+                event='memory.add_turn("model", response_text)',
+                session_id=session_id,
+                session_name=get_current_session_name(),
+                loop_id=loop_id,
+                source="Orchestrator",
+                destination="Memory Manager",
+                details={"response_text": response_text},
+                control_flow=None
+            )
             memory.add_turn("model", response_text)
 
             prose, command_json = parse_agent_response(response_text)
+            audit_log.log_event(
+                event='parse_agent_response() completed.',
+                session_id=session_id,
+                session_name=get_current_session_name(),
+                loop_id=loop_id,
+                source="Orchestrator",
+                destination="Orchestrator",
+                details={"prose": prose, "command_json": command_json},
+                control_flow=None
+            )
 
-            if command_json and prose:
-                command_json['attachment'] = prose
-                audit_log.log_event("Socket.IO Emit: log_message", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User"], details={'type': 'info', 'data': prose})
-                socketio.emit('log_message', {'type': 'info', 'data': prose}, to=session_id)
+            prose, command_json, placeholders_found = _handle_payloads(prose, command_json)
+            if placeholders_found:
+                audit_log.log_event(
+                    event='_handle_payloads() completed.',
+                    session_id=session_id,
+                    session_name=get_current_session_name(),
+                    loop_id=loop_id,
+                    source="Orchestrator",
+                    destination="Orchestrator",
+                    details={ "prose": prose, "command_json": command_json},
+                    control_flow=None
+                )
+
+            if prose and command_json:    
+                command_json['attachment'] = prose   
 
             if not command_json:
-                # If no JSON was found or parsing/healing failed, treat the whole response as prose.
                 logging.warning(f"Could not decode JSON from model response. Treating as plain text.")
-                final_prose = prose or response_text # Use prose if available, otherwise full text
-                command_json = {"action": "respond", "parameters": {"response": final_prose}}
-
-            # --- END OF NEW PARSING LOGIC ---
+                command_json = {"action": "respond", "parameters": {"response": response_text}}
 
             action = command_json.get("action")
 
-            if action == 'respond':
-                response_to_user = command_json.get('parameters', {}).get('response', '')
-                if response_to_user and response_to_user.strip():
-                    audit_log.log_event("Socket.IO Emit: log_message", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'type': 'final_answer', 'data': response_to_user})
-                    socketio.emit('log_message', {'type': 'final_answer', 'data': response_to_user}, to=session_id)
-                return
+            # --- NEW LOGIC TO HANDLE FINAL MESSAGES ---
+            final_message_to_user = ""
+            if action in ['respond', 'task_complete']:
+                # Compare the length of the prose attachment and the response parameter
+                prose_text = command_json.get('attachment', '') or ""
+                response_param_text = command_json.get('parameters', {}).get('response', '') or ""
+                
+                if len(prose_text.strip()) > len(response_param_text.strip()):
+                    final_message_to_user = prose_text
+                else:
+                    final_message_to_user = response_param_text
             
-            if action == 'task_complete':
-                final_response = command_json.get('parameters', {}).get('response')
-                if final_response and final_response.strip():
-                    audit_log.log_event("Socket.IO Emit: log_message", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'type': 'final_answer', 'data': final_response})
-                    socketio.emit('log_message', {'type': 'final_answer', 'data': final_response}, to=session_id)
-                logging.info(f"Agent initiated task_complete. Ending loop for session {session_id}.")
-                return
+            # If the action is NOT a final response, but there is prose, send it as an 'info' message.
+            elif command_json.get('attachment'):
+                prose_text = command_json.get('attachment', '')
+                if prose_text and prose_text.strip():
+                    audit_log.log_event(
+                        event="Socket.IO Emit: log_message",
+                        session_id=session_id,
+                        session_name=get_current_session_name(),
+                        loop_id=loop_id,
+                        source="Orchestrator",
+                        destination="Client",
+                        details={'type': 'info', 'data': prose_text},
+                        control_flow=None
+                    )
+                    socketio.emit('log_message', {'type': 'info', 'data': prose_text}, to=session_id)
+
+            # Now, handle the final actions with the determined message
+            if action in ['respond', 'task_complete']:
+                if final_message_to_user and final_message_to_user.strip():
+                    audit_log.log_event(
+                        "Socket.IO Emit: log_message", 
+                        session_id=session_id, 
+                        session_name=get_current_session_name(), 
+                        loop_id=loop_id, 
+                        source="Orchestrator", 
+                        destination="Client", 
+                        observers=["User", "Orchestrator"], 
+                        details={'type': 'final_answer', 'data': final_message_to_user}
+                    )
+                    socketio.emit('log_message', {'type': 'final_answer', 'data': final_message_to_user}, to=session_id)
+                
+                if action == 'task_complete':
+                    logging.info(f"Agent initiated task_complete. Ending loop for session {session_id}.")
+                
+                return # End the loop for both respond and task_complete
+            
+            # --- END OF NEW LOGIC ---
 
             destructive_actions = ['delete_file', 'delete_session']
             if action in destructive_actions and not destruction_confirmed:
@@ -359,16 +586,44 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 current_prompt = f"USER_CONFIRMATION: '{user_response}'"
                 continue
 
-            audit_log.log_event("Tool Agent Call Sent", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Tool Agent", observers=["Orchestrator", "Tool Agent"], details=command_json)
-            tool_result = execute_tool_command(command_json, socketio, session_id, chat_sessions, model)            
-            audit_log.log_event("Tool Agent Execution Finished", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Tool Agent", destination="Orchestrator", observers=["Orchestrator", "Tool Agent"], details=tool_result)
+            audit_log.log_event(
+                event="Tool Agent Call Sent",
+                session_id=session_id,
+                session_name=get_current_session_name(),
+                loop_id=loop_id,
+                source="Orchestrator",
+                destination="Tool Agent",
+                details=command_json
+            )
+            
+            tool_result = execute_tool_command(command_json, socketio, session_id, chat_sessions, model, loop_id)            
+            
+            audit_log.log_event(
+                event="Tool Agent Execution Finished",
+                session_id=session_id,
+                session_name=get_current_session_name(),
+                loop_id=loop_id,
+                source="Orchestrator",
+                destination="Orchestrator",
+                details=tool_result
+            )
 
             destruction_confirmed = False
 
             if tool_result.get('status') == 'success':
                 log_message = tool_result.get('message', f"Tool '{action}' executed successfully.")
-                audit_log.log_event("Socket.IO Emit: tool_log", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'data': f"[{log_message}]"})
+
+                audit_log.log_event(
+                    event="Socket.IO Emit: tool_log",
+                    session_id=session_id,
+                    session_name=get_current_session_name(),
+                    loop_id=loop_id,
+                    source="Orchestrator",
+                    destination="Client",
+                    details={'data': f"[{log_message}]"}
+                )
                 socketio.emit('tool_log', {'data': f"[{log_message}]"}, to=session_id)
+
                 if action == "load_session":
                     return
             else:

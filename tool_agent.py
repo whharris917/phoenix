@@ -107,7 +107,7 @@ def get_safe_path(filename, base_dir_name='sandbox'):
         raise ValueError("Attempted path traversal outside of allowed directory.")
     return requested_path
 
-def execute_tool_command(command, socketio, session_id, chat_sessions, model):
+def execute_tool_command(command, socketio, session_id, chat_sessions, model, loop_id=None):
     action = command.get('action')
     params = command.get('parameters', {})
     try:
@@ -271,7 +271,12 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
             memory.collection = chroma_client.get_collection(name=session_name)
             session_data['name'] = session_name
 
-            audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User", "Orchestrator"], details={'name': session_name, 'previous_name': old_session_name})
+            audit_log.log_event(
+                event="Socket.IO Emit: session_name_update",
+                session_id=session_id, session_name=session_name, loop_id=loop_id,
+                source="Server", destination="Client",
+                details={'name': session_name, 'previous_name': old_session_name}
+            )
             socketio.emit('session_name_update', {'name': session_name}, to=session_id)
 
             return {"status": "success", "message": f"Session '{session_name}' saved and session state updated."}
@@ -303,6 +308,8 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
 
         elif action == 'load_session':
             from orchestrator import replay_history_for_client
+            from memory_manager import MemoryManager # Import MemoryManager
+
             session_name = params.get('session_name')
             if not session_name:
                 return {"status": "error", "message": "Session name not provided."}
@@ -324,7 +331,7 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
                 collection = chroma_client.get_collection(name=session_name)
                 history_data = collection.get(include=["documents", "metadatas"])
                 
-                history = []
+                full_history = []
                 if history_data and history_data['ids']:
                     history_tuples = sorted(
                         zip(history_data['documents'], history_data['metadatas']), 
@@ -333,20 +340,21 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model):
                     for doc, meta in history_tuples:
                         role = meta.get('role', 'unknown')
                         content = doc.split(':', 1)[1] if ':' in doc else doc
-                        history.append({"role": role, "parts": [{'text': content.strip()}]})
+                        full_history.append({"role": role, "parts": [{'text': content.strip()}]})
 
                 memory_manager = chat_sessions[session_id]['memory']
                 memory_manager.collection = collection
-                memory_manager.conversational_buffer = history
+                memory_manager.conversational_buffer = full_history
                 memory_manager.session_name = session_name
                 
-                chat_sessions[session_id]['chat'] = model.start_chat(history=history)
+                chat_sessions[session_id]['chat'] = model.start_chat(history=full_history)
                 chat_sessions[session_id]['name'] = session_name
                 
                 socketio.emit('session_name_update', {'name': session_name}, to=session_id)
 
-                # *** NEW: Call the replay function ***
-                replay_history_for_client(socketio, session_id, session_name, history)
+                # *** MODIFIED: Replay only the last part of the history ***
+                history_for_replay = full_history[-memory_manager.max_buffer_size:]
+                replay_history_for_client(socketio, session_id, session_name, history_for_replay)
 
                 updated_list_result = execute_tool_command({'action': 'list_sessions'}, socketio, session_id, chat_sessions, model)
                 if updated_list_result.get('status') == 'success':

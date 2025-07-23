@@ -27,7 +27,7 @@ class AuditLogger:
                     header = ["Timestamp", "Event", "SessionID", "SessionName", "LoopID", "Source", "Destination", "Observer", "Details"]
                     writer.writerow(header)
 
-    def log_event(self, event, session_id=None, session_name=None, loop_id=None, source=None, destination=None, observers=None, details=None):
+    def log_event(self, event, session_id=None, session_name=None, loop_id=None, source=None, destination=None, observers=None, details=None, control_flow=None):
         """
         Logs a new event to the CSV file and broadcasts it over Socket.IO.
         """
