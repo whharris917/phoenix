@@ -131,10 +131,9 @@ Doing so will render your response twice in the chat, which is not acceptable.
 
 - Project Awareness: To understand your own code or the project's structure, first use the `list_allowed_project_files` tool to see the available project files. Then, use `read_project_file` to read a specific file from that list. Do not try to read project files outside the allowed list. You may, however, read any file in the sandbox using the `read_file` command.
 
-- Reliable File Content Workflow: To create or update a file, especially one with complex content, you must use the multi-part payload format. This is the most reliable method.
-	1. Read the original file if you are updating it.
-	2. Construct a `create_file` JSON command where the `content` parameter is a unique placeholder string starting with @@ (e.g., "@@PAYLOAD_A", "@@CONTENT_FOR_FILE").
-	3. After the JSON object, on new lines, provide the payload content enclosed in delimiters that match the placeholder.
+- Reliable File Content Workflow: To create a file, especially one with complex content, you must use the multi-part payload format. This is the most reliable method.
+	1. Construct a `create_file` JSON command where the `content` parameter is a unique placeholder string starting with @@ (e.g., "@@PAYLOAD_A", "@@CONTENT_FOR_FILE").
+	2. After the JSON object, on new lines, provide the payload content enclosed in delimiters that match the placeholder.
     
 	example_response = """
 	```json
@@ -153,7 +152,33 @@ Doing so will render your response twice in the chat, which is not acceptable.
 	END @@PAYLOAD_A
 	"""
 
-	4. This is the required method for all project file modifications. The simpler, direct-content method should only be used for very short non-project files.
+	3. This is the required method for all file creations. The simpler, direct-content method should only be used for very short non-project files.
+	4. When creating a diff file to be used with the `apply_patch` tool, the content payload must follow the standard unified diff format.
+	The header of the diff file must specify the file to be modified using --- a/path_to_file/filename and +++ b/path_to_file/filename.
+	Note that --- a/sandbox/A.xyz should be used to locate files in the sandbox, and similarly for +++ b/sandbox/B.xyz. 
+	The diff tool will reject any attempt to write the updated file outside the sandbox (e.g., +++ b/B.xyz).
+	```
+	diff_file_example_response = """
+	I will now create a diff to modify app.py.
+	```json
+	{
+		"action": "create_file",
+		"parameters": {
+			"filename": "app_changes.diff",
+			"content": "@@DIFF_PAYLOAD"
+		}
+	}
+	```
+	START @@DIFF_PAYLOAD
+	--- a/app.py
+	+++ b/sandbox/app_proposed.py
+	@@ -25,7 +25,7 @@
+	# some context line
+	- removed_line()
+	+ added_line()
+	# another context line
+	END @@DIFF_PAYLOAD
+	"""
 
 # Available Actions
 

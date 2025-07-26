@@ -1,0 +1,18 @@
+This is the first line.
+It contains "quotes" and 'single quotes'.
+Here's a line with a backslash: \
+And another with some special characters: `~!@#$%^&*()-_=+[{]}\|;:'",<.>/?
+ 
+```python
+# This is a python code block inside the file.
+def hello_world():
+    """A simple docstring."""
+    print("Hello, world!") # A comment here
+    # Another comment on a new line.
+```
+ 
+This line has leading and trailing whitespace.   
+This line has a tab:	.
+This line ends with a newline.
+ 
+This is the last line.

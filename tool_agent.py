@@ -11,6 +11,7 @@ from audit_logger import audit_log
 from code_parser import analyze_codebase, generate_mermaid_diagram
 import patcher
 import debugpy
+import builtins
 
 # --- Constants ---
 LEGACY_SESSIONS_FILE = os.path.join(os.path.dirname(__file__), 'sandbox', 'sessions', 'sessions.json')
@@ -42,6 +43,7 @@ def _execute_script(script_content):
     string_io = io.StringIO()
     try:
         restricted_globals = {"__builtins__": {"print": print, "range": range, "len": len, "str": str, "int": int, "float": float, "list": list, "dict": dict, "set": set, "abs": abs, "max": max, "min": min, "sum": sum}}
+        global_scope = {'__builtins__': builtins.__dict__}
         with redirect_stdout(string_io):
             exec(script_content, restricted_globals, {})
         return {"status": "success", "output": string_io.getvalue()}
@@ -195,9 +197,10 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model, lo
                 logging.error(f"Error generating code diagram: {e}")
                 return {"status": "error", "message": str(e)}
 
-        # --- NEW: Patching Tool ---
         elif action == 'apply_patch':
             diff_filename = params.get('diff_filename')
+            confirmed = params.get('confirmed', False)
+
             if not diff_filename:
                 return {"status": "error", "message": "Missing required parameter: diff_filename."}
 
@@ -205,51 +208,73 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model, lo
             diff_result = tpool.execute(_read_file, diff_path)
             if diff_result['status'] == 'error':
                 return diff_result
-            diff_content_with_header = diff_result['content']
+            diff_content = diff_result['content']
 
-            lines = diff_content_with_header.splitlines(keepends=True)
-            diff_start_index = -1
-            for i, line in enumerate(lines):
-                if line.startswith('--- a/'):
-                    diff_start_index = i
-                    break
-
-            if diff_start_index == -1:
-                clean_diff_content = diff_content_with_header
-            else:
-                clean_diff_content = "".join(lines[diff_start_index:])
-
+            # 1. Extract source (a) and target (b) filenames from diff header
+            source_filename = None
             target_filename = None
-            for line in clean_diff_content.splitlines():
+            for line in diff_content.splitlines():
                 if line.startswith('--- a/'):
-                    target_filename = line.split('--- a/')[1].strip()
+                    source_filename = line.split('--- a/')[1].strip()
+                if line.startswith('+++ b/'):
+                    target_filename = line.split('+++ b/')[1].strip()
+                if source_filename and target_filename:
                     break
             
-            if not target_filename:
-                return {"status": "error", "message": "Could not determine target filename from diff."}
-                
-            if target_filename not in ALLOWED_PROJECT_FILES:
-                return {"status": "error", "message": f"Access denied. Patching the project file '{target_filename}' is not permitted."}
+            if not source_filename or not target_filename:
+                return {"status": "error", "message": "Could not determine source or target filename from diff header."}
 
-            project_file_path = os.path.join(os.path.dirname(__file__), target_filename)
-            read_result = tpool.execute(_read_file, project_file_path)
+            # 2. Validate that the target path must be in the sandbox
+            if not target_filename.startswith('sandbox/'):
+                return {"status": "error", "message": "Target file path in diff header (+++ b/) must start with 'sandbox/'."}
+            
+            # Strip the 'sandbox/' prefix to use get_safe_path correctly
+            relative_target_filename = target_filename[len('sandbox/'):]
+            
+            try:
+                target_save_path = get_safe_path(relative_target_filename)
+            except ValueError as e:
+                return {"status": "error", "message": str(e)}
+
+            # 3. Handle overwrite confirmation
+            if os.path.exists(target_save_path) and not confirmed:
+                return {
+                    "status": "error",
+                    "message": f"File '{target_filename}' already exists. To overwrite, add '\"confirmed\": true' to the parameters of the 'apply_patch' action."
+                }
+
+            # 4. Determine the absolute path to read the source file from
+            source_read_path = None
+            if source_filename.startswith('sandbox/'):
+                relative_source_filename = source_filename[len('sandbox/'):]
+                try:
+                    source_read_path = get_safe_path(relative_source_filename)
+                except ValueError as e:
+                    return {"status": "error", "message": f"Invalid source path in diff: {e}"}
+            else:
+                # If not in sandbox, it must be an allowed project file
+                if source_filename not in ALLOWED_PROJECT_FILES:
+                    return {"status": "error", "message": f"Access denied. Patching the project file '{source_filename}' is not permitted."}
+                source_read_path = os.path.join(os.path.dirname(__file__), source_filename)
+
+            # 5. Read original content from the determined source path
+            read_result = tpool.execute(_read_file, source_read_path)
             if read_result['status'] == 'error':
                 return read_result
             original_content = read_result['content']
 
-            new_content, error_message = patcher.apply_patch(clean_diff_content, original_content, target_filename)
+            # 6. Apply the patch using the patcher utility
+            new_content, error_message = patcher.apply_patch(diff_content, original_content, source_filename)
             
             if error_message:
                 return {"status": "error", "message": f"Failed to apply patch: {error_message}"}
-            
-            proposed_filename = f"{os.path.splitext(os.path.basename(target_filename))[0]}_proposed{os.path.splitext(os.path.basename(target_filename))[1]}"
-            proposed_save_path = get_safe_path(proposed_filename)
 
-            write_result = tpool.execute(_write_file, proposed_save_path, new_content)
+            # 7. Write the new, patched content to the validated target path
+            write_result = tpool.execute(_write_file, target_save_path, new_content)
             if write_result['status'] == 'error':
                 return write_result
 
-            return {"status": "success", "message": f"Patch applied successfully. The new version has been saved to the sandbox as '{proposed_filename}'."}
+            return {"status": "success", "message": f"Patch applied successfully. File saved to '{target_filename}'."}
 
         # --- REFACTORED AND MODIFIED SESSION MANAGEMENT TOOLS ---
         elif action == 'save_session':

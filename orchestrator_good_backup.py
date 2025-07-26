@@ -37,17 +37,6 @@ def _log_turn_to_file(session_name, loop_id, turn_counter, role, content):
     except Exception as e:
         logging.error(f"Failed to log turn to file: {e}")
 
-def _mask_payloads(text: str) -> str:
-    """
-    Finds all payload blocks (START @@... END @@...) and replaces them with an empty string.
-    This prevents the JSON extraction logic from accidentally finding JSON within a payload.
-    """
-    # This regex finds all instances of "START @@PLACEHOLDER ... END @@PLACEHOLDER" and removes them.
-    # It uses a backreference \1 to ensure the start and end placeholders match.
-    # re.DOTALL ensures that '.' matches newlines, covering multi-line payloads.
-    pattern = re.compile(r"START (@@\w+).*?END \1", re.DOTALL)
-    return pattern.sub("", text)
-
 def parse_agent_response(response_text: str) -> (str | None, dict | None):
     """
     Parses a potentially messy agent response to separate prose from a valid command JSON.
@@ -57,8 +46,6 @@ def parse_agent_response(response_text: str) -> (str | None, dict | None):
     failure modes, including missing JSON fences, malformed JSON, and prose
     that might be mistaken for JSON.
 
-    This version first masks payload blocks to prevent false positives during JSON extraction.
-
     Args:
         response_text: The raw string response from the agent.
 
@@ -67,73 +54,87 @@ def parse_agent_response(response_text: str) -> (str | None, dict | None):
         - The cleaned prose string (or None if no prose is found).
         - The parsed command JSON as a Python dictionary (or None if no valid JSON is found).
     """
-
-    # Step 1: Create a sanitized version of the text with all payload blocks removed.
-    sanitized_text = _mask_payloads(response_text)
-
-    # Step 2: Attempt to find a command JSON within the sanitized text.
-    # First, try finding a command enclosed in JSON fences.
-    full_match_block, command_json_str = _extract_json_with_fences(sanitized_text)
-    if full_match_block and command_json_str:
-        try_parse = True
-    else:
-        # If no fences are found, fall back to brace counting on the sanitized text.
-        full_match_block, command_json_str = _extract_json_with_brace_counting(sanitized_text)
-        if full_match_block and command_json_str:
-            try_parse = True
-        else:
-            try_parse = False
-            
-    # Step 3: If a potential command was found, parse it and construct the final prose.
-    if try_parse:
+    prose, command_json_str = _extract_json_with_fences(response_text)
+    if command_json_str:
+        # If fences are found, we prioritize that and attempt to parse it.
         try:
             # First, try to load it as is.
             # If the agent provides a valid JSON with escaped newlines, this will work.
             command_json = json.loads(command_json_str)
+            return _clean_prose(prose), command_json
         except json.JSONDecodeError:
-            # Attempt to repair the JSON if initial parsing fails.
-            command_json_str = _repair_json(command_json_str)
+            # If it fails, it might be malformed. Let's try to repair it.
+            repaired_json_str = _repair_json(command_json_str)
             try:
-                command_json = json.loads(command_json_str)
+                command_json = json.loads(repaired_json_str)
+                return _clean_prose(prose), command_json
             except json.JSONDecodeError:
-                # If repair also fails, treat the whole original response as prose.
+                # If repair fails, we fall through to brace counting on the whole text.
+                pass
+
+    # If no fences were found or the fenced content was irreparable, try brace counting.
+    prose, command_json_str = _extract_json_with_brace_counting(response_text)
+    if command_json_str:
+        try:
+            command_json = json.loads(command_json_str)
+            return _clean_prose(prose), command_json
+        except json.JSONDecodeError:
+            repaired_json_str = _repair_json(command_json_str)
+            try:
+                command_json = json.loads(repaired_json_str)
+                # The prose here is what's left after extracting the JSON
+                return _clean_prose(prose), command_json
+            except json.JSONDecodeError as e:
+                print(f"Failed to parse JSON even after repair: {e}")
+                # If all attempts fail, return the original text as prose.
                 return _clean_prose(response_text), None
 
-        # Step 4: Construct the final prose by removing the command block from the *original* text.
-        # This ensures payload blocks are preserved in the prose for the next stage.
-        final_prose = response_text.replace(full_match_block, "", 1).strip()
-        return _clean_prose(final_prose), command_json
-
-    # If no JSON command was found in the sanitized text, the entire original response is prose.
+    # If no JSON of any kind is found, the whole response is prose.
     return _clean_prose(response_text), None
 
-
-def _extract_json_with_fences(text: str) -> (str | None, str | None):
+def _extract_json_with_fences(text: str) -> (str, str | None):
     """
-    Extracts the largest JSON block and its full enclosing ``` fences.
-    Returns the full matched block and the inner JSON string.
+    Extracts the largest JSON block enclosed in ```json ... ``` fences.
     """
-    pattern = r"(```json\s*\n?({.*?})\s*\n?```)"
-    matches = list(re.finditer(pattern, text, re.DOTALL))
-    
+    matches = list(re.finditer(r"```json\s*\n?({.*?})\s*\n?```", text, re.DOTALL))
     if not matches:
-        return None, None
+        return text, None
+    largest_json_str = ""
+    largest_match_obj = None
 
-    # Find the largest JSON block by the length of its content (group 2).
-    largest_match = max(matches, key=lambda m: len(m.group(2)))
-    
-    full_block = largest_match.group(1)
-    json_content = largest_match.group(2)
-    
-    return full_block, json_content
+    # Find the largest JSON block among all fenced blocks
+    for match in matches:
+        json_str = match.group(1)
+        if len(json_str) > len(largest_json_str):
+            largest_json_str = json_str
+            largest_match_obj = match
+            
+    if largest_match_obj:
+        match_start = largest_match_obj.start()
+        match_end = largest_match_obj.end()
 
+        prose_before = text[:match_start]
+        prose_after = text[match_end:]
 
-def _extract_json_with_brace_counting(text: str) -> (str | None, str | None):
+        # If the text before the match ends with a newline and the text after also starts with one,
+        # we have a potential extra blank line.
+        if prose_before.endswith('\n') and prose_after.startswith(('\n', '\r\n')):
+            # Remove the leading newline(s) from the 'after' part to prevent a blank line.
+            prose = prose_before + prose_after.lstrip('\n\r')
+        else:
+            prose = prose_before + prose_after
+
+        return prose.strip(), largest_json_str
+        
+    return text, None
+
+def _extract_json_with_brace_counting(text: str) -> (str, str | None):
     """
     Finds the largest valid JSON object in a string by counting braces.
-    Returns the full JSON string if a valid one is found.
+    This is a fallback for when JSON is not properly fenced.
     """
     best_json_candidate = None
+    best_candidate_prose = text
     
     # Find all potential start indices for a JSON object
     start_indices = [m.start() for m in re.finditer('{', text)]
@@ -168,9 +169,7 @@ def _extract_json_with_brace_counting(text: str) -> (str | None, str | None):
                 except json.JSONDecodeError:
                     # Not a valid JSON, continue searching within this start_index
                     continue
-                    
-    return best_json_candidate, best_json_candidate
-
+    return best_candidate_prose, best_json_candidate
 
 def _repair_json(s: str) -> str:
     """
@@ -178,6 +177,7 @@ def _repair_json(s: str) -> str:
     based on feedback from the JSON parser. This approach is safer for complex
     string values than broad regex replacements.
     """
+
     s_before_loop = s
     max_iterations = 1000
     for _ in range(max_iterations):
@@ -230,38 +230,39 @@ def _clean_prose(prose: str | None) -> str | None:
 
 def _handle_payloads(prose, command_json):
     """
-    Finds and replaces payload placeholders in a command's parameters
-    with content defined in START/END blocks within the prose.
+    Checks for payload placeholders in command_json and replaces them with actual content,
+    as defined in the prose. Returns the stripped prose, updated command, and a list of placeholders that were found.
     """
     placeholders_found = []
     if not command_json or 'parameters' not in command_json or not prose:
         return prose, command_json, placeholders_found
 
     params = command_json['parameters']
-    placeholders_to_process = [(k, v) for k, v in params.items() if isinstance(v, str) and v.startswith('@@')]
-
-    for key, placeholder in placeholders_to_process:
-        start_marker = f"START {placeholder}"
-        end_marker = f"END {placeholder}"
-        start_index = prose.find(start_marker)
-        if start_index == -1:
-            continue
-        end_index = prose.find(end_marker, start_index)
-        if end_index == -1:
-            continue
-
-        content_start = start_index + len(start_marker)
-        payload_content = prose[content_start:end_index].strip()
-        params[key] = payload_content
-        placeholders_found.append(placeholder)
-        logging.info(f"Successfully extracted payload for '{placeholder}'.")
+    for key, value in params.items():
+        if isinstance(value, str) and value.startswith('@@'):
+            placeholder = value
+            start_marker = f"START {placeholder}"
+            end_marker = f"END {placeholder}"
+            
+            start_index = prose.find(start_marker)
+            end_index = prose.find(end_marker)
+            
+            if start_index != -1 and end_index != -1:
+                content_start = start_index + len(start_marker)
+                payload_content = prose[content_start:end_index].strip()
+                params[key] = payload_content
+                placeholders_found.append(placeholder)
+                logging.info(f"Successfully extracted payload for '{placeholder}'.")
 
     if placeholders_found:
-        temp_prose = prose
         for placeholder in placeholders_found:
-            pattern = re.compile(f"START {re.escape(placeholder)}.*?END {re.escape(placeholder)}", re.DOTALL)
-            temp_prose = pattern.sub('', temp_prose)
-        prose = temp_prose.strip()
+            start_marker = f"START {placeholder}"
+            end_marker = f"END {placeholder}"
+            start_index = prose.find(start_marker)
+            if start_index != -1:
+                end_index = prose.find(end_marker, start_index)
+                if end_index != -1:
+                    prose = prose.replace(prose[start_index : end_index + len(end_marker)], "").strip()
 
     return prose, command_json, placeholders_found
 
@@ -377,7 +378,7 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
 
         observation_template = "Tool Result: {tool_result_json}"
 
-        for i in range(100):
+        for i in range(15):
             socketio.sleep(0)
             
             audit_log.log_event(
