@@ -220,9 +220,17 @@ def handle_start_task(data):
     session_name = chat_sessions.get(session_id, {}).get('name')
     audit_log.log_event("Socket.IO Event Received: start_task", session_id=session_id, session_name=session_name, source="Client", destination="Server", observers=["Orchestrator"], details=data)
     prompt = data.get('prompt')
+    
+    # Prepend timestamp to the user's prompt before processing
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamped_prompt = f"[{timestamp}] {prompt}"
+    
+    # Echo the timestamped prompt back to the user for immediate display
+    socketio.emit('display_user_prompt', {'prompt': timestamped_prompt}, to=session_id)
+
     session_data = chat_sessions.get(session_id)
-    if prompt and session_data:
-        socketio.start_background_task(execute_reasoning_loop, socketio, session_data, prompt, session_id, chat_sessions, model, api_stats)
+    if prompt and session_data: # Check for original prompt here, not the timestamped one
+        socketio.start_background_task(execute_reasoning_loop, socketio, session_data, timestamped_prompt, session_id, chat_sessions, model, api_stats)
     elif not session_data:
         socketio.emit('log_message', {'type': 'error', 'data': 'No active AI session. Please refresh.'}, to=request.sid)
 

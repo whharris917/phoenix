@@ -8,14 +8,25 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 2em;
+            margin: 0; 
             background-color: #f4f4f9;
             color: #333;
         }
+        
+        #sticky-header {
+            position: sticky;
+            top: 0;
+            background-color: #f4f4f9;
+            padding: 2em 2em 1em 2em; 
+            z-index: 20;
+            border-bottom: 1px solid #ccc;
+        }
+        
         h1, h2 {
             color: #444;
+            margin-top: 0;
         }
-        #controls {
+        #controls, #column-toggles {
             margin-bottom: 1.5em;
         }
         label {
@@ -32,6 +43,7 @@
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
+            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
         }
         th, td {
             border: 1px solid #ddd;
@@ -41,13 +53,31 @@
             vertical-align: top;
         }
         th {
+            position: sticky;
             background-color: #e9ecef;
+            z-index: 10;
         }
-        /* --- COLUMN WIDTH STYLES --- */
-        th:nth-child(1), td:nth-child(1) { width: 8%; } /* Timestamp */
-        th:nth-child(2), td:nth-child(2) { width: 15%; } /* ID */
-        th:nth-child(3), td:nth-child(3) { width: 5%; } /* Role */
-        th:nth-child(4), td:nth-child(4) { width: 72%; } /* Document */
+        
+        /* --- COLUMN SELECTORS --- */
+        .col-arrow { width: 5%; }
+        .col-timestamp { width: 8%; }
+        .col-id { width: 15%; }
+        .col-role { width: 5%; }
+        .col-document { width: 67%; }
+
+        /* --- NEW: Column Visibility --- */
+        #data-table.hide-arrow .col-arrow,
+        #data-table.hide-timestamp .col-timestamp,
+        #data-table.hide-id .col-id,
+        #data-table.hide-role .col-role,
+        #data-table.hide-document .col-document {
+            display: none;
+        }
+        
+        #column-toggles label {
+            font-weight: normal;
+            margin-right: 15px;
+        }
 
         pre {
             white-space: pre-wrap; 
@@ -55,32 +85,70 @@
             background-color: #f8f9fa;
             padding: 10px;
             border-radius: 4px;
+            margin: 0;
+            line-height: 1.5em; 
+            font-family: inherit;
+        }
+        
+        .document-cell .content {
+            max-height: 4.5em; 
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+        .expandable-row.expanded .document-cell .content {
+            max-height: 1000px; 
+        }
+        .arrow-cell {
+            cursor: pointer;
+            text-align: center;
+        }
+        .arrow {
+            display: inline-block;
+            border: solid #333;
+            border-width: 0 2px 2px 0;
+            padding: 4px;
+            transform: rotate(45deg);
+            transition: transform 0.2s ease-in-out;
+        }
+        .expandable-row.expanded .arrow {
+            transform: rotate(-135deg);
         }
     </style>
 </head>
 <body>
-    <h1>ChromaDB Memory Viewer</h1>
-
-    <div id="controls">
-        <label for="collection-selector">Select a Collection (Sorted by Most Recent):</label>
-        <select id="collection-selector">
-            <option>Loading collections...</option>
-        </select>
+    <div id="sticky-header">
+        <h1>ChromaDB Memory Viewer</h1>
+        <div id="controls">
+            <label for="collection-selector">Select a Collection:</label>
+            <select id="collection-selector">
+                <option>Loading collections...</option>
+            </select>
+        </div>
+        <!-- NEW: Column Toggle Checkboxes -->
+        <div id="column-toggles">
+            <label>Show/Hide Columns:</label>
+            <label><input type="checkbox" data-col="arrow" checked> Arrow</label>
+            <label><input type="checkbox" data-col="timestamp" checked> Timestamp</label>
+            <label><input type="checkbox" data-col="id"> ID</label> <!-- Unchecked by default -->
+            <label><input type="checkbox" data-col="role" checked> Role</label>
+            <label><input type="checkbox" data-col="document" checked> Document</label>
+        </div>
+        <h2 id="table-title">No Collection Selected</h2>
     </div>
 
-    <h2 id="table-title">No Collection Selected</h2>
     <table id="data-table">
         <thead>
             <tr>
-                <th>Timestamp</th>
-                <th>ID</th>
-                <th>Role</th>
-                <th>Document (Memory Content)</th>
+                <th class="col-arrow"><!-- Arrow --></th>
+                <th class="col-timestamp">Timestamp</th>
+                <th class="col-id">ID</th>
+                <th class="col-role">Role</th>
+                <th class="col-document">Document (Memory Content)</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td colspan="4">Select a collection to view its data.</td>
+                <td colspan="5" style="padding-left: 2em;">Select a collection to view its data.</td>
             </tr>
         </tbody>
     </table>
@@ -91,19 +159,44 @@
             const selector = document.getElementById('collection-selector');
             const tableBody = document.querySelector('#data-table tbody');
             const tableTitle = document.getElementById('table-title');
+            const stickyHeader = document.getElementById('sticky-header');
+            const table = document.getElementById('data-table');
+            const tableHeaders = document.querySelectorAll('#data-table th');
+            const columnToggles = document.getElementById('column-toggles');
+
+            function adjustTableHeaderPosition() {
+                const headerHeight = stickyHeader.offsetHeight;
+                tableHeaders.forEach(th => {
+                    th.style.top = `${headerHeight}px`;
+                });
+            }
+
+            // --- NEW: Column Toggle Logic ---
+            function setupColumnToggles() {
+                columnToggles.addEventListener('change', (e) => {
+                    if (e.target.type === 'checkbox') {
+                        const colName = e.target.dataset.col;
+                        table.classList.toggle(`hide-${colName}`, !e.target.checked);
+                        adjustTableHeaderPosition(); // Re-calculate widths/positions
+                    }
+                });
+                // Initial setup to hide default columns
+                document.querySelectorAll('#column-toggles input[type="checkbox"]').forEach(checkbox => {
+                    const colName = checkbox.dataset.col;
+                    if (!checkbox.checked) {
+                        table.classList.add(`hide-${colName}`);
+                    }
+                });
+            }
 
             socket.on('connect', () => {
-                console.log('Connected to server. Requesting collections...');
                 socket.emit('request_db_collections');
             });
 
             socket.on('db_collections_list', (collectionsJson) => {
-                console.log('Received collections:', collectionsJson);
                 const res = JSON.parse(collectionsJson);
-                selector.innerHTML = '<option value="">-- Select a Collection --</option>';
-
+                selector.innerHTML = '<option value=\"\">-- Select a Collection --</option>';
                 if (res.status === 'success' && res.collections && res.collections.length > 0) {
-                    // Backend now sends the list pre-sorted by last_modified
                     res.collections.forEach(collection => {
                         const option = document.createElement('option');
                         option.value = collection.name;
@@ -113,47 +206,79 @@
                 } else {
                     selector.innerHTML = `<option>Error: ${res.message || 'No collections found'}</option>`;
                 }
+                adjustTableHeaderPosition();
             });
 
             selector.addEventListener('change', () => {
                 const collectionName = selector.value;
-                tableBody.innerHTML = '<tr><td colspan="4">Loading data...</td></tr>'; 
+                tableBody.innerHTML = '<tr><td colspan="5" style="padding-left: 2em;">Loading data...</td></tr>';
                 if (collectionName) {
-                    console.log(`Requesting data for collection: ${collectionName}`);
                     tableTitle.textContent = `Data for: ${collectionName}`;
                     socket.emit('request_db_collection_data', { collection_name: collectionName });
                 } else {
                     tableTitle.textContent = 'No Collection Selected';
-                    tableBody.innerHTML = '<tr><td colspan="4">Select a collection to view its data.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="5" style="padding-left: 2em;">Select a collection to view its data.</td></tr>';
                 }
+                adjustTableHeaderPosition();
             });
 
             socket.on('db_collection_data', (dataJson) => {
-                console.log('Received data for collection.');
                 const res = JSON.parse(dataJson);
-                tableBody.innerHTML = ''; // Clear table
+                tableBody.innerHTML = ''; 
 
                 if (res.status === 'success' && res.data && res.data.length > 0) {
-                    // Backend sends data pre-sorted by timestamp
                     res.data.forEach(item => {
                         const row = tableBody.insertRow();
-                        row.insertCell(0).textContent = item.Timestamp || 'N/A';
-                        row.insertCell(1).textContent = item.ID || 'N/A';
-                        row.insertCell(2).textContent = item.Role || 'N/A';
-                        row.insertCell(3).textContent = item['Document (Memory Content)'] || 'N/A';
+                        row.classList.add('expandable-row');
+
+                        const arrowCell = row.insertCell(0);
+                        arrowCell.classList.add('arrow-cell', 'col-arrow');
+                        arrowCell.innerHTML = '<span class="arrow"></span>';
+
+                        row.insertCell(1).className = 'col-timestamp';
+                        row.cells[1].textContent = item.Timestamp || 'N/A';
+                        
+                        row.insertCell(2).className = 'col-id';
+                        row.cells[2].textContent = item.ID || 'N/A';
+
+                        row.insertCell(3).className = 'col-role';
+                        row.cells[3].textContent = item.Role || 'N/A';
+                        
+                        const docCell = row.insertCell(4);
+                        docCell.classList.add('document-cell', 'col-document');
+
+                        const contentDiv = document.createElement('div');
+                        contentDiv.classList.add('content');
+                        
+                        const preElement = document.createElement('pre');
+                        preElement.textContent = item['Document (Memory Content)'] || 'N/A';
+                        
+                        contentDiv.appendChild(preElement);
+                        docCell.appendChild(contentDiv);
                     });
                 } else if (res.status === 'error') {
-                    tableBody.innerHTML = `<tr><td colspan="4">Error loading data: ${res.message}</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="5" style="padding-left: 2em;">Error loading data: ${res.message}</td></tr>`;
                 } else {
-                    tableBody.innerHTML = '<tr><td colspan="4">No data found in this collection.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="5" style="padding-left: 2em;">No data found in this collection.</td></tr>';
+                }
+                adjustTableHeaderPosition();
+            });
+            
+            tableBody.addEventListener('click', function(e) {
+                const row = e.target.closest('.expandable-row');
+                if (row) {
+                    row.classList.toggle('expanded');
                 }
             });
 
             socket.on('disconnect', () => {
-                console.log('Disconnected from server.');
                 tableTitle.textContent = 'Disconnected - Please reload';
                 selector.innerHTML = '<option>Disconnected</option>';
             });
+            
+            setupColumnToggles();
+            adjustTableHeaderPosition();
+            window.addEventListener('resize', adjustTableHeaderPosition);
         });
     </script>
 

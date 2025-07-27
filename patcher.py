@@ -3,6 +3,7 @@ import os
 import tempfile
 import shutil
 import logging
+import re
 
 def _normalize_text(text):
     """
@@ -22,6 +23,70 @@ def _normalize_text(text):
     text = text.rstrip('\n') + '\n'
     return text
 
+def _correct_hunk_line_numbers(diff_content, original_content):
+    """
+    Scans a diff and corrects the source line numbers in hunk headers.
+
+    This is a "best effort" correction that helps when the agent generates
+    a patch with slightly off line numbers. It works by finding the
+    actual location of the hunk's context and removed lines in the original file.
+
+    Args:
+        diff_content (str): The normalized diff content.
+        original_content (str): The normalized original file content.
+
+    Returns:
+        str: The diff content with corrected hunk headers.
+    """
+    corrected_diff_lines = []
+    original_lines = original_content.splitlines()
+    diff_lines = diff_content.splitlines(True) # Keep endings for reconstruction
+
+    line_idx = 0
+    while line_idx < len(diff_lines):
+        line = diff_lines[line_idx]
+        hunk_header_match = re.match(r'@@ -(\d+)(,(\d+))? \+(\d+)(,(\d+))? @@.*', line)
+
+        if not hunk_header_match:
+            corrected_diff_lines.append(line)
+            line_idx += 1
+            continue
+
+        original_start_line_from_hunk = int(hunk_header_match.group(1))
+        
+        # Extract lines that should exist in the original file (' ' or '-')
+        hunk_search_pattern = []
+        hunk_body_lines = []
+        hunk_body_idx = line_idx + 1
+        while hunk_body_idx < len(diff_lines) and not diff_lines[hunk_body_idx].startswith('@@ '):
+            hunk_line = diff_lines[hunk_body_idx]
+            hunk_body_lines.append(hunk_line)
+            if hunk_line.startswith((' ', '-')):
+                hunk_search_pattern.append(hunk_line[1:].rstrip('\r\n'))
+            hunk_body_idx += 1
+
+        if not hunk_search_pattern: # Skip add-only hunks
+            corrected_diff_lines.extend([line] + hunk_body_lines)
+            line_idx = hunk_body_idx
+            continue
+
+        # Search for the pattern in the original file
+        found_at_index = -1
+        for i in range(len(original_lines) - len(hunk_search_pattern) + 1):
+            if original_lines[i:i+len(hunk_search_pattern)] == hunk_search_pattern:
+                found_at_index = i
+                break
+        
+        actual_start_line = found_at_index + 1 # Convert 0-based index to 1-based line
+        if found_at_index != -1 and actual_start_line != original_start_line_from_hunk:
+            logging.info(f"Correcting hunk start line from {original_start_line_from_hunk} to {actual_start_line}.")
+            line = re.sub(r'@@ -(\d+)', f'@@ -{actual_start_line}', line, 1)
+        
+        corrected_diff_lines.extend([line] + hunk_body_lines)
+        line_idx = hunk_body_idx
+
+    return "".join(corrected_diff_lines)
+
 def apply_patch(diff_content, original_content, original_filename):
     """
     Applies a diff by creating a temporary file structure. It normalizes
@@ -38,9 +103,14 @@ def apply_patch(diff_content, original_content, original_filename):
     # Create a unique temporary directory within the sandbox
     temp_dir = tempfile.mkdtemp(dir='./.sandbox')
     try:
-        # --- NEW: Normalize inputs to prevent common errors ---
-        normalized_diff = _normalize_text(diff_content)
+        # --- Normalize both inputs first for consistent processing ---
         normalized_original = _normalize_text(original_content)
+        normalized_diff = _normalize_text(diff_content)
+
+        # --- NEW: Correct hunk line numbers before attempting to patch ---
+        corrected_diff = _correct_hunk_line_numbers(normalized_diff, normalized_original)
+        if corrected_diff != normalized_diff:
+            logging.info(f"Patch for {original_filename} had its hunk line numbers auto-corrected.") 
 
         # The diff file expects a specific path, so we recreate it
         full_temp_path = os.path.join(temp_dir, original_filename)
@@ -51,8 +121,8 @@ def apply_patch(diff_content, original_content, original_filename):
         with open(full_temp_path, 'w', encoding='utf-8', newline='\n') as f:
             f.write(normalized_original)
 
-        # Create the patch set from the NORMALIZED diff string
-        patch_set = patch.fromstring(normalized_diff.encode('utf-8'))
+        # Create the patch set from the (potentially corrected) diff string
+        patch_set = patch.fromstring(corrected_diff.encode('utf-8'))
 
         if not patch_set:
             return None, "Failed to parse diff content. The patch may be malformed or empty."
@@ -65,7 +135,7 @@ def apply_patch(diff_content, original_content, original_filename):
             # The final content should match the normalized state, but we'll
             # rstrip just in case the patch library adds a final newline
             # to a file that was intended to have none.
-            if not normalized_diff.endswith('\n'):
+            if not corrected_diff.endswith('\n'):
                  return new_content.rstrip('\n'), None
             return new_content, None
         else:

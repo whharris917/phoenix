@@ -35,7 +35,8 @@ class MemoryManager:
     Manages the Tiered Memory Architecture for the AI agent.
 
     Tier 1: Conversational Buffer (Short-Term Memory)
-    Tier 3: Vector Store (Long-Term, Specific Recall)
+    Tier 2: Summaries & Segments (Mid-Term Memory) - NEW
+    Tier 3: Vector Store (Long-Term, Specific Recall) # NOT CURRENTLY OPERATIONAL
     """
     def __init__(self, session_name):
         """
@@ -43,7 +44,7 @@ class MemoryManager:
         This will create or load a persistent ChromaDB collection based on the name.
         """
         self.session_name = session_name
-        self.max_buffer_size = 20 # Increased buffer size for better context
+        self.max_buffer_size = 30 # Increased buffer size for better context
 
         # Tier 1: Conversational Buffer
         self.conversational_buffer = []
@@ -71,7 +72,7 @@ class MemoryManager:
             )
             logging.info(f"ChromaDB collection '{collection_name}' loaded/created for session '{self.session_name}'.")
 
-            # --- NEW: Repopulate buffer from DB on init ---
+            # Repopulate buffer from DB on init
             self._repopulate_buffer_from_db()
 
         except Exception as e:
@@ -83,59 +84,33 @@ class MemoryManager:
         Loads the most recent history from the ChromaDB collection into the
         conversational buffer to maintain context across sessions.
         """
-        if not self.collection or self.collection.count() == 0:
-            logging.info(f"No history found in ChromaDB for session '{self.session_name}'.")
+        all_turns = self.get_all_turns()
+        if not all_turns:
             return
 
         try:
-            history = self.collection.get(include=["metadatas", "documents"])
-
-            if not history or not history.get('ids'):
-                return
-
-            combined_history = []
-            for i, doc_id in enumerate(history['ids']):
-                meta = history['metadatas'][i]
-                doc = history['documents'][i]
-
-                try:
-                    # Document format is "role: content"
-                    role, content = doc.split(":", 1)
-                    content = content.strip()
-                    # Use the role from metadata if available, as it's more reliable
-                    role_to_use = meta.get('role', role)
-                    if role_to_use not in ['user', 'model']:
-                        logging.warning(f"Skipping document with invalid role '{role_to_use}' in session '{self.session_name}'.")
-                        continue
-                except ValueError:
-                    logging.warning(f"Skipping malformed document in DB: {doc}")
-                    continue
-
-                combined_history.append({
-                    'role': role_to_use,
-                    'timestamp': meta.get('timestamp', 0),
-                    'content': content
-                })
-
-            combined_history.sort(key=lambda x: x['timestamp'], reverse=True)
-            recent_turns = combined_history[:self.max_buffer_size]
+            # Sort by timestamp, most recent first
+            all_turns.sort(key=lambda x: x['metadata'].get('timestamp', 0), reverse=True)
+            # Take the most recent turns up to the buffer size
+            recent_turns = all_turns[:self.max_buffer_size]
+            # Reverse again to get chronological order
             recent_turns.reverse()
 
             self.conversational_buffer = [
-                {"role": turn['role'], "parts": [{'text': turn['content']}]}
+                {"role": turn['metadata']['role'], "parts": [{'text': turn['document']}]}
                 for turn in recent_turns
             ]
-
             logging.info(f"Repopulated buffer with {len(self.conversational_buffer)} turns from ChromaDB for session '{self.session_name}'.")
 
         except Exception as e:
             logging.error(f"Could not repopulate buffer from ChromaDB for session '{self.session_name}': {e}")
             self.conversational_buffer = []
 
-    def add_turn(self, role, content):
+    def add_turn(self, role, content, metadata=None):
         """
         Adds a new turn to the memory, updating both Tier 1 and Tier 3.
         Role is 'user' or 'model'.
+        Metadata is an optional dictionary for storing additional info like summaries.
         """
         turn = {"role": role, "parts": [{'text': content}]}
         self.conversational_buffer.append(turn)
@@ -145,17 +120,67 @@ class MemoryManager:
         if self.collection:
             try:
                 doc_id = str(uuid.uuid4())
-                metadata = {'role': role, 'timestamp': time.time()}
-                doc_content = f"{role}: {content}"
+                
+                # Start with base metadata and update with any provided metadata
+                meta = {'role': role, 'timestamp': time.time()}
+                if metadata:
+                    meta.update(metadata)
 
                 self.collection.add(
-                    documents=[doc_content],
-                    metadatas=[metadata],
+                    documents=[content], # Store the raw content directly as the document
+                    metadatas=[meta],
                     ids=[doc_id]
                 )
-                logging.info(f"Added document to ChromaDB for session '{self.session_name}'.")
+                logging.info(f"Added document to ChromaDB for session '{self.session_name}' with metadata: {meta}")
             except Exception as e:
                 logging.error(f"Could not add document to ChromaDB for session '{self.session_name}': {e}")
+    
+    # --- Function to update existing records ---
+    def update_turns_metadata(self, ids, metadatas):
+        """
+        Updates the metadata for one or more existing documents in the collection.
+        'ids' is a list of document IDs to update.
+        'metadatas' is a list of corresponding metadata dictionaries.
+        """
+        if not self.collection:
+            logging.error("Cannot update metadata: collection is not initialized.")
+            return
+        try:
+            self.collection.update(ids=ids, metadatas=metadatas)
+            logging.info(f"Updated metadata for {len(ids)} documents in ChromaDB for session '{self.session_name}'.")
+        except Exception as e:
+            logging.error(f"Could not update metadata in ChromaDB for session '{self.session_name}': {e}")
+
+    # --- NEW: Function to get all turns for summarization ---
+    def get_all_turns(self):
+        """
+        Retrieves all documents, metadatas, and IDs from the collection.
+        Returns a list of dictionaries, each representing a turn.
+        """
+        if not self.collection or self.collection.count() == 0:
+            return []
+        
+        try:
+            history = self.collection.get(include=["metadatas", "documents"])
+            if not history or not history.get('ids'):
+                return []
+            
+            # Re-structure the data into a more usable list of objects
+            all_turns = []
+            for i, doc_id in enumerate(history['ids']):
+                all_turns.append({
+                    "id": doc_id,
+                    "document": history['documents'][i],
+                    "metadata": history['metadatas'][i]
+                })
+            
+            # Sort chronologically
+            all_turns.sort(key=lambda x: x['metadata'].get('timestamp', 0))
+            return all_turns
+
+        except Exception as e:
+            logging.error(f"Could not retrieve all turns from ChromaDB for session '{self.session_name}': {e}")
+            return []
 
     def get_context_for_prompt(self, prompt, n_results=3):
         """

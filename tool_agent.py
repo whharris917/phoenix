@@ -364,7 +364,15 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, model, lo
                     )
                     for doc, meta in history_tuples:
                         role = meta.get('role', 'unknown')
-                        content = doc.split(':', 1)[1] if ':' in doc else doc
+                        content = doc
+                        # FIX: Handle both legacy ("role: content") and modern ("content") doc formats
+                        # Safely strip the "role: " prefix only if it's present, avoiding
+                        # accidental splitting of timestamps.
+                        if role == 'user' and doc.startswith('user: '):
+                            content = doc[len('user: '):]
+                        elif role == 'model' and doc.startswith('model: '):
+                            content = doc[len('model: '):]
+
                         full_history.append({"role": role, "parts": [{'text': content.strip()}]})
 
                 memory_manager = chat_sessions[session_id]['memory']
