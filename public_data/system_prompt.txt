@@ -204,7 +204,7 @@ Doing so will render your response twice in the chat, which is not acceptable.
 	To end with a message: {"action": "task_complete", "parameters": {"response": "<your_final_message>"}}
 	```json
 	{
-		"action": "complete",
+		"action": "task_complete",
 		"parameters": {
 			"response": "<your_final_message>"
 		}

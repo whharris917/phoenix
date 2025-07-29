@@ -1,0 +1,24 @@
+--- a/orchestrator.py
++++ b/sandbox/orchestrator_proposed.py
+@@ -319,16 +319,17 @@
+                 continue
+ 
+             if role == 'user':
+-                if raw_text.startswith(('TOOL_RESULT:', 'OBSERVATION:', 'Tool Result:')):\
+-                    try:\
+-                        json_str = raw_text[raw_text.find('{'):]\n                        tool_result = json.loads(json_str)\n                        log_message = tool_result.get('message', 'Tool action completed.')\n                        socketio.emit('tool_log', {'data': f\"[{log_message}]\"}, to=session_id)\n                    except (json.JSONDecodeError, IndexError):\n                        socketio.emit('tool_log', {'data': f\"[{raw_text}]\"}, to=session_id)\n-                    continue\n-                elif not raw_text.startswith('USER_CONFIRMATION:'):\n+                # --- MODIFIED: Robustly check if the message is a tool result ---
++                try:
++                    # Attempt to parse as JSON. If successful and has 'status', it's a tool result.
++                    tool_result = json.loads(raw_text)
++                    if isinstance(tool_result, dict) and 'status' in tool_result:
++                        log_message = tool_result.get('message', 'Tool action completed.')
++                        socketio.emit('tool_log', {'data': f"[{log_message}]"}, to=session_id)
++                        continue # Skip to the next item in history
++                except (json.JSONDecodeError, TypeError):
++                    # If it's not a valid JSON, it's a regular user message.
++                    pass # Fall through to the next check
++                
++                if not raw_text.startswith('USER_CONFIRMATION:'):
+                     socketio.emit('log_message', {'type': 'user', 'data': raw_text}, to=session_id)
+             
+             elif role == 'model':

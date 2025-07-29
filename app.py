@@ -1,7 +1,8 @@
 from flask import Flask, render_template, send_from_directory, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
-import google.generativeai as genai
+import vertexai
+from vertexai.generative_models import GenerativeModel, HarmCategory, HarmBlockThreshold
 import os
 import logging
 import json
@@ -10,18 +11,11 @@ from datetime import datetime
 from orchestrator import execute_reasoning_loop, confirmation_events
 from tool_agent import execute_tool_command, get_safe_path
 from memory_manager import MemoryManager
+from multiprocessing.managers import BaseManager
 from audit_logger import audit_log
 import inspect_db as db_inspector
 import debugpy
-
-# --- Function to load API key from a file ---
-def load_api_key():
-    try:
-        key_path = os.path.join(os.path.dirname(__file__), 'private_data', 'Gemini_API_Key.txt')
-        with open(key_path, 'r') as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        return None
+import time
 
 # --- Function to load the system prompt from a file ---
 def load_system_prompt():
@@ -37,15 +31,17 @@ def load_model_definition():
     try:
         model_definition_path = os.path.join(os.path.dirname(__file__), 'public_data', 'model_definition.txt')
         with open(model_definition_path, 'r') as f:
-            return f.read()
+            return f.read().strip() # Use strip() to remove whitespace
     except FileNotFoundError:
-        return 'gemini-2.5-pro'
+        # Use a valid Vertex AI model name as a fallback
+        return 'gemini-2.5-pro-001'
 
 # --- CONFIGURATION ---
-API_KEY = load_api_key()
+PROJECT_ID = "long-ratio-463815-n7"
+LOCATION = "us-east1"
+
 SYSTEM_PROMPT = load_system_prompt()
 MODEL_DEFINITION = load_model_definition()
-API_STATS_FILE = os.path.join(os.path.dirname(__file__), 'api_usage.json')
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
@@ -56,46 +52,47 @@ audit_log.register_socketio(socketio)
 # --- Setup Logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler("agent.log"), logging.StreamHandler()])
 
-# --- GEMINI SETUP ---
+# --- GEMINI SETUP (MODIFIED FOR VERTEX AI) ---
 model = None
-if API_KEY:
+try:
+    vertexai.init(project=PROJECT_ID, location=LOCATION)
+    
+    # Safety settings for Vertex AI are defined with enums
+    safety_settings = {
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+    }
+
+    model = GenerativeModel(
+        model_name=MODEL_DEFINITION,
+        system_instruction=[SYSTEM_PROMPT], # Vertex AI expects system_instruction as a list
+        safety_settings=safety_settings
+    )
+    logging.info(f"Vertex AI configured successfully for project '{PROJECT_ID}' and model '{MODEL_DEFINITION}'.")
+except Exception as e:
+    logging.critical(f"FATAL: Failed to configure Vertex AI. Is your project ID correct and have you run 'gcloud auth application-default login'? Error: {e}")
+
+# --- NEW: Connect to the Haven to get the persistent session dictionary ---
+class HavenManager(BaseManager):
+    pass
+
+HavenManager.register('get_sessions')
+manager = HavenManager(address=('localhost', 50000), authkey=b'phoenixhaven')
+
+# Add a retry loop for robustness
+for i in range(5): # Try to connect 5 times
     try:
-        genai.configure(api_key=API_KEY)
-        safety_settings = {
-            'HARM_CATEGORY_HARASSMENT': 'BLOCK_NONE',
-            'HARM_CATEGORY_HATE_SPEECH': 'BLOCK_NONE',
-            'HARM_CATEGORY_SEXUALLY_EXPLICIT': 'BLOCK_NONE',
-            'HARM_CATEGORY_DANGEROUS_CONTENT': 'BLOCK_NONE',
-        }
-        model = genai.GenerativeModel(
-            model_name=MODEL_DEFINITION,
-            system_instruction=SYSTEM_PROMPT,
-            safety_settings=safety_settings
-        )
-        logging.info("Gemini API configured successfully.")
-    except Exception as e:
-        logging.critical(f"FATAL: Failed to configure Gemini API. Error: {e}")
-else:
-    logging.critical("FATAL: Gemini API key not loaded.")
+        manager.connect()
+        logging.info("Successfully connected to Haven.")
+        break
+    except ConnectionRefusedError:
+        logging.warning(f"Haven connection refused. Retrying in {i+1} second(s)...")
+        time.sleep(i+1)
 
-# --- API Usage Tracking ---
-def load_api_stats():
-    try:
-        with open(API_STATS_FILE, 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {'total_calls': 0, 'total_prompt_tokens': 0, 'total_completion_tokens': 0}
-
-def save_api_stats():
-    audit_log.log_event("Server Shutdown", source="System", destination="System", observers=["Orchestrator"])
-    with open(API_STATS_FILE, 'w') as f:
-        json.dump(api_stats, f, indent=4)
-    logging.info("API usage statistics saved.")
-
-api_stats = load_api_stats()
-atexit.register(save_api_stats)
-
-chat_sessions = {}
+chat_sessions = manager.get_sessions()
+client_session_map = {} # Maps temporary client IDs to persistent session names
 
 # --- SERVER ROUTES & EVENTS ---
 @app.route('/')
@@ -147,34 +144,40 @@ def handle_connect():
     timestamp = datetime.now().strftime("%d%b%Y_%I%M%S%p").upper()
     new_session_name = f"New_Session_{timestamp}"
     
-    audit_log.log_event("Client Connected", session_id=session_id, session_name=new_session_name, source="Application", destination="Client", observers=["Application, Client"])
+    audit_log.log_event("Client Connected", session_id=session_id, session_name=new_session_name, source="Application", destination="Client")
     app.logger.info(f"Client connected: {session_id}")
     if model:
         try:
-            # --- MODIFIED: Initialize MemoryManager with the persistent session_name ---
+            # --- Initialize MemoryManager with the persistent session_name ---
             memory = MemoryManager(session_name=new_session_name)
+            
+            # The history from memory.get_full_history() is now a list of Content objects
+            full_history = memory.get_full_history()
+
+            # The start_chat method is compatible between libraries
             chat_sessions[session_id] = {
-                "chat": model.start_chat(history=memory.get_full_history()),
+                "chat": model.start_chat(history=memory.get_full_history()), # This is now correct
                 "memory": memory,
                 "name": new_session_name
             }
             app.logger.info(f"Chat and MemoryManager session created for {session_id} with name {new_session_name}")
             
-            audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=new_session_name, source="Application", destination="Client", observers=["User", "Orchestrator"], details={'name': new_session_name})
+            audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=new_session_name, source="Application", destination="Client", details={'name': new_session_name})
             socketio.emit('session_name_update', {'name': new_session_name}, to=session_id)
 
-            # --- NEW: Send the (potentially loaded) history to the client ---
-            full_history = memory.get_full_history()
             if full_history:
-                audit_log.log_event("Socket.IO Emit: full_history_update", session_id=session_id, session_name=new_session_name, source="Application", destination="Client", observers=["User"], details=f"{len(full_history)} turns loaded")
-                socketio.emit('load_chat_history', {'history': full_history}, to=session_id)
+                # --- Convert Content objects to dicts for JSON serialization ---
+                history_for_client = [
+                    {"role": c.role, "parts": [{"text": p.text} for p in c.parts]} for c in full_history
+                ]
+                audit_log.log_event("Socket.IO Emit: full_history_update", session_id=session_id, session_name=new_session_name, source="Application", destination="Client", details=f"{len(history_for_client )} turns loaded")
+                socketio.emit('load_chat_history', {'history': history_for_client}, to=session_id)
 
         except Exception as e:
             app.logger.exception(f"Could not create chat session for {session_id}.")
             socketio.emit('log_message', {'type': 'error', 'data': 'Failed to initialize AI session.'}, to=session_id)
     else:
         socketio.emit('log_message', {'type': 'error', 'data': 'AI model not available.'}, to=request.sid)
-
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -185,8 +188,8 @@ def handle_disconnect():
     if session_data:
         session_name = session_data.get('name')
         app.logger.info(f"Client disconnected: {session_id}, Session: {session_name}")
-        audit_log.log_event("Client Disconnected", session_id=session_id, session_name=session_name, source="Client", destination="Server", observers=["Orchestrator"])
-
+        audit_log.log_event("Client Disconnected", session_id=session_id, session_name=session_name, source="Client", destination="Server")
+        """
         # Check if the session was a default, unsaved session and clean it up.
         if session_name and session_name.startswith("New_Session_"):
             try:
@@ -200,15 +203,15 @@ def handle_disconnect():
                         session_name=session_name,
                         source="System",
                         destination="Database",
-                        observers=["Orchestrator"],
                         details=f"Unsaved session '{session_name}' automatically cleaned up on disconnect."
                     )
             except Exception as e:
-                app.logger.error(f"Error during automatic cleanup of session '{session_name}': {e}")
+                app.logger.error(f"Error during automatic cleanup of session '{session_name}': {e}"
+        """
     else:
         # Fallback for cases where session data might already be gone.
         app.logger.info(f"Client disconnected: {session_id} (No session data found).)")
-        audit_log.log_event("Client Disconnected", session_id=session_id, session_name="N/A", source="Client", destination="Server", observers=["Orchestrator"])
+        audit_log.log_event("Client Disconnected", session_id=session_id, session_name="N/A", source="Client", destination="Server")
 
     # Final cleanup of the application state.
     chat_sessions.pop(session_id, None)
@@ -218,7 +221,7 @@ def handle_disconnect():
 def handle_start_task(data):
     session_id = request.sid
     session_name = chat_sessions.get(session_id, {}).get('name')
-    audit_log.log_event("Socket.IO Event Received: start_task", session_id=session_id, session_name=session_name, source="Client", destination="Server", observers=["Orchestrator"], details=data)
+    audit_log.log_event("Socket.IO Event Received: start_task", session_id=session_id, session_name=session_name, source="Client", destination="Server", details=data)
     prompt = data.get('prompt')
     
     # Prepend timestamp to the user's prompt before processing
@@ -230,7 +233,7 @@ def handle_start_task(data):
 
     session_data = chat_sessions.get(session_id)
     if prompt and session_data: # Check for original prompt here, not the timestamped one
-        socketio.start_background_task(execute_reasoning_loop, socketio, session_data, timestamped_prompt, session_id, chat_sessions, model, api_stats)
+        socketio.start_background_task(execute_reasoning_loop, socketio, session_data, timestamped_prompt, session_id, chat_sessions, model)
     elif not session_data:
         socketio.emit('log_message', {'type': 'error', 'data': 'No active AI session. Please refresh.'}, to=request.sid)
 
@@ -251,28 +254,20 @@ def handle_audit_event(data):
 def handle_session_list_request():
     session_id = request.sid
     session_name = chat_sessions.get(session_id, {}).get('name')
-    audit_log.log_event("Socket.IO Event Received: request_session_list", session_id=session_id, session_name=session_name, source="Client", destination="Server", observers=["Orchestrator"])
+    audit_log.log_event("Socket.IO Event Received: request_session_list", session_id=session_id, session_name=session_name, source="Client", destination="Server")
     tool_result = execute_tool_command({'action': 'list_sessions'}, socketio, session_id, chat_sessions, model)
-    audit_log.log_event("Socket.IO Emit: session_list_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User"], details=tool_result)
+    audit_log.log_event("Socket.IO Emit: session_list_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", details=tool_result)
     socketio.emit('session_list_update', tool_result, to=request.sid)
-
-@socketio.on('request_api_stats')
-def handle_api_stats_request():
-    session_id = request.sid
-    session_name = chat_sessions.get(session_id, {}).get('name')
-    audit_log.log_event("Socket.IO Event Received: request_api_stats", session_id=session_id, session_name=session_name, source="Client", destination="Server", observers=["Orchestrator"])
-    audit_log.log_event("Socket.IO Emit: api_usage_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User"], details=api_stats)
-    socketio.emit('api_usage_update', api_stats, to=request.sid)
 
 @socketio.on('request_session_name')
 def handle_session_name_request():
     session_id = request.sid
     session_name = chat_sessions.get(session_id, {}).get('name')
-    audit_log.log_event("Socket.IO Event Received: request_session_name", session_id=session_id, session_name=session_name, source="Client", destination="Server", observers=["Orchestrator"])
+    audit_log.log_event("Socket.IO Event Received: request_session_name", session_id=session_id, session_name=session_name, source="Client", destination="Server")
     session_data = chat_sessions.get(session_id)
     if session_data:
         name = session_data.get('name')
-        audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=name, source="Server", destination="Client", observers=["User"], details={'name': name})
+        audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=name, source="Server", destination="Client", details={'name': name})
         socketio.emit('session_name_update', {'name': name}, to=request.sid)
         
 # --- NEW: Socket.IO handlers for Database Viewer ---
@@ -327,14 +322,14 @@ def handle_db_collection_data_request(data):
 def handle_user_confirmation(data):
     session_id = request.sid
     session_name = chat_sessions.get(session_id, {}).get('name')
-    audit_log.log_event("Socket.IO Event Received: user_confirmation", session_id=session_id, session_name=session_name, source="Client", destination="Server", observers=["Orchestrator"], details=data)
+    audit_log.log_event("Socket.IO Event Received: user_confirmation", session_id=session_id, session_name=session_name, source="Client", destination="Server", details=data)
     event = confirmation_events.get(session_id)
     if event:
         event.send(data.get('response'))
 
 if __name__ == '__main__':
-    if not API_KEY:
-        app.logger.critical("Server startup failed: API key is missing.")
+    if not model:
+        app.logger.critical("Server startup failed: Vertex AI model could not be initialized.")
     else:
         # --- ACTIVATE THIS BLOCK FOR DEBUGGING ---
         # use this: debugpy.breakpoint()
@@ -345,5 +340,5 @@ if __name__ == '__main__':
             app.logger.info("Debugger attached.")
 
         app.logger.info("Starting Unified Agent Server on http://127.0.0.1:5001")
-        audit_log.log_event("SocketIO Server Started", source="System", destination="System", observers=["Orchestrator"])
+        audit_log.log_event("SocketIO Server Started", source="System", destination="System")
         socketio.run(app, port=5001)

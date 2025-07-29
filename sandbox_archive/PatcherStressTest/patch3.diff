@@ -1,0 +1,7 @@
+--- a/sandbox/PatcherStressTest/original_file3.txt
++++ b/sandbox/PatcherStressTest/patched_file3.txt
+@@ -1,4 +1,2 @@
+ Line 1: This line will be kept.
+-Line 2: This line is to be deleted.
+-Line 3: So is this one.
+ Line 4: This line will also be kept.

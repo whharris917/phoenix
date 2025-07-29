@@ -1,0 +1,21 @@
+--- a/tool_agent.py
++++ b/sandbox/tool_agent.py
+@@ -254,16 +254,11 @@
+             if not source_filename or not target_filename:
+                 return {"status": "error", "message": "Could not determine source or target filename from diff header."}
+ 
+-            # 2. Validate that the target path must be in the sandbox
+-            if not target_filename.startswith('sandbox/'):
+-                return {"status": "error", "message": "Target file path in diff header (+++ b/) must start with 'sandbox/'. "}
+-            
+-            # Strip the 'sandbox/' prefix to use get_safe_path correctly
+-            relative_target_filename = target_filename[len('sandbox/'):]
+-            
++            # 2. Get the safe path for the target file in the sandbox.
++            # The patcher utility operates in a temporary directory, but the final output
++            # is written to a safe path within the sandbox.
+             try:
+-                target_save_path = get_safe_path(relative_target_filename)
++                target_save_path = get_safe_path(target_filename)
+             except ValueError as e:
+                 return {"status": "error", "message": str(e)}

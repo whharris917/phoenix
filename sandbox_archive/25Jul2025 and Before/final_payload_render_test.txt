@@ -1,0 +1,3 @@
+This is the content of the file.
+If the fix is successful, you should NOT see this text rendered in the chat log.
+You should only see the preamble text that came before the JSON command.

@@ -1,0 +1,108 @@
+--- a/app.py
++++ b/sandbox/app.py
+@@ -171,60 +171,40 @@
+     new_session_name = f"New_Session_{timestamp}"
+     
+     audit_log.log_event("Client Connected", session_id=session_id, session_name=new_session_name, source="Application", destination="Client", observers=["Application, Client"])
+-    app.logger.info(f\"Client connected: {session_id}\")\n    if model:\n        try:\n            # --- MODIFIED: Initialize MemoryManager with the persistent session_name ---\n            memory = MemoryManager(session_name=new_session_name)\n            chat_sessions[session_id] = {\n                \"chat\": model.start_chat(history=memory.get_full_history()),\n                \"memory\": memory,\n                \"name\": new_session_name\n            }\n            app.logger.info(f\"Chat and MemoryManager session created for {session_id} with name {new_session_name}\")\n            \n-            audit_log.log_event(\"Socket.IO Emit: session_name_update\", session_id=session_id, session_name=new_session_name, source=\"Application\", destination=\"Client\", observers=[\"User\", \"Orchestrator\"], details={'name': new_session_name})\n-            socketio.emit('session_name_update', {'name': new_session_name}, to=session_id)\n-\n-            # --- NEW: Send the (potentially loaded) history to the client ---\n-            full_history = memory.get_full_history()\n-            if full_history:\n-                audit_log.log_event(\"Socket.IO Emit: full_history_update\", session_id=session_id, session_name=new_session_name, source=\"Application\", destination=\"Client\", observers=[\"User\"], details=f\"{len(full_history)} turns loaded\")\n-                socketio.emit('load_chat_history', {'history': full_history}, to=session_id)\n-\n-        except Exception as e:\n-            app.logger.exception(f\"Could not create chat session for {session_id}.\")\n-            socketio.emit('log_message', {'type': 'error', 'data': 'Failed to initialize AI session.'}, to=session_id)\n-    else:\n-        socketio.emit('log_message', {'type': 'error', 'data': 'AI model not available.'}, to=request.sid)\n+    app.logger.info(f"Client connected: {session_id}")
++
++    client_session_map[session_id] = new_session_name
++
++    if new_session_name not in chat_sessions:
++        app.logger.info(f"Creating new session '{new_session_name}' in Haven for client {session_id}.")
++        memory = MemoryManager(session_name=new_session_name)
++        chat_sessions[new_session_name] = {
++            "chat": model.start_chat(history=memory.get_full_history()),
++            "memory": memory
++        }
++    else:
++        app.logger.info(f"Re-attaching client {session_id} to existing Haven session '{new_session_name}'.")
++
++    socketio.emit('session_name_update', {'name': new_session_name}, to=session_id)
+ 
+ 
+ @socketio.on('disconnect')
+ def handle_disconnect():
+     session_id = request.sid
+-    # Get the full session data before removing it.\n    session_data = chat_sessions.get(session_id)\n\n    if session_data:\n        session_name = session_data.get('name')\n        app.logger.info(f\"Client disconnected: {session_id}, Session: {session_name}\")\n        audit_log.log_event(\"Client Disconnected\", session_id=session_id, session_name=session_name, source=\"Client\", destination=\"Server\", observers=[\"Orchestrator\"])\n\n        # Check if the session was a default, unsaved session and clean it up.\n        if session_name and session_name.startswith(\"New_Session_\"):\n            try:\n                memory = session_data.get('memory')\n                if memory:\n                    app.logger.info(f\"Auto-deleting unsaved session collection: '{session_name}'\")\n                    memory.clear()  # This deletes the ChromaDB collection.\n                    audit_log.log_event(\n                        \"DB Collection Deleted\",\n                        session_id=session_id,\n                        session_name=session_name,\n                        source=\"System\",\n                        destination=\"Database\",\n                        observers=[\"Orchestrator\"],\n                        details=f\"Unsaved session '{session_name}' automatically cleaned up on disconnect.\"\n                    )\n            except Exception as e:\n                app.logger.error(f\"Error during automatic cleanup of session '{session_name}': {e}\")\n    else:\n        # Fallback for cases where session data might already be gone.\n        app.logger.info(f\"Client disconnected: {session_id} (No session data found).)\")\n        audit_log.log_event(\"Client Disconnected\", session_id=session_id, session_name=\"N/A\", source=\"Client\", destination=\"Server\", observers=[\"Orchestrator\"])\n-\n-    # Final cleanup of the application state.\n-    chat_sessions.pop(session_id, None)\n-    confirmation_events.pop(session_id, None)\n+    session_name = client_session_map.pop(session_id, None)
++    app.logger.info(f"Client disconnected: {session_id}, unmapping from session: {session_name or 'N/A'}")
++    
++    # If the disconnected session was a temporary 'New_Session', clean it up.
++    if session_name and session_name.startswith("New_Session_"):
++        app.logger.info(f"Auto-deleting unsaved session '{session_name}' from Haven.")
++        session_to_delete = chat_sessions.pop(session_name, None)
++        if session_to_delete and 'memory' in session_to_delete:
++            session_to_delete['memory'].clear() # Deletes the ChromaDB collection
+ 
+ @socketio.on('start_task')
+ def handle_start_task(data):\n     session_id = request.sid\n-    session_name = chat_sessions.get(session_id, {}).get('name')\n-    audit_log.log_event(\"Socket.IO Event Received: start_task\", session_id=session_id, session_name=session_name, source=\"Client\", destination=\"Server\", observers=[\"Orchestrator\"], details=data)\n     prompt = data.get('prompt')\n     \n-    # Prepend timestamp to the user's prompt before processing\n     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')\n     timestamped_prompt = f\"[{timestamp}] {prompt}\"\n     \n-    # Echo the timestamped prompt back to the user for immediate display\n     socketio.emit('display_user_prompt', {'prompt': timestamped_prompt}, to=session_id)\n-
+-    session_data = chat_sessions.get(session_id)\n-    if prompt and session_data: # Check for original prompt here, not the timestamped one\n-        socketio.start_background_task(execute_reasoning_loop, socketio, session_data, timestamped_prompt, session_id, chat_sessions, model, api_stats)\n-    elif not session_data:\n-        socketio.emit('log_message', {'type': 'error', 'data': 'No active AI session. Please refresh.'}, to=request.sid)\n+    session_name = client_session_map.get(session_id)
++    audit_log.log_event("Socket.IO Event Received: start_task", session_id=session_id, session_name=session_name, details=data)
++
++    if prompt and session_name:
++        timestamped_prompt = f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {prompt}"
++        socketio.emit('display_user_prompt', {'prompt': timestamped_prompt}, to=session_id)
++        
++        session_data = chat_sessions.get(session_name)
++        if session_data:
++            socketio.start_background_task(execute_reasoning_loop, socketio, session_data, timestamped_prompt, session_id, chat_sessions, model, api_stats)
++        else:
++             socketio.emit('log_message', {'type': 'error', 'data': f"Session '{session_name}' not found in Haven."}, to=session_id)
++    else:
++        socketio.emit('log_message', {'type': 'error', 'data': 'Cannot start task: client session mapping not found.'}, to=session_id)
+ 
+ @socketio.on('log_audit_event')
+ def handle_audit_event(data):\n    audit_log.log_event(\n         event=data.get('event'),\n         session_id=request.sid,\n-        session_name=chat_sessions.get(request.sid, {}).get('name'),\n+        session_name=client_session_map.get(request.sid, "Unknown"),\n         loop_id=None,\n         source=data.get('source'),\n         destination=data.get('destination'),\n@@ -242,24 +224,20 @@
+ @socketio.on('request_session_list')
+ def handle_session_list_request():
+     session_id = request.sid
+-    session_name = chat_sessions.get(session_id, {}).get('name')
++    session_name = client_session_map.get(session_id, "Unknown")
+     audit_log.log_event("Socket.IO Event Received: request_session_list", session_id=session_id, session_name=session_name, source="Client", destination="Server", observers=["Orchestrator"])
+     tool_result = execute_tool_command({'action': 'list_sessions'}, socketio, session_id, chat_sessions, model)
+     audit_log.log_event("Socket.IO Emit: session_list_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User"], details=tool_result)
+     socketio.emit('session_list_update', tool_result, to=request.sid)
+ 
+ @socketio.on('request_api_stats')
+ def handle_api_stats_request():
+     session_id = request.sid
+-    session_name = chat_sessions.get(session_id, {}).get('name')
++    session_name = client_session_map.get(session_id, "Unknown")
+     audit_log.log_event("Socket.IO Event Received: request_api_stats", session_id=session_id, session_name=session_name, source="Client", destination="Server", observers=["Orchestrator"])
+     audit_log.log_event("Socket.IO Emit: api_usage_update", session_id=session_id, session_name=session_name, source="Server", destination="Client", observers=["User"], details=api_stats)
+     socketio.emit('api_usage_update', api_stats, to=request.sid)
+ 
+ @socketio.on('request_session_name')
+ def handle_session_name_request():
+     session_id = request.sid
+-    session_name = chat_sessions.get(session_id, {}).get('name')
+-    audit_log.log_event(\"Socket.IO Event Received: request_session_name\", session_id=session_id, session_name=session_name, source=\"Client\", destination=\"Server\", observers=[\"Orchestrator\"])\n-    session_data = chat_sessions.get(session_id)\n-    if session_data:\n-        name = session_data.get('name')\n-        audit_log.log_event(\"Socket.IO Emit: session_name_update\", session_id=session_id, session_name=name, source=\"Server\", destination=\"Client\", observers=[\"User\"], details={'name': name})\n-        socketio.emit('session_name_update', {'name': name}, to=request.sid)\n+    session_name = client_session_map.get(session_id, "Unknown")
++    audit_log.log_event("Socket.IO Event Received: request_session_name", session_id=session_id, session_name=session_name)
++    if session_name:
++        audit_log.log_event("Socket.IO Emit: session_name_update", session_id=session_id, session_name=session_name, details={'name': session_name})
++        socketio.emit('session_name_update', {'name': session_name}, to=request.sid)
+         
+ # --- NEW: Socket.IO handlers for Database Viewer ---
+ @socketio.on('request_db_collections')
+ def handle_db_collections_request():
+     session_id = request.sid
+-    session_name = chat_sessions.get(session_id, {}).get('name', 'N/A')
++    session_name = client_session_map.get(session_id, "Unknown")
+     audit_log.log_event(
+         "DB Viewer: Collections Requested", 
+         session_id=session_id, 
+@@ -282,7 +260,7 @@
+ @socketio.on('request_db_collection_data')
+ def handle_db_collection_data_request(data):
+     session_id = request.sid
+-    session_name = chat_sessions.get(session_id, {}).get('name', 'N/A')
++    session_name = client_session_map.get(session_id, "Unknown")
+     collection_name = data.get('collection_name')
+     audit_log.log_event(
+         "DB Viewer: Collection Data Requested", 
+@@ -303,8 +281,8 @@
+ @socketio.on('user_confirmation')
+ def handle_user_confirmation(data):
+     session_id = request.sid
+-    session_name = chat_sessions.get(session_id, {}).get('name')
+-    audit_log.log_event(\"Socket.IO Event Received: user_confirmation\", session_id=session_id, session_name=session_name, source=\"Client\", destination=\"Server\", observers=[\"Orchestrator\"], details=data)\n     event = confirmation_events.get(session_id)\n     if event:\n         event.send(data.get('response'))\n

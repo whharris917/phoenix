@@ -1,0 +1,47 @@
+--- a/tool_agent.py
++++ b/sandbox/tool_agent_proposed.py
+@@ -467,20 +467,26 @@
+                 if current_session_name and current_session_name.startswith("New_Session_"):
+                     try:
+                         memory_to_clear = current_session_data.get('memory')
+-                        if memory_to_clear:
++                        if memory_to_clear and hasattr(memory_to_clear, 'clear'):
+                             logging.info(f"Auto-deleting unsaved collection '{current_session_name}' before loading new session.")
+                             memory_to_clear.clear()
+                             audit_log.log_event("DB Collection Deleted", session_id=session_id, session_name=current_session_name, source="System", destination="Database", details=f"Unsaved session '{current_session_name}' cleaned up.")
+                     except Exception as e:
+                         logging.error(f"Error during auto-cleanup: {e}")
+                 """
+ 
++            try:
++                # Step 1: Attempt to retrieve the collection. This is the only
++                # place that should raise a ValueError for a session not being found.
++                collection = chroma_client.get_collection(name=session_name)
++            except ValueError:
++                return {"status": "error", "message": f"Session '{session_name}' not found."}
++
+             try:
+-                collection = chroma_client.get_collection(name=session_name)
++                # Step 2: Process the collection data.
+                 history_data = collection.get(include=["documents", "metadatas"])
+                 
+                 full_history = []
+-                if history_data and history_data['ids']:
++                if history_data and history_data.get('ids'):
+                     history_tuples = sorted(
+                         zip(history_data['documents'], history_data['metadatas']), 
+                         key=lambda x: x[1].get('timestamp', 0)
+@@ -512,11 +518,9 @@
+                     socketio.emit('session_list_update', updated_list_result, to=session_id)
+                 
+                 return {"status": "success", "message": f"Session '{session_name}' loaded."}
+-            except ValueError:
+-                 return {"status": "error", "message": f"Session '{session_name}' not found."}
+             except Exception as e:
+-                logging.error(f"Error loading session '{session_name}': {e}")
+-                return {"status": "error", "message": f"Could not load session: {e}"}
++                logging.error(f"Error processing data for session '{session_name}': {e}")
++                return {"status": "error", "message": f"An error occurred while processing the session data: {e}"}
+         
+         elif action == 'delete_session':
+             session_name = params.get('session_name')

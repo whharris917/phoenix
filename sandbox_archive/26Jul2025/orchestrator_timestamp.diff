@@ -1,0 +1,33 @@
+--- a/orchestrator.py
++++ b/sandbox/orchestrator_proposed.py
+@@ -6,6 +6,7 @@
+ import uuid
+ import debugpy
+ import re
++from datetime import datetime
+ import os
+ 
+ confirmation_events = {}
+@@ -536,6 +537,10 @@
+             # Now, handle the final actions with the determined message
+             if action in ['respond', 'task_complete']:
+                 if final_message_to_user and final_message_to_user.strip():
++                    # Prepend timestamp to the model's response
++                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
++                    timestamped_final_message = f"[{timestamp}] {final_message_to_user}"
++
+                     audit_log.log_event(
+                         "Socket.IO Emit: log_message", 
+                         session_id=session_id, 
+@@ -544,9 +549,9 @@
+                         source="Orchestrator", 
+                         destination="Client", 
+                         observers=["User", "Orchestrator"], 
+-                        details={'type': 'final_answer', 'data': final_message_to_user}
++                        details={'type': 'final_answer', 'data': timestamped_final_message}
+                     )
+-                    socketio.emit('log_message', {'type': 'final_answer', 'data': final_message_to_user}, to=session_id)
++                    socketio.emit('log_message', {'type': 'final_answer', 'data': timestamped_final_message}, to=session_id)
+                 
+                 if action == 'task_complete':
+                     logging.info(f"Agent initiated task_complete. Ending loop for session {session_id}.")

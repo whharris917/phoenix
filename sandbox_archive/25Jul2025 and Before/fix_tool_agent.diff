@@ -1,0 +1,24 @@
+--- a/tool_agent.py
++++ b/tool_agent.py
+@@ -216,12 +216,13 @@
+                 return read_result
+             original_content = read_result['content']
+ 
+-            # Filter out hunk headers (e.g., \"@@ -15,7 +15,7 @@\") to make patching more robust.
+-            # This forces the patch tool to rely on context matching instead of strict line numbers.
+-            diff_lines = clean_diff_content.splitlines(keepends=True)
+-            filtered_lines = [line for line in diff_lines if not line.strip().startswith('@@')]
+-            robust_diff_content = \"\".join(filtered_lines)
+-
+-            new_content, error_message = patcher.apply_patch(robust_diff_content, original_content, target_filename)
++            # # Filter out hunk headers (e.g., \"@@ -15,7 +15,7 @@\") to make patching more robust.
++            # # This forces the patch tool to rely on context matching instead of strict line numbers.
++            # diff_lines = clean_diff_content.splitlines(keepends=True)
++            # filtered_lines = [line for line in diff_lines if not line.strip().startswith('@@')]
++            # robust_diff_content = \"\".join(filtered_lines)
++
++            # Pass the clean, complete diff content directly to the patcher
++            new_content, error_message = patcher.apply_patch(clean_diff_content, original_content, target_filename)
+             
+             if error_message:
+                 return {\"status\": \"error\", \"message\": f\"Failed to apply patch: {error_message}\"}

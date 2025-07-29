@@ -1,0 +1,5 @@
+{ "key": "This is not the command json" }
+```json
+This is also not the command.
+```
+This is the real content.

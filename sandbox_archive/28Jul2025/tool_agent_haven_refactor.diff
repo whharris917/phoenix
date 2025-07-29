@@ -1,0 +1,169 @@
+--- a/tool_agent.py
++++ b/sandbox/tool_agent.py
+@@ -5,6 +5,7 @@
+ import logging
+ from eventlet import tpool
+ import chromadb
++from multiprocessing.managers import BaseManager
+ import uuid
+ from audit_logger import audit_log 
+ from code_parser import analyze_codebase, generate_mermaid_diagram
+@@ -19,6 +20,7 @@
+ ALLOWED_PROJECT_FILES = [
+ 'public_data/system_prompt.txt', 
+     'api_usage.py',
+     'app.py',
+     'audit_logger.py',
+     'audit_visualizer.py',
+@@ -26,6 +28,7 @@
+     'code_visualizer.py',
+     'database_viewer.html',
+     'documentation_viewer.html',
++    'haven.py',
+     'index.html',
+     'inspect_db.py',
+     'memory_manager.py',
+@@ -95,9 +98,18 @@
+     action = command.get('action')
+     params = command.get('parameters', {})
+     try:
+-        chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
++        # --- NEW: Lazily connect to Haven and ChromaDB only when needed ---
++        class HavenManager(BaseManager):
++            pass
++        HavenManager.register('get_sessions')
++        manager = HavenManager(address=('localhost', 50000), authkey=b'phoenixhaven')
++        
++        haven_sessions = None
++        chroma_client = None
+ 
+         if action == 'create_file':
+             filename = params.get('filename', 'default.txt')
+             content = params.get('content', '') 
+             safe_path = get_safe_path(filename)
+@@ -153,6 +165,13 @@
+             else:
+                 return {"status": "error", "message": f"Failed to list directory: {result['message']}"}
+ 
++        elif action == 'list_haven_sessions':
++            if haven_sessions is None:
++                manager.connect()
++                haven_sessions = manager.get_sessions()
++            session_names = haven_sessions.keys()
++            return {"status": "success", "message": f"Found {len(session_names)} sessions in Haven.", "sessions": list(session_names)}
++
+         elif action == 'delete_file':
+             filename = params.get('filename')
+             safe_path = get_safe_path(filename)
+@@ -282,23 +301,19 @@
+ 
+         # --- REFACTORED AND MODIFIED SESSION MANAGEMENT TOOLS ---
+         elif action == 'save_session':
++            if haven_sessions is None:
++                manager.connect()
++                haven_sessions = manager.get_sessions()
+             session_name = params.get('session_name')
+             if not session_name:
+                 return {"status": "error", "message": "Session name not provided."}
+ 
+             session_data = chat_sessions.get(session_id)
+-            if not session_data or 'memory' not in session_data:
+-                return {"status": "error", "message": "Active memory session not found."}
+-            
+             old_session_name = session_data.get('name')
+-            memory = session_data['memory']
+-            current_collection = memory.collection
+-            if not current_collection:
+-                 return {"status": "error", "message": "ChromaDB collection not found for this session."}
+-
+-            current_collection.modify(name=session_name)
+-            memory.collection = chroma_client.get_collection(name=session_name)
+-            session_data['name'] = session_name
++
++            if haven_sessions.rename_session(old_session_name, session_name):
++                session_data['name'] = session_name # Update the local app's mapping
++            else:
++                return {"status": "error", "message": f"Session '{old_session_name}' not found in Haven."}
+ 
+             audit_log.log_event(
+                 event="Socket.IO Emit: session_name_update",
+@@ -310,6 +325,8 @@
+             return {"status": "success", "message": f"Session '{session_name}' saved and session state updated."}
+ 
+         elif action == 'list_sessions':
++            if chroma_client is None:
++                chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+             collections = chroma_client.list_collections()
+             
+             session_list = []
+@@ -334,6 +351,9 @@
+ 
+         elif action == 'load_session':
+             from orchestrator import replay_history_for_client
++            if haven_sessions is None:
++                manager.connect()
++                haven_sessions = manager.get_sessions()
+             from memory_manager import MemoryManager # Import MemoryManager
+ 
+             session_name = params.get('session_name')
+@@ -345,6 +365,8 @@
+                 current_session_name = current_session_data.get('name')
+                 if current_session_name and current_session_name.startswith("New_Session_"):
+                     try:
++                        # The Haven now handles the cleanup of temporary sessions on disconnect.
++                        # This block can be reviewed for removal later.
+                         memory_to_clear = current_session_data.get('memory')
+                         if memory_to_clear:
+                             logging.info(f"Auto-deleting unsaved collection '{current_session_name}' before loading new session.")
+@@ -354,34 +376,14 @@
+                         logging.error(f"Error during auto-cleanup: {e}")
+ 
+             try:
+-                collection = chroma_client.get_collection(name=session_name)
+-                history_data = collection.get(include=["documents", "metadatas"])
++                # This call ensures the session exists in the Haven, creating it if needed.
++                haven_sessions.get_or_create_session(session_name)
++                chat_sessions[session_id]['name'] = session_name # Update the app's mapping
+                 
+-                full_history = []
+-                if history_data and history_data['ids']:
+-                    history_tuples = sorted(
+-                        zip(history_data['documents'], history_data['metadatas']), 
+-                        key=lambda x: x[1].get('timestamp', 0)
+-                    )
+-                    for doc, meta in history_tuples:
+-                        role = meta.get('role', 'unknown')\n                        content = doc\n                        # FIX: Handle both legacy (\"role: content\") and modern (\"content\") doc formats\n                        # Safely strip the \"role: \" prefix only if it's present, avoiding\n                        # accidental splitting of timestamps.\n                        if role == 'user' and doc.startswith('user: '):\n                            content = doc[len('user: '):]\n                        elif role == 'model' and doc.startswith('model: '):\n                            content = doc[len('model: '):]\n\n                        full_history.append({\"role\": role, \"parts\": [{'text': content.strip()}]})\n\n-                memory_manager = chat_sessions[session_id]['memory']\n-                memory_manager.collection = collection\n-                memory_manager.conversational_buffer = full_history\n-                memory_manager.session_name = session_name\n-                \n-                chat_sessions[session_id]['chat'] = model.start_chat(history=full_history)\n-                chat_sessions[session_id]['name'] = session_name\n-                \n                 socketio.emit('session_name_update', {'name': session_name}, to=session_id)
+-
+-                # *** MODIFIED: Replay only the last part of the history ***
+-                history_for_replay = full_history[-memory_manager.max_buffer_size:]\n-                replay_history_for_client(socketio, session_id, session_name, history_for_replay)\n+                full_history = haven_sessions.get_full_history(session_name)
++                replay_history_for_client(socketio, session_id, session_name, full_history)
+ 
+                 updated_list_result = execute_tool_command({'action': 'list_sessions'}, socketio, session_id, chat_sessions, model)
+                 if updated_list_result.get('status') == 'success':
+@@ -395,12 +397,15 @@
+                 return {"status": "error", "message": f"Could not load session: {e}"}
+         
+         elif action == 'delete_session':
++            if haven_sessions is None:
++                manager.connect()
++                haven_sessions = manager.get_sessions()
+             session_name = params.get('session_name')
+             if not session_name:
+                 return {"status": "error", "message": "Session name not provided."}
+             try:
+-                chroma_client.delete_collection(name=session_name)
+-                updated_list_result = execute_tool_command({'action': 'list_sessions'}, socketio, session_id, chat_sessions, model)
++                haven_sessions.delete_session(session_name)
++                updated_list_result = execute_tool_command({'action': 'list_sessions'}, socketio, session_id, haven_sessions, model)
+                 if updated_list_result.get('status') == 'success':
+                     socketio.emit('session_list_update', updated_list_result, to=session_id)
+ 
+@@ -411,6 +416,8 @@
+                 return {"status": "error", "message": f"Could not delete session: {e}"}
+         
+         elif action == 'import_legacy_sessions':
++            if chroma_client is None:
++                chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+             try:
+                 with open(LEGACY_SESSIONS_FILE, 'r') as f:
+                     legacy_sessions = json.load(f)

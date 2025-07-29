@@ -1,14 +1,11 @@
-import json
-import logging
 from eventlet import tpool
 from eventlet.event import Event
-from tool_agent import execute_tool_command
-from audit_logger import audit_log
-import uuid
-import debugpy
-import re
-import os
 from datetime import datetime
+import json, logging, uuid, debugpy, re, os
+from tool_agent import execute_tool_command
+
+ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP = 10
+NOMINAL_MAX_ITERATIONS_REASONING_LOOP = 3
 
 confirmation_events = {}
 
@@ -123,7 +120,6 @@ def parse_agent_response(response_text: str) -> (str | None, dict | None, bool):
     prose_is_empty = is_prose_effectively_empty(response_text)
     return _clean_prose(response_text), None, prose_is_empty
 
-
 def _extract_json_with_fences(text: str) -> (str | None, str | None):
     """
     Extracts the largest JSON block and its full enclosing ``` fences.
@@ -142,7 +138,6 @@ def _extract_json_with_fences(text: str) -> (str | None, str | None):
     json_content = largest_match.group(2)
     
     return full_block, json_content
-
 
 def _extract_json_with_brace_counting(text: str) -> (str | None, str | None):
     """
@@ -186,7 +181,6 @@ def _extract_json_with_brace_counting(text: str) -> (str | None, str | None):
                     continue
                     
     return best_json_candidate, best_json_candidate
-
 
 def _repair_json(s: str) -> str:
     """
@@ -251,7 +245,7 @@ def _handle_payloads(prose, command_json):
     """
     placeholders_found = []
     if not command_json or 'parameters' not in command_json or not prose:
-        return prose, command_json, placeholders_found
+        return prose, command_json
 
     params = command_json['parameters']
     placeholders_to_process = [(k, v) for k, v in params.items() if isinstance(v, str) and v.startswith('@@')]
@@ -279,8 +273,104 @@ def _handle_payloads(prose, command_json):
             temp_prose = pattern.sub('', temp_prose)
         prose = temp_prose.strip()
 
-    return prose, command_json, placeholders_found
+    return prose, command_json
 
+def _emit_agent_message(socketio, session_id, message_type, content):
+    """A small wrapper to emit a formatted message to the client."""
+    if content and content.strip():
+        socketio.emit('log_message', {'type': message_type, 'data': content}, to=session_id)
+
+def _render_user_turn(socketio, session_id, raw_text):
+    """Parses and renders a 'user' turn from history for high-fidelity replay."""
+    is_tool_result = False
+    if raw_text.startswith(('TOOL_RESULT:', 'OBSERVATION:', 'Tool Result:')):
+        try:
+            json_str = raw_text[raw_text.find('{'):]
+            tool_result = json.loads(json_str)
+            log_message = tool_result.get('message', 'Tool action completed.')
+            socketio.emit('tool_log', {'data': f"[{log_message}]"}, to=session_id)
+            is_tool_result = True
+        except (json.JSONDecodeError, IndexError):
+            socketio.emit('tool_log', {'data': f"[{raw_text}]"}, to=session_id)
+            is_tool_result = True
+    else:
+        try:
+            tool_result = json.loads(raw_text)
+            if isinstance(tool_result, dict) and 'status' in tool_result:
+                log_message = tool_result.get('message', 'Tool action completed.')
+                socketio.emit('tool_log', {'data': f"[{log_message}]"}, to=session_id)
+                is_tool_result = True
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    if not is_tool_result and not raw_text.startswith('USER_CONFIRMATION:'):
+        # In the original logic, user messages were sent with type 'user'.
+        # The new client-side logic uses 'display_user_prompt', but for fidelity
+        # with original history, we can stick to the 'log_message' event.
+        socketio.emit('log_message', {'type': 'user', 'data': raw_text}, to=session_id)
+
+def _process_and_render_model_turn(socketio, session_id, timestamped_response_text, is_live=False):
+    """
+    Parses and renders a 'model' turn, handling prose, commands, and confirmations.
+    This is used for both live rendering and high-fidelity history replay.
+    """
+
+    # --- BEGINNING OF AGENT RESPONSE PARSING ---
+
+    # Separate prose from command_json, attempt to repair command_json
+    prose, command_json, prose_is_empty = parse_agent_response(timestamped_response_text)
+
+    # Strip placeholder definitions from prose and move to command_json
+    prose, command_json = _handle_payloads(prose, command_json)
+
+    # Move prose into command_json as attachment if command_json exists
+    if prose and command_json: 
+        command_json['attachment'] = prose
+
+    # If command_json does not exist, create it as a `response` command with timestamped model response text
+    if not command_json:
+        logging.warning(f"Could not decode JSON from model response. Treating as plain text.")
+        command_json = {"action": "respond", "parameters": {"response": timestamped_response_text}}
+
+    # At this point, command_json exist and any prose is contained in its attachment or response fields
+    # The prose variable is no longer needed. However, the prose contained within command_json may contain only a timestamp
+
+    # --- END OF AGENT RESPONSE PARSING ---
+
+    action = command_json.get("action")
+
+    final_message = ""
+
+    # Case 1: The action is a final response ('respond' or 'task_complete')
+    if action in ['respond', 'task_complete']: # task_complete is a legacy command
+        # Compare the length of the prose attachment and the response parameter
+        prose_text = command_json.get('attachment', '') or ""
+        response_param_text = command_json.get('parameters', {}).get('response', '') or ""
+        
+        # Determine the definitive message to display
+        if len(prose_text.strip()) > len(response_param_text.strip()):
+            final_message = prose_text
+        else:
+            final_message = response_param_text
+        
+        # Send the final message if it's not empty
+        if not prose_is_empty:
+            _emit_agent_message(socketio, session_id, 'final_answer', final_message)
+        
+    # Case 2: The action is a tool command, which may have preceding prose.
+    elif action == 'request_confirmation':
+        if prose:
+            _emit_agent_message(socketio, session_id, 'info', prose)
+        prompt = command_json.get('parameters', {}).get('prompt', 'Are you sure?')
+        if is_live:
+            socketio.emit('request_user_confirmation', {'prompt': prompt}, to=session_id)
+        else:
+            _emit_agent_message(socketio, session_id, 'system_confirm', prompt)
+    else: 
+        if prose and not prose_is_empty:
+            _emit_agent_message(socketio, session_id, 'info', prose)
+
+    return(command_json)
 
 def replay_history_for_client(socketio, session_id, session_name, history):
     """
@@ -288,7 +378,6 @@ def replay_history_for_client(socketio, session_id, session_name, history):
     This version includes logic to clean payloads from prose for consistent rendering.
     """
     try:
-        audit_log.log_event("History Replay Started", session_id=session_id, session_name=session_name, source="Orchestrator", destination="Client", details=f"Replaying {len(history)} turns.")
         socketio.emit('clear_chat_history', to=session_id)
         socketio.sleep(0.1)
 
@@ -299,7 +388,6 @@ def replay_history_for_client(socketio, session_id, session_name, history):
                 continue
 
             if role == 'user':
-                # --- SURGICAL FIX START ---
                 is_tool_result = False
                 # First, check for prefixed tool results (older format)
                 if raw_text.startswith(('TOOL_RESULT:', 'OBSERVATION:', 'Tool Result:')):
@@ -330,24 +418,22 @@ def replay_history_for_client(socketio, session_id, session_name, history):
                 # If it's not any kind of tool result, treat it as a standard user message
                 if not raw_text.startswith('USER_CONFIRMATION:'):
                     socketio.emit('log_message', {'type': 'user', 'data': raw_text}, to=session_id)
-                # --- SURGICAL FIX END ---
             
             elif role == 'model':
-
                 prose, command_json, prose_is_empty = parse_agent_response(raw_text)
                 
                 if prose_is_empty:
                     continue
 
                 # This crucial step cleans the prose of any payload blocks.
-                cleaned_prose, _, _ = _handle_payloads(prose, command_json)
+                cleaned_prose, _ = _handle_payloads(prose, command_json)
                 
                 final_message_for_display = ""
                 
                 # Determine what to display based on the command and cleaned prose.
                 if command_json:
                     action = command_json.get('action')
-                    if action in ['respond', 'task_complete']:
+                    if action in ['respond', 'task_complete']: # task_complete is a legacy command
                         response_param_text = command_json.get('parameters', {}).get('response', '') or ""
                         prose_text = cleaned_prose or ""
                         
@@ -369,87 +455,60 @@ def replay_history_for_client(socketio, session_id, session_name, history):
                 if command_json and command_json.get('action') == 'request_confirmation':
                     prompt = command_json.get('parameters', {}).get('prompt')
                     if prompt:
-                        socketio.emit('log_message', {'type': 'system_confirm', 'data': prompt}, to=session_id)
+                        socketio.emit('log_message', {'type': 'system_confirm_replayed', 'data': prompt}, to=session_id)
 
             socketio.sleep(0.01)
     except Exception as e:
         logging.error(f"Error during history replay for session {session_name}: {e}")
         socketio.emit('log_message', {'type': 'error', 'data': f"Failed to replay history: {e}"}, to=session_id)
 
-
-def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):
+def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model):
     loop_id = str(uuid.uuid4())
 
-    def get_current_session_name():
-        return chat_sessions.get(session_id, {}).get('name')
-    
-    audit_log.log_event(
-        event="Reasoning Loop Started",
-        session_id=session_id,
-        session_name=get_current_session_name(),
-        loop_id=loop_id,
-        source="Orchestrator",
-        destination="Orchestrator",
-        details={"initial_prompt": initial_prompt},
-        control_flow=None
-    )
+    # implement A loop, B loop, C loops strategy 
+    # A: starts with message from user
+    # B: starts with response that tool was successful
+    # C: starts with response that tool failed
+    # D: attempt to fix fail
 
     try:
         current_prompt = initial_prompt
         destruction_confirmed = False
 
+        # --- NEW: Re-fetch session data on each loop to ensure context is fresh ---
+        #session_data = chat_sessions.get(session_id)
         if not isinstance(session_data, dict):
-            logging.error(f"Session data for {session_id} is not a dictionary.")
-            audit_log.log_event(
-                event="Socket.IO Emit: log_message",
-                session_id=session_id,
-                session_name=get_current_session_name(),
-                loop_id=loop_id,
-                source="Orchestrator",
-                destination="Client",
-                details={'type': 'error', 'data': f"Session data is not a dictionary."},
-                control_flow="Return"
-            )
-            socketio.emit('log_message', {'type': 'error', 'data': f"Session data is not a dictionary."}, to=session_id)
+            error_message = f"Session data for {session_id} is not a dictionary."
+            logging.error(error_message)
+            socketio.emit('log_message', {'type': 'error', 'data': error_message}, to=session_id)
             return
 
         chat = session_data.get('chat')
         memory = session_data.get('memory')
 
         if not chat or not memory:
-            logging.error(f"Could not find chat or memory object for session {session_id}.")
-            audit_log.log_event(
-                event="Socket.IO Emit: log_message",
-                session_id=session_id,
-                session_name=get_current_session_name(),
-                loop_id=loop_id,
-                source="Orchestrator",
-                destination="Client",
-                details={'type': 'error', 'data': 'Critical error: Chat or Memory session object not found.'},
-                control_flow="Return"
-            )
-            socketio.emit('log_message', {'type': 'error', 'data': 'Critical error: Chat or Memory session object not found.'}, to=session_id)
+            error_message = f"Could not find chat or memory object for session {session_id}."
+            logging.error(error_message)
+            socketio.emit('log_message', {'type': 'error', 'data': error_message}, to=session_id)
             return
 
         observation_template = "Tool Result: {tool_result_json}"
 
-        for i in range(100):
+        for i in range(ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP):
             socketio.sleep(0)
-            
-            audit_log.log_event(
-                event=f"Beginning iteration {i} of reasoning loop.",
-                session_id=session_id,
-                session_name=get_current_session_name(),
-                loop_id=loop_id,
-                source="Orchestrator",
-                destination="Orchestrator",
-                details={},
-                control_flow=None
-            )
 
-            retrieved_context = None #memory.get_context_for_prompt(current_prompt)
+            # retrieved_context = memory.get_context_for_prompt(current_prompt)
 
             final_prompt = current_prompt
+
+            final_prompt = (
+                f"This is iteration {i+1} of {NOMINAL_MAX_ITERATIONS_REASONING_LOOP} of the reasoning loop.\n"
+                f"You MUST issue a resonse to the user on or before the final iteration.\n"
+                f"The prompt for the current iteration is below:\n\n"
+                f"{final_prompt}"
+            )
+
+            """
             if retrieved_context:
                 context_str = "\n".join(retrieved_context)
                 final_prompt = (
@@ -460,141 +519,36 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 )
                 log_message = f"Augmented prompt with {len(retrieved_context)} documents from memory."
                 logging.info(log_message)
-                audit_log.log_event(
-                    event=log_message,
-                    session_id=session_id,
-                    session_name=get_current_session_name(),
-                    loop_id=loop_id,
-                    source="Orchestrator",
-                    destination="Orchestrator",
-                    details={},
-                    control_flow=None
-                )
+            """
 
-            audit_log.log_event(
-                event='memory.add_turn("user", current_prompt)',
-                session_id=session_id,
-                session_name=get_current_session_name(),
-                loop_id=loop_id,
-                source="Orchestrator",
-                destination="Memory Manager",
-                details={"current_prompt": current_prompt},
-                control_flow=None
-            )
             memory.add_turn("user", current_prompt)
 
-            # Log the prompt sent to the agent
-            #_log_turn_to_file(get_current_session_name(), loop_id, i, "user", final_prompt)
-
-            audit_log.log_event(
-                event="Gemini API Call Sent",
-                session_id=session_id,
-                session_name=get_current_session_name(),
-                loop_id=loop_id,
-                source="Orchestrator",
-                destination="Gemini",
-                details={"prompt": final_prompt},
-                control_flow="Send"
-            )
-
+            # Get raw response text from model
             response = tpool.execute(chat.send_message, final_prompt)
-            
-            audit_log.log_event(
-                event="Gemini API Response Received",
-                session_id=session_id,
-                session_name=get_current_session_name(),
-                loop_id=loop_id,
-                source="Gemini",
-                destination="Orchestrator",
-                details={"response_text": response.text},
-                control_flow="Receive"
-            )
-
-            if response.usage_metadata:
-                api_stats['total_calls'] += 1
-                api_stats['total_prompt_tokens'] += response.usage_metadata.prompt_token_count
-                api_stats['total_completion_tokens'] += response.usage_metadata.candidates_token_count
-                socketio.emit('api_usage_update', api_stats)
-            
-            # --- Idempotent Timestamping ---
             response_text = response.text
-            # Check if a timestamp of the form [YYYY-MM-DD HH:MM:SS] already exists
+            
+            # Check if timestamp of form [YYYY-MM-DD HH:MM:SS] already exists
+            # If not, add timestamp to beginning of response text
             if not re.match(r'^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]', response_text):
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 response_text = f"[{timestamp}] {response_text}"
 
-            # Log the raw response from the agent
-            #_log_turn_to_file(get_current_session_name(), loop_id, i, "model", response_text)
-
-            audit_log.log_event(
-                event='memory.add_turn("model", response_text)',
-                session_id=session_id,
-                session_name=get_current_session_name(),
-                loop_id=loop_id,
-                source="Orchestrator",
-                destination="Memory Manager",
-                details={"response_text": response_text},
-                control_flow=None
-            )
+            # Save timestamped response text to memory database
             memory.add_turn("model", response_text)
 
-            prose, command_json, prose_is_empty = parse_agent_response(response_text)
-            audit_log.log_event(
-                event='parse_agent_response() completed.',
-                session_id=session_id,
-                session_name=get_current_session_name(),
-                loop_id=loop_id,
-                source="Orchestrator",
-                destination="Orchestrator",
-                details={"prose": prose, "command_json": command_json, "prose_is_empty": prose_is_empty},
-                control_flow=None
-            )
-
-            prose, command_json, placeholders_found = _handle_payloads(prose, command_json)
-            if placeholders_found:
-                audit_log.log_event(
-                    event='_handle_payloads() completed.',
-                    session_id=session_id,
-                    session_name=get_current_session_name(),
-                    loop_id=loop_id,
-                    source="Orchestrator",
-                    destination="Orchestrator",
-                    details={ "prose": prose, "command_json": command_json},
-                    control_flow=None
-                )
-
-            if prose and command_json:    
-                command_json['attachment'] = prose   
-
-            if not command_json:
-                logging.warning(f"Could not decode JSON from model response. Treating as plain text.")
-                command_json = {"action": "respond", "parameters": {"response": response_text}}
+            command_json = _process_and_render_model_turn(socketio, session_id, response_text, is_live=True)
 
             action = command_json.get("action")
 
-            # --- REFACTORED AND UNIFIED MESSAGE HANDLING LOGIC ---
-            final_message_to_user = ""
-            
-            # Case 1: The action is a final response ('respond' or 'task_complete').
-            if action in ['respond', 'task_complete']:
-                # Compare the length of the prose attachment and the response parameter
-                prose_text = command_json.get('attachment', '') or ""
-                response_param_text = command_json.get('parameters', {}).get('response', '') or ""
-                
-                # Determine the definitive message to display
-                if len(prose_text.strip()) > len(response_param_text.strip()):
-                    final_message_to_user = prose_text
-                else:
-                    final_message_to_user = response_param_text
-                
-                # Send the final message if it's not empty
-                if final_message_to_user and final_message_to_user.strip() and not prose_is_empty:
-                    socketio.emit('log_message', {'type': 'final_answer', 'data': final_message_to_user}, to=session_id)
-                
-                if action == 'task_complete':
-                    logging.info(f"Agent initiated task_complete. Ending loop for session {session_id}.")
-                
-                return # Terminate the loop after sending the final message.
+            if i >= NOMINAL_MAX_ITERATIONS_REASONING_LOOP and not action == "respond":
+                current_prompt = "WARNING: You have exceeded the maximum number of allowed reasoning loop iterations. You MUST use the `respond` command to issue a response to the user and terminate this reasoning loop. Please note that any command or prose you sent during your last iteration was not executed or delivered to the user."
+                continue
+
+            # Case 1: The action is a final response ('respond' or 'task_complete')
+            if action in ['respond', 'task_complete']: # task_complete is a legacy command
+                # Response was already sent to client in _process_and_render_model_turn()
+                logging.info(f"Agent has issued a response. Terminating reasoning loop for session {session_id}.")
+                return # Terminate reasoning loop
 
             # Case 2: The action is a tool command, which may have preceding prose.
             destructive_actions = ['delete_file', 'delete_session']
@@ -605,19 +559,11 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 current_prompt = observation_template.format(tool_result_json=json.dumps(error_payload))
                 destruction_confirmed = False
                 continue
-
             if action == 'request_confirmation':
-                prompt_text = command_json.get('parameters', {}).get('prompt', 'Are you sure?')
-                # Send the introductory prose first, if it exists
-                if command_json.get('attachment'):
-                    prose_text = command_json.get('attachment', '')
-                    if prose_text and prose_text.strip() and not prose_is_empty:
-                        socketio.emit('log_message', {'type': 'info', 'data': prose_text}, to=session_id)
-
+                # Prompt and prose (if present) already sent to client in _process_and_render_model_turn()
                 confirmation_event = Event()
                 confirmation_events[session_id] = confirmation_event
-                audit_log.log_event("Socket.IO Emit: request_user_confirmation", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User", "Orchestrator"], details={'prompt': prompt_text})
-                socketio.emit('request_user_confirmation', {'prompt': prompt_text}, to=session_id)
+                #socketio.emit('request_user_confirmation', {'prompt': prompt_text}, to=session_id)
                 user_response = confirmation_event.wait()
                 confirmation_events.pop(session_id, None)
                 if user_response == 'yes':
@@ -628,27 +574,8 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 continue
 
             # --- TOOL EXECUTION AND RE-ORDERED RESPONSE ---
-            audit_log.log_event(
-                event="Tool Agent Call Sent",
-                session_id=session_id,
-                session_name=get_current_session_name(),
-                loop_id=loop_id,
-                source="Orchestrator",
-                destination="Tool Agent",
-                details=command_json
-            )
             
             tool_result = execute_tool_command(command_json, socketio, session_id, chat_sessions, model, loop_id)            
-            
-            audit_log.log_event(
-                event="Tool Agent Execution Finished",
-                session_id=session_id,
-                session_name=get_current_session_name(),
-                loop_id=loop_id,
-                source="Orchestrator",
-                destination="Orchestrator",
-                details=tool_result
-            )
 
             destruction_confirmed = False
 
@@ -657,23 +584,13 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 log_message = tool_result.get('message', f"Tool '{action}' executed successfully.")
             else:
                 log_message = tool_result.get('message', f"Tool '{action}' failed.")
-
-            # Log the result to the client's tool log.
-            audit_log.log_event(
-                event="Socket.IO Emit: tool_log",
-                session_id=session_id,
-                session_name=get_current_session_name(),
-                loop_id=loop_id,
-                source="Orchestrator",
-                destination="Client",
-                details={'data': f"[{log_message}]"}
-            )
             socketio.emit('tool_log', {'data': f"[{log_message}]"}, to=session_id)
 
             # Special case for session loading, which shouldn't pause.
             if action == "load_session":
                 return
 
+            """
             # STEP 2: Now, send the agent's "thinking out loud" prose that came with the command.
             if command_json.get('attachment'):
                 prose_text = command_json.get('attachment', '')
@@ -692,11 +609,13 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 logging.info(f"User halted execution after tool action. Ending loop for session {session_id}.")
                 socketio.emit('log_message', {'type': 'info', 'data': "Execution halted by user."}, to=session_id)
                 break # Use break to cleanly exit the loop and wait for new user input.
+            """
             
             current_prompt = observation_template.format(tool_result_json=json.dumps(tool_result))
 
     except Exception as e:
-        logging.exception("An error occurred in the reasoning loop.")
-        socketio.emit('log_message', {'type': 'error', 'data': f"An error occurred during reasoning: {str(e)}"}, to=session_id)
+        error_message = f"An error occurred during reasoning: {str(e)}"
+        logging.exception(error_message)
+        socketio.emit('log_message', {'type': 'error', 'data': error_message}, to=session_id)
     finally:
-        audit_log.log_event("Reasoning Loop Ended", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Orchestrator", observers=["Orchestrator"])
+        logging.info("Reasoning Loop Ended")

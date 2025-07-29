@@ -1,0 +1,70 @@
+--- a/orchestrator.py
++++ b/sandbox/orchestrator.py
+@@ -427,18 +427,18 @@
+                     final_message_for_display = cleaned_prose
+ 
+                 # Render the messages based on the processed data
+-                if final_message_for_display:
+-                    socketio.emit('log_message', {'type': 'final_answer', 'data': final_message_for_display}, to=session_id)
+-                elif cleaned_prose: # This handles cases where prose is an intro to a command.
+-                    socketio.emit('log_message', {'type': 'info', 'data': cleaned_prose}, to=session_id)
+-                
++                # Render the messages based on the processed data, but only if they contain actual content.
++                if final_message_for_display:
++                    content_match = re.match(r'^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\]\\s*(.*)', final_message_for_display, re.DOTALL)
++                    actual_content = content_match.group(1) if content_match else final_message_for_display
++                    if actual_content.strip():
++                        socketio.emit('log_message', {'type': 'final_answer', 'data': final_message_for_display}, to=session_id)
++                elif cleaned_prose: # This handles cases where prose is an intro to a command.
++                    content_match = re.match(r'^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\]\\s*(.*)', cleaned_prose, re.DOTALL)
++                    actual_content = content_match.group(1) if content_match else cleaned_prose
++                    if actual_content.strip():
++                        socketio.emit('log_message', {'type': 'info', 'data': cleaned_prose}, to=session_id)
++
+                 # Handle non-message actions like confirmation prompts
+                 if command_json and command_json.get('action') == 'request_confirmation':
+                     prompt = command_json.get('parameters', {}).get('prompt')
+@@ -616,22 +616,20 @@
+ 
+             # Now, handle the final actions with the determined message
+             if action in ['respond', 'task_complete']:
+-                if final_message_to_user and final_message_to_user.strip():
+-                    if response.text.strip():
+-                        audit_log.log_event(
+-                            "Socket.IO Emit: log_message", 
+-                            session_id=session_id, 
+-                            session_name=get_current_session_name(), 
+-                            loop_id=loop_id, 
+-                            source="Orchestrator", 
+-                            destination="Client", 
+-                            observers=["User", "Orchestrator"], 
+-                            details={'type': 'final_answer', 'data': final_message_to_user}
+-                        )
+-                        socketio.emit('log_message', {'type': 'final_answer', 'data': final_message_to_user}, to=session_id)
+-                
++                # Strip the timestamp prefix to check if there is actual content.
++                content_match = re.match(r'^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\]\\s*(.*)', final_message_to_user, re.DOTALL)
++                actual_content = content_match.group(1) if content_match else final_message_to_user
++
++                if actual_content.strip():
++                    audit_log.log_event(
++                        "Socket.IO Emit: log_message",
++                        session_id=session_id,
++                        session_name=get_current_session_name(),
++                        loop_id=loop_id,
++                        source="Orchestrator",
++                        destination="Client",
++                        observers=["User", "Orchestrator"],
++                        details={'type': 'final_answer', 'data': final_message_to_user}
++                    )
++                    socketio.emit('log_message', {'type': 'final_answer', 'data': final_message_to_user}, to=session_id)
++
+                 if action == 'task_complete':
+                     logging.info(f"Agent initiated task_complete. Ending loop for session {session_id}.")
+-                
+                 return # End the loop for both respond and task_complete
+-            
+-            # --- END OF NEW LOGIC ---
+ 
+             destructive_actions = ['delete_file', 'delete_session']
+             if action in destructive_actions and not destruction_confirmed:

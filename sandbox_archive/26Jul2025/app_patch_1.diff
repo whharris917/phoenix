@@ -1,0 +1,11 @@
+--- a/app.py
++++ b/sandbox/app_proposed.py
+@@ -168,7 +168,8 @@
+             chat_sessions[session_id] = {
+                 "chat": model.start_chat(history=memory.get_full_history()),
+                 "memory": memory,
+-                "name": new_session_name
++                "name": new_session_name,
++                "state": "idle"
+             }
+             app.logger.info(f"Chat and MemoryManager session created for {session_id} with name {new_session_name}")

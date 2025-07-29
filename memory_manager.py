@@ -3,6 +3,7 @@ import logging
 import uuid
 import os
 import time
+from vertexai.generative_models import Content, Part
 import chromadb.utils.embedding_functions as embedding_functions
 
 # This script will be in the project root. The sandbox is a subdirectory.
@@ -14,7 +15,7 @@ os.makedirs(CHROMA_DB_PATH, exist_ok=True)
 logging.info(f"ChromaDB path set to: {CHROMA_DB_PATH}")
 
 
-# --- NEW: Explicitly define the embedding function ---
+# --- Explicitly define the embedding function ---
 # This forces ChromaDB to use a known, pre-loaded model, preventing silent failures
 # during the automatic download of the default model.
 try:
@@ -35,7 +36,7 @@ class MemoryManager:
     Manages the Tiered Memory Architecture for the AI agent.
 
     Tier 1: Conversational Buffer (Short-Term Memory)
-    Tier 2: Summaries & Segments (Mid-Term Memory) - NEW
+    Tier 2: Summaries & Segments (Mid-Term Memory) # NOT CURRENTLY OPERATIONAL
     Tier 3: Vector Store (Long-Term, Specific Recall) # NOT CURRENTLY OPERATIONAL
     """
     def __init__(self, session_name):
@@ -96,8 +97,9 @@ class MemoryManager:
             # Reverse again to get chronological order
             recent_turns.reverse()
 
+            # --- Create Content objects using Part.from_text() ---
             self.conversational_buffer = [
-                {"role": turn['metadata']['role'], "parts": [{'text': turn['document']}]}
+                Content(role=turn['metadata']['role'], parts=[Part.from_text(turn['document'])])
                 for turn in recent_turns
             ]
             logging.info(f"Repopulated buffer with {len(self.conversational_buffer)} turns from ChromaDB for session '{self.session_name}'.")
@@ -112,7 +114,8 @@ class MemoryManager:
         Role is 'user' or 'model'.
         Metadata is an optional dictionary for storing additional info like summaries.
         """
-        turn = {"role": role, "parts": [{'text': content}]}
+        # --- Create Content object using Part.from_text() ---
+        turn = Content(role=role, parts=[Part.from_text(content)])
         self.conversational_buffer.append(turn)
         if len(self.conversational_buffer) > self.max_buffer_size:
             self.conversational_buffer.pop(0)

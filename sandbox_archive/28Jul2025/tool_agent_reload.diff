@@ -1,0 +1,17 @@
+--- a/tool_agent.py
++++ b/sandbox/tool_agent.py
+@@ -319,7 +319,13 @@
+             if write_result['status'] == 'error':
+                 return write_result
+ 
+-            return {"status": "success", "message": f"Patch applied successfully. File saved to '{target_filename}'.\"}
++            # --- NEW: Server-initiated reload for UI files ---
++            if source_filename in ['index.html', 'database_viewer.html', 'documentation_viewer.html', 'workshop.html']:
++                logging.info(f"UI file '{source_filename}' was patched. Requesting client reload.")
++                socketio.emit('request_client_reload', to=session_id)
++
++            return {"status": "success", "message": f"Patch applied to '{source_filename}'. Output saved to '{target_filename}'."}
++
+ 
+         # --- REFACTORED AND MODIFIED SESSION MANAGEMENT TOOLS ---
+         elif action == 'save_session':

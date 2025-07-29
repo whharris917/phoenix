@@ -1,0 +1,54 @@
+--- a/tool_agent.py
++++ b/sandbox/tool_agent_proposed.py
+@@ -10,9 +10,18 @@
+ import builtins
+ 
+ # --- Constants ---\
+-LEGACY_SESSIONS_FILE = os.path.join(os.path.dirname(__file__), 'sandbox', 'sessions', 'sessions.json')
+-CHROMA_DB_PATH = os.path.join(os.path.dirname(__file__), '.sandbox', 'chroma_db') 
++# Define the project root and the parent directory
++PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
++PARENT_DIR = os.path.dirname(PROJECT_ROOT)
+ 
++# The sandbox is now a sibling to the project directory, not inside it.
++SANDBOX_DIR = os.path.join(PARENT_DIR, 'sandbox')
++
++# Ensure the sandbox directory exists
++if not os.path.exists(SANDBOX_DIR):
++    os.makedirs(SANDBOX_DIR)
++
++LEGACY_SESSIONS_FILE = os.path.join(SANDBOX_DIR, 'sessions', 'sessions.json')
++CHROMA_DB_PATH = os.path.join(SANDBOX_DIR, 'chroma_db')
+ ALLOWED_PROJECT_FILES = [
+ 'public_data/system_prompt.txt', 
+     'api_usage.py',
+@@ -87,15 +96,12 @@
+ 
+ # --- Core Tooling Logic ---\
+ 
+-def get_safe_path(filename, base_dir_name='sandbox'):
+-    base_dir = os.path.dirname(os.path.abspath(__file__))
+-    target_dir = os.path.join(base_dir, base_dir_name)
+-    if not os.path.exists(target_dir):
+-        os.makedirs(target_dir)
++def get_safe_path(filename):
++    # This function now uses the global SANDBOX_DIR constant
+     
+-    requested_path = os.path.abspath(os.path.join(target_dir, filename))
++    requested_path = os.path.abspath(os.path.join(SANDBOX_DIR, filename))
+     
+-    if not requested_path.startswith(target_dir):
++    if not requested_path.startswith(SANDBOX_DIR):
+         raise ValueError("Attempted path traversal outside of allowed directory.")
+     return requested_path
+ 
+@@ -131,8 +137,7 @@
+             return {\"status\": \"success\", \"message\": \"Listed allowed project files.\", \"allowed_files\": ALLOWED_PROJECT_FILES}
+ 
+         elif action == 'list_directory':
+-            sandbox_dir = get_safe_path('').rsplit(os.sep, 1)[0]
+-            result = tpool.execute(_list_directory, sandbox_dir)
++            result = tpool.execute(_list_directory, SANDBOX_DIR)
+             if result['status'] == 'success':
+                  return {\"status\": \"success\", \"message\": \"Listed files in sandbox.\", \"files\": result['files']}\
+             else:

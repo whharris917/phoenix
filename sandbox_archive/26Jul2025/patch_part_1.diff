@@ -1,0 +1,22 @@
+--- a/memory_manager.py
++++ b/sandbox/memory_manager.py
+@@ -181,6 +181,18 @@
+         except Exception as e:
+             logging.error(f"Could not update metadata in ChromaDB for session '{self.session_name}': {e}")
+ 
++    def get_unsummarized_turns(self):
++        """
++        Retrieves all turns that have not yet been included in a summary.
++        This is the source material for creating a new Tier 2 summary.
++        """
++        all_turns = self.get_all_turns()
++        unsummarized = [
++            turn for turn in all_turns
++            if not turn['metadata'].get('is_summarized') and turn['metadata'].get('role') in ['user', 'model']
++        ]
++        unsummarized.sort(key=lambda x: x['metadata'].get('timestamp', 0))
++        return unsummarized
++
+     # --- NEW: Function to get all turns for summarization ---
+     def get_all_turns(self):
+         """

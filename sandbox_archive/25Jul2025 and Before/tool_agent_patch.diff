@@ -1,0 +1,56 @@
+--- a/tool_agent.py
++++ b/tool_agent.py
+@@ -35,10 +35,38 @@
+ # --- Helper functions ---
+ 
+-def _execute_script(script_content):
+-    string_io = io.StringIO()
+-    try:
+-        restricted_globals = {"__builtins__": {"print": print, "range": range, "len": len, "str": str, "int": int, "float": float, "list": list, "dict": dict, "set": set, "abs": abs, "max": max, "min": min, "sum": sum}}
+-        with redirect_stdout(string_io):
+-            exec(script_content, restricted_globals, {})
+-        return {"status": "success", "output": string_io.getvalue()}
+-    except Exception as e:
+-        return {"status": "error", "message": str(e)}
++ALLOWED_IMPORTS = [
++    'numpy', 
++    'scipy', 
++    'pandas', 
++    'scikit-learn', 
++    'matplotlib', 
++    'requests', 
++    'beautifulsoup4',
++    'math',
++    'random',
++    'datetime',
++    'json',
++    're',
++    'io',
++    'sys'
++]
++
++def _custom_importer(name, globals=None, locals=None, fromlist=(), level=0):
++    """
++    A restricted version of the import statement that only allows importing from a whitelist.
++    """
++    if name in ALLOWED_IMPORTS:
++        return __import__(name, globals, locals, fromlist, level)
++    raise ImportError(f"Gemini-local-agent has blocked the import of '{name}'.")
++
++def _execute_script(script_content):
++    string_io = io.StringIO()
++    try:
++        safe_builtins = __builtins__.__dict__.copy()
++        safe_builtins['__import__'] = _custom_importer
++        restricted_globals = {"__builtins__": safe_builtins}
++        with redirect_stdout(string_io):
++            exec(script_content, restricted_globals, {})
++        return {"status": "success", "output": string_io.getvalue()}
++    except Exception as e:
++        import traceback
++        error_trace = traceback.format_exc()
++        logging.error(f"Script execution error: {e}\n{error_trace}")
++        return {"status": "error", "message": f"{str(e)}\n{error_trace}"}
+ 
+ def _write_file(path, content):
+     try:

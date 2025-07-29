@@ -1,0 +1,11 @@
+--- a/orchestrator.py
++++ b/sandbox/orchestrator_proposed.py
+@@ -358,7 +358,7 @@
+ 
+         observation_template = "Tool Result: {tool_result_json}"
+ 
+-        for i in range(100):
++        for i in range(30):
+             socketio.sleep(0)
+             
+             audit_log.log_event(

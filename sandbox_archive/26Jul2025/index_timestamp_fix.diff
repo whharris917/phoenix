@@ -1,0 +1,24 @@
+--- a/index.html
++++ b/sandbox/index_proposed.html
+@@ -375,6 +375,11 @@
+                 addConversationLog(msg.data, msg.type);
+             });
+             
++            socket.on('display_user_prompt', (data) => {
++                logClientEvent("Socket.IO Event Received: display_user_prompt", {"data": data}, "Client", null);
++                addConversationLog(data.prompt, 'user');
++            });
++
+             socket.on('tool_log', (msg) => {
+                 logClientEvent("Socket.IO Event Received: tool_log", {\"msg\": msg}, "Client", null);
+                 addToolLog(msg.data);
+@@ -410,7 +415,7 @@
+             const handleUserPrompt = () => {
+                 logClientEvent("Event Handler Triggered: handleUserPrompt()", {}, "Client", null);
+                 const prompt = promptInput.value.trim();
+                 if (!prompt) return;
+-                addConversationLog(prompt, 'user');
++                // addConversationLog(prompt, 'user'); // MODIFIED: Do not log immediately. Wait for server echo.
+                 promptInput.value = '';
+                 adjustTextareaHeight();
+                 const payload = { prompt };

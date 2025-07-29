@@ -1,0 +1,11 @@
+--- a/tool_agent.py
++++ b/sandbox/tool_agent.py
+@@ -310,7 +310,7 @@
+             new_content, error_message = patcher.apply_patch(diff_content, original_content, source_filename)
+             
+             if error_message:
+-                return {"status": "error", "message": f"Failed to apply patch: {error_message}"}
++                return {"status": "error", "message": error_message}
+ 
+             # 7. Write the new, patched content to the validated target path
+             write_result = tpool.execute(_write_file, target_save_path, new_content)

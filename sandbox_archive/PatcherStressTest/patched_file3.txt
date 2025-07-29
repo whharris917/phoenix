@@ -1,0 +1,2 @@
+Line 1: This line will be kept.
+Line 4: This line will also be kept.

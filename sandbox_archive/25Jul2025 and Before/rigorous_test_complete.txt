@@ -1,0 +1,1 @@
+This file is the result of a "successful" test. It was created from a mixed message that contained both prose and a JSON command. The JSON's content included curly braces {} which previously broke the parser.

@@ -1,0 +1,4 @@
+--- a/tool_agent.py
++++ b/sandbox/tool_agent_fixed.py
+@@ -420,7 +420,11 @@
+                 \"\"\"\n\n            try:\n-                collection = chroma_client.get_collection(name=session_name)\n+                # BUGFIX: Use get_or_create_collection instead of get_collection.\n+                # The get_collection method was throwing a ValueError even when the\n+                # collection was confirmed to exist by list_collections. \n+                # Using get_or_create_collection is more robust; since we know it exists, it will just 'get' it.\n+                collection = chroma_client.get_or_create_collection(name=session_name)\n                 history_data = collection.get(include=[\"documents\", \"metadatas\"])\n                 \n                 full_history = []\n

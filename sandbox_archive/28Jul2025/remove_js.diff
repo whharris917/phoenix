@@ -1,0 +1,46 @@
+--- a/index.html
++++ b/sandbox/index.html
+@@ -162,11 +162,6 @@
+             const orchestratorText = document.getElementById('orchestrator-text');
+             const agentStatus = document.getElementById('agent-status');
+             const agentText = document.getElementById('agent-text');
+-            const apiCallsEl = document.getElementById('api-calls');
+-            const promptTokensEl = document.getElementById('prompt-tokens');
+-            const completionTokensEl = document.getElementById('completion-tokens');
+-            const totalTokensEl = document.getElementById('total-tokens');
+-            const estCostEl = document.getElementById('est-cost');
+ 
+             const SERVER_URL = window.location.origin;
+             const socket = io(SERVER_URL);
+@@ -256,17 +251,10 @@
+             const requestSessionList = () => { 
+                 logClientEvent("Socket.IO Emit: request_session_list", {}, "Server", "Request");
+                 if (socket.connected) socket.emit('request_session_list'); 
+-            };
+-            
+-            const updateApiStats = (stats) => {
+-                 const INPUT_PRICE_PER_MILLION = 3.50; const OUTPUT_PRICE_PER_MILLION = 10.50;
+-                 const promptTokens = stats.total_prompt_tokens || 0; const completionTokens = stats.total_completion_tokens || 0; const totalTokens = promptTokens + completionTokens;
+-                 const cost = (promptTokens / 1000000 * INPUT_PRICE_PER_MILLION) + (completionTokens / 1000000 * OUTPUT_PRICE_PER_MILLION);
+-                 apiCallsEl.textContent = stats.total_calls || 0; promptTokensEl.textContent = promptTokens.toLocaleString(); completionTokensEl.textContent = completionTokens.toLocaleString(); totalTokensEl.textContent = totalTokens.toLocaleString(); estCostEl.textContent = `$${cost.toFixed(4)}`;
+             };
+ 
+             socket.on('connect', () => {
+                 logClientEvent("Socket.IO Event Received: connect", {}, "Client", null);
+                 orchestratorStatus.className = 'w-3 h-3 rounded-full bg-green-500'; orchestratorText.textContent = 'Orchestrator Online';
+                 agentStatus.className = 'w-3 h-3 rounded-full bg-green-500'; agentText.textContent = 'Agent Online';
+                 requestSessionList(); 
+-                //logClientEvent("Socket.IO Emit: request_api_stats");
+-                socket.emit('request_api_stats'); 
+                 logClientEvent("Socket.IO Emit: request_session_name", {}, "Client", "Request");
+                 socket.emit('request_session_name');
+             });
+@@ -307,8 +295,6 @@
+                 currentSessionName = data.name || '[New Session]';
+                 sessionNameDisplay.textContent = currentSessionName;
+             });
+-
+-            socket.on('api_usage_update', (stats) => { updateApiStats(stats); });
+ 
+             socket.on('clear_chat_history', () => {
+                 logClientEvent("Socket.IO Event Received: clear_chat_history", {}, "Client", null);

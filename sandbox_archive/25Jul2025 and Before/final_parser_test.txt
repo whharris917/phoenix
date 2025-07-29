@@ -1,0 +1,1 @@
+This file confirms the new, robust parser works. It was created from a "mixed message" that included prose, markdown fences, and characters like {} that would have broken previous versions.

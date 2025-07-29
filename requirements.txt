@@ -10,3 +10,4 @@ pandas
 patch
 debugpy
 jupyter
+google-cloud-aiplatform

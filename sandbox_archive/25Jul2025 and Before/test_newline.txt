@@ -1,0 +1,2 @@
+This is a string with a
+newline that needs fixing.

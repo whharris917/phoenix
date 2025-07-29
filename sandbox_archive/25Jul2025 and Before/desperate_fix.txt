@@ -1,0 +1,85 @@
+### Step 1: Replace the `find_json_block` function
+
+Please delete the entire `find_json_block` function in `orchestrator.py` and replace it with this new, more robust version:
+
+```python
+def find_and_extract_json_with_prose(text):
+    """
+    Finds a JSON block, prioritizing markdown fences, and separates it from surrounding text.
+    Returns a tuple: (json_string, prose_string)
+    """
+    # Prioritize finding a markdown-fenced JSON block
+    start_marker = '```json'
+    end_marker = '```'
+    start_pos = text.find(start_marker)
+
+    if start_pos != -1:
+        end_pos = text.find(end_marker, start_pos + len(start_marker))
+        if end_pos != -1:
+            json_str = text[start_pos + len(start_marker):end_pos].strip()
+            prose_str = (text[:start_pos].strip() + ' ' + text[end_pos + len(end_marker):].strip()).strip()
+            return json_str, prose_str
+
+    # Fallback to brace-counting from the end if no markdown block is found
+    end_brace_pos = text.rfind('}')
+    if end_brace_pos == -1:
+        return None, text # No JSON found, return original text as prose
+
+    brace_count = 1
+    start_brace_pos = -1
+    for i in range(end_brace_pos - 1, -1, -1):
+        if text[i] == '}': brace_count += 1
+        elif text[i] == '{': brace_count -= 1
+        if brace_count == 0:
+            start_brace_pos = i
+            break
+
+    if start_brace_pos != -1:
+        json_str = text[start_brace_pos:end_brace_pos + 1]
+        prose_str = text[:start_brace_pos].strip()
+        return json_str, prose_str
+
+    return None, text # No JSON found, return original text as prose
+```
+
+### Step 2: Replace the JSON Parsing Block
+
+In `execute_reasoning_loop`, please find and delete the entire block of code that starts with `command_json = None` and ends just before `action = command_json.get("action")`. Replace it with this new logic:
+
+```python
+            # --- NEW, ROBUST JSON PARSING LOGIC ---
+            command_json = None
+            json_str, attachment_text = find_and_extract_json_with_prose(response_text)
+
+            if json_str:
+                # A potential JSON block was found. Try to parse/heal it.
+                max_repair_attempts = 10
+                for attempt in range(max_repair_attempts):
+                    try:
+                        command_json = json.loads(json_str)
+                        if attempt > 0:
+                            logging.info(f"Successfully repaired JSON after {attempt} attempts.")
+                        break # Success!
+                    except json.JSONDecodeError as e:
+                        offending_quote_pos = json_str.rfind('"', 0, e.pos + 1)
+                        if offending_quote_pos != -1:
+                            logging.warning(f"Attempting JSON repair {attempt + 1}/{max_repair_attempts}. Error: {e}")
+                            json_str = json_str[:offending_quote_pos] + '\\' + json_str[offending_quote_pos:]
+                        else:
+                            logging.error(f"JSON repair failed on attempt {attempt+1}. Could not find quote to escape.")
+                            command_json = None
+                            break # Unfixable error
+
+                if command_json and attachment_text:
+                    command_json['attachment'] = attachment_text
+                    audit_log.log_event("Socket.IO Emit: log_message", session_id=session_id, session_name=get_current_session_name(), loop_id=loop_id, source="Orchestrator", destination="Client", observers=["User"], details={'type': 'info', 'data': attachment_text})
+                    socketio.emit('log_message', {'type': 'info', 'data': attachment_text}, to=session_id)
+
+            if not command_json:
+                # If no JSON was found or parsing/healing failed, treat the whole response as prose.
+                logging.warning(f"Could not decode JSON from model response. Treating as plain text.")
+                command_json = {"action": "respond", "parameters": {"response": response_text}}
+            # --- END OF NEW PARSING LOGIC ---
+```
+
+Please let me know when you have applied these changes. I will be ready to test.

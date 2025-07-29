@@ -1,0 +1,40 @@
+--- a/app.py
++++ b/sandbox/app.py
+@@ -9,6 +9,7 @@
+ from tool_agent import execute_tool_command, get_safe_path
+ from memory_manager import MemoryManager
+ from multiprocessing.managers import BaseManager
++import time
+ from audit_logger import audit_log
+ import inspect_db as db_inspector
+ import debugpy
+@@ -107,17 +108,24 @@
+ api_stats = load_api_stats()
+ atexit.register(save_api_stats)
+ 
+-\"\"\"
+ # --- NEW: Connect to the Haven to get the persistent session dictionary ---
+ class HavenManager(BaseManager):
+     pass
+ 
+ HavenManager.register('get_sessions')
+ manager = HavenManager(address=('', 50000), authkey=b'phoenixhaven')
+-manager.connect()
++
++# Add a retry loop for robustness
++for i in range(5): # Try to connect 5 times
++    try:
++        manager.connect()
++        logging.info("Successfully connected to Haven.")
++        break
++    except ConnectionRefusedError:
++        logging.warning(f"Haven connection refused. Retrying in {i+1} second(s)...")
++        time.sleep(i+1)
++
+ chat_sessions = manager.get_sessions()
+-logging.info(\"Successfully connected to Haven and retrieved session dictionary.\")\n\"\"\"
+-
+-chat_sessions = {}
+ 
+ # --- SERVER ROUTES & EVENTS ---
+ @app.route('/')

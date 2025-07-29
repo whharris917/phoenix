@@ -1,0 +1,10 @@
+--- a/app.py
++++ b/app.py
+@@ -20,6 +20,7 @@
+ CORS(app)
+ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+ 
++# This is a "test" comment with unescaped quotes.
+ # --- Global Variables ---
+ chat_sessions = {}
+ model = None
