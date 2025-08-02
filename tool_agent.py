@@ -6,30 +6,7 @@ from eventlet import tpool
 import chromadb
 from code_parser import analyze_codebase, generate_mermaid_diagram
 import patcher
-import builtins
-
-# --- Constants ---
-CHROMA_DB_PATH = os.path.join(os.path.dirname(__file__), ".sandbox", "chroma_db")
-
-ALLOWED_PROJECT_FILES = [
-    "public_data/system_prompt.txt",
-    "app.py",
-    "audit_logger.py",
-    "audit_visualizer.py",
-    "code_parser.py",
-    "code_visualizer.py",
-    "database_viewer.html",
-    "documentation_viewer.html",
-    "haven.py",
-    "index.html",
-    "inspect_db.py",
-    "memory_manager.py",
-    "orchestrator.py",
-    "patcher.py",
-    "requirements.txt",
-    "tool_agent.py",
-    "workshop.html",
-]
+from config import CHROMA_DB_PATH, ALLOWED_PROJECT_FILES
 
 
 # --- NEW: Haven Proxy Wrapper for seamless integration ---
@@ -88,9 +65,8 @@ def _execute_script(script_content):
                 "sum": sum,
             }
         }
-        global_scope = {
-            "__builtins__": builtins.__dict__
-        }  # Use this instead of restricted_globals to give agent abiltiy to import
+
+        # global_scope = {"__builtins__": builtins.__dict_}  # Use this instead of restricted_globals to give agent abiltiy to import
         with redirect_stdout(string_io):
             exec(script_content, restricted_globals, {})
         return {"status": "success", "output": string_io.getvalue()}

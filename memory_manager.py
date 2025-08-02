@@ -5,10 +5,7 @@ import os
 import time
 from vertexai.generative_models import Content, Part
 import chromadb.utils.embedding_functions as embedding_functions
-
-# This script will be in the project root. The sandbox is a subdirectory.
-SANDBOX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".sandbox")
-CHROMA_DB_PATH = os.path.join(SANDBOX_DIR, "chroma_db")
+from config import CHROMA_DB_PATH
 
 # Ensure the ChromaDB directory exists
 os.makedirs(CHROMA_DB_PATH, exist_ok=True)

@@ -8,8 +8,10 @@ import re
 import os
 from tool_agent import execute_tool_command
 
-ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP = 10
-NOMINAL_MAX_ITERATIONS_REASONING_LOOP = 3
+from config import (
+    ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP,
+    NOMINAL_MAX_ITERATIONS_REASONING_LOOP,
+)
 
 confirmation_events = {}
 

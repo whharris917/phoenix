@@ -1,5 +1,3 @@
-# summarizer.py
-
 import chromadb
 import time
 import logging
@@ -7,14 +5,13 @@ import uuid  # Import uuid for segment IDs
 from datetime import datetime, timezone
 from vertexai.generative_models import GenerativeModel, Part
 import vertexai
-
-# --- CONFIGURATION ---
-# Use a cheaper, faster model for summarization tasks
-SUMMARIZER_MODEL_NAME = "gemini-2.0-flash-lite-001"
-CHROMA_DB_PATH = ".sandbox/chroma_db"
-PROJECT_ID = "long-ratio-463815-n7"
-LOCATION = "us-east1"
-SEGMENT_THRESHOLD = 20  # Number of turns before creating a "chapter" summary
+from config import (
+    SUMMARIZER_MODEL_NAME,
+    SEGMENT_THRESHOLD,
+    PROJECT_ID,
+    LOCATION,
+    CHROMA_DB_PATH,
+)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - Summarizer - %(levelname)s - %(message)s"

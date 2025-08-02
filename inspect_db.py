@@ -3,8 +3,7 @@ import os
 import pandas as pd
 import json
 from datetime import datetime
-
-CHROMA_DB_PATH = os.path.join(os.getcwd(), ".sandbox", "chroma_db")
+from config import CHROMA_DB_PATH
 
 
 def get_db_client():

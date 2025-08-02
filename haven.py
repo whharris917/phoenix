@@ -9,6 +9,7 @@ from vertexai.generative_models import (
     Content,
     Part,
 )
+from config import PROJECT_ID, LOCATION
 
 # --- Setup Logging ---
 logging.basicConfig(
@@ -40,9 +41,6 @@ def load_model_definition():
         return "gemini-1.5-pro-001"
 
 
-# --- CONFIGURATION & MODEL SETUP (MOVED FROM APP.PY) ---
-PROJECT_ID = "long-ratio-463815-n7"
-LOCATION = "us-east1"
 SYSTEM_PROMPT = load_system_prompt()
 MODEL_DEFINITION = load_model_definition()
 model = None
