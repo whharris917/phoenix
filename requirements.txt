@@ -11,3 +11,5 @@ patch
 debugpy
 jupyter
 google-cloud-aiplatform
+black
+ruff

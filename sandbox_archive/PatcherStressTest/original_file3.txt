@@ -1,4 +1,0 @@
-Line 1: This line will be kept.
-Line 2: This line is to be deleted.
-Line 3: So is this one.
-Line 4: This line will also be kept.

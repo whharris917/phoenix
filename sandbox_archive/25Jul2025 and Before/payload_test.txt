@@ -1,2 +1,0 @@
-This is the content that should be extracted from the payload.
-It can contain multiple lines.

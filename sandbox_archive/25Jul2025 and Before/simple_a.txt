@@ -1,3 +1,0 @@
-Line 1: The original first line.
-Line 2: The line to be replaced.
-Line 3: The final line.

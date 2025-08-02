@@ -1,1 +1,0 @@
-Here is a string with \"escaped quotes\" and a literal backslash: \\.

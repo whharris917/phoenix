@@ -2,8 +2,9 @@ import chromadb
 import os
 import fnmatch
 
-SANDBOX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.sandbox')
-CHROMA_DB_PATH = os.path.join(SANDBOX_DIR, 'chroma_db')
+SANDBOX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".sandbox")
+CHROMA_DB_PATH = os.path.join(SANDBOX_DIR, "chroma_db")
+
 
 def manage_collections():
     """
@@ -11,7 +12,9 @@ def manage_collections():
     """
     if not os.path.exists(CHROMA_DB_PATH):
         print(f"ChromaDB path not found at: {CHROMA_DB_PATH}")
-        print("Please ensure the agent has been run at least once to create the database.")
+        print(
+            "Please ensure the agent has been run at least once to create the database."
+        )
         return
 
     try:
@@ -28,10 +31,14 @@ def manage_collections():
         for i, name in enumerate(collection_names):
             print(f"  {i + 1}. {name}")
 
-        print("\nPlease enter the name or a wildcard pattern (e.g., 'session_*') of the collection(s) you wish to delete.")
+        print(
+            "\nPlease enter the name or a wildcard pattern (e.g., 'session_*') of the collection(s) you wish to delete."
+        )
         pattern = input("> ")
 
-        collections_to_delete = [name for name in collection_names if fnmatch.fnmatch(name, pattern)]
+        collections_to_delete = [
+            name for name in collection_names if fnmatch.fnmatch(name, pattern)
+        ]
 
         if not collections_to_delete:
             print(f"No collections found matching the pattern: {pattern}")
@@ -41,10 +48,12 @@ def manage_collections():
         for name in collections_to_delete:
             print(f"  - {name}")
 
-        print(f"\nAre you sure you want to permanently delete these {len(collections_to_delete)} collections? (yes/no)")
+        print(
+            f"\nAre you sure you want to permanently delete these {len(collections_to_delete)} collections? (yes/no)"
+        )
         confirmation = input("> ").lower()
 
-        if confirmation == 'yes':
+        if confirmation == "yes":
             for name in collections_to_delete:
                 try:
                     client.delete_collection(name=name)
@@ -57,6 +66,7 @@ def manage_collections():
 
     except Exception as e:
         print(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
     manage_collections()

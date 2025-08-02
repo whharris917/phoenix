@@ -1,7 +1,0 @@
---- a/sandbox/PatcherStressTest/original_file2.txt
-+++ b/sandbox/PatcherStressTest/patched_file2.txt
-@@ -1,2 +1,4 @@
- This is the first line.
-+This is a newly added second line.
-+This is a newly added third line.
- This is the last line.

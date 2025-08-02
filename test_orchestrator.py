@@ -1,5 +1,4 @@
 import unittest
-import json
 import sys
 import os
 
@@ -8,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # It's better to import the specific function to be tested
 from orchestrator import parse_agent_response
+
 
 class TestParseAgentResponse(unittest.TestCase):
     """
@@ -35,17 +35,19 @@ class TestParseAgentResponse(unittest.TestCase):
         prose, command, prose_is_empty = parse_agent_response(response_text)
         self.assertIsNone(prose)
         self.assertIsNotNone(command)
-        self.assertEqual(command['action'], 'list_files')
+        self.assertEqual(command["action"], "list_files")
         self.assertTrue(prose_is_empty)
 
     def test_command_only_no_fences(self):
         """Tests a response with a JSON command not enclosed in fences."""
-        response_text = '{"action": "read_file", "parameters": {"filename": "test.txt"}}'
+        response_text = (
+            '{"action": "read_file", "parameters": {"filename": "test.txt"}}'
+        )
         prose, command, prose_is_empty = parse_agent_response(response_text)
         self.assertIsNone(prose)
         self.assertIsNotNone(command)
-        self.assertEqual(command['action'], 'read_file')
-        self.assertEqual(command['parameters']['filename'], 'test.txt')
+        self.assertEqual(command["action"], "read_file")
+        self.assertEqual(command["parameters"]["filename"], "test.txt")
 
     def test_mixed_message_prose_first(self):
         """Tests a mixed response with prose followed by a command."""
@@ -59,7 +61,7 @@ class TestParseAgentResponse(unittest.TestCase):
         prose, command, prose_is_empty = parse_agent_response(response_text)
         self.assertEqual(prose, "[2025-07-27 10:05:00] I will now list the files.")
         self.assertIsNotNone(command)
-        self.assertEqual(command['action'], 'list_files')
+        self.assertEqual(command["action"], "list_files")
         self.assertFalse(prose_is_empty)
 
     def test_malformed_json_needs_repair(self):
@@ -78,9 +80,9 @@ Line 2"
         prose, command, prose_is_empty = parse_agent_response(response_text)
         self.assertEqual(prose, "[2025-07-27 10:10:00] Creating a file with a newline.")
         self.assertIsNotNone(command)
-        self.assertEqual(command['action'], 'create_file')
+        self.assertEqual(command["action"], "create_file")
         # Check if the newline was correctly escaped
-        self.assertEqual(command['parameters']['content'], "Line 1\nLine 2")
+        self.assertEqual(command["parameters"]["content"], "Line 1\nLine 2")
 
     def test_response_with_payload(self):
         """Tests that payload blocks are correctly ignored by the parser but kept in the prose."""
@@ -108,11 +110,13 @@ print("Hello, World!")
 END @@PAYLOAD"""
         self.assertEqual(prose.strip(), expected_prose.strip())
         self.assertIsNotNone(command)
-        self.assertEqual(command['parameters']['content'], '@@PAYLOAD')
+        self.assertEqual(command["parameters"]["content"], "@@PAYLOAD")
 
     def test_no_valid_json(self):
         """Tests a response that looks like it has JSON but doesn't, should be all prose."""
-        response_text = "[2025-07-27 10:20:00] This is just text { with braces } but not JSON."
+        response_text = (
+            "[2025-07-27 10:20:00] This is just text { with braces } but not JSON."
+        )
         prose, command, prose_is_empty = parse_agent_response(response_text)
         self.assertEqual(prose, response_text)
         self.assertIsNone(command)
@@ -132,7 +136,7 @@ END @@PAYLOAD"""
         self.assertEqual(prose, "")
         self.assertIsNone(command)
         self.assertTrue(prose_is_empty)
-        
+
     def test_prose_is_effectively_empty(self):
         """Tests a response where the prose is just a timestamp and whitespace."""
         response_text = """[2025-07-27 10:25:00]   
@@ -147,6 +151,6 @@ END @@PAYLOAD"""
         self.assertTrue(prose_is_empty, "Prose should be considered effectively empty")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # This allows the test to be run from the command line
     unittest.main(verbosity=2)
