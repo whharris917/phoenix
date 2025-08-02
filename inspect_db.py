@@ -49,30 +49,35 @@ def get_collection_data_as_json(collection_name):
     try:
         client = get_db_client()
         collection = client.get_collection(name=collection_name)
+        # Ensure you include documents and metadatas
         data = collection.get(include=["metadatas", "documents"])
 
         if not data or not data['ids']:
             return json.dumps({'status': 'success', 'collection_name': collection_name, 'data': []})
 
-        # Format data for JSON serialization
         formatted_data = []
         for i, doc_id in enumerate(data['ids']):
             metadata = data['metadatas'][i] if data['metadatas'] and data['metadatas'][i] else {}
             timestamp = metadata.get('timestamp', 0)
-            # Format timestamp to a readable string, handle potential errors
+            
             try:
                 readable_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S') if timestamp else 'N/A'
             except (ValueError, TypeError):
                 readable_time = 'Invalid Timestamp'
 
+            # This block now includes all the fields we've added
             formatted_data.append({
                 'ID': doc_id,
                 'Timestamp': readable_time,
-                'Role': metadata.get('role', 'N/A'),
-                'Document (Memory Content)': data['documents'][i] if data['documents'] and data['documents'][i] else 'N/A'
+                'Role': metadata.get('role'),
+                'Summary': metadata.get('summary'),
+                'Augmented Prompt': metadata.get('augmented_prompt'),
+                'Type': metadata.get('type'),
+                'Segment ID': metadata.get('segment_id'),
+                'Document (Memory Content)': metadata.get('raw_content', data['documents'][i])
             })
         
-        # Sort the data by timestamp descending, so newest entries are first
+        # Sort data by timestamp so newest entries appear first in the viewer
         formatted_data.sort(key=lambda x: x.get('Timestamp', ''), reverse=True)
          
         return json.dumps({'status': 'success', 'collection_name': collection_name, 'data': formatted_data})
@@ -80,7 +85,6 @@ def get_collection_data_as_json(collection_name):
         return json.dumps({'status': 'error', 'message': f"Failed to retrieve collection '{collection_name}': {e}"})
 
 def inspect_database_cli():
-    """The original command-line inspection functionality."""
     print("--- ChromaDB Inspector (CLI) ---")
     try:
         collections_json = json.loads(list_collections_as_json())

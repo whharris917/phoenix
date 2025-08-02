@@ -60,10 +60,9 @@ class HavenProxyWrapper:
         if response_dict and response_dict.get('status') == 'success':
             return MockResponse(response_dict.get('text', ''))
         else:
-            # Raise an exception instead of returning a mock response with an error.
             error_message = response_dict.get('message', 'Unknown error in Haven.')
             logging.error(f"Error from Haven send_message for session '{self.session}': {error_message}")
-            raise RuntimeError(f"Haven service failed for session '{self.session}': {error_message}")
+            return MockResponse(f"Error communicating with Haven: {error_message}")
 
 # --- Helper functions ---
 def _execute_script(script_content):
@@ -149,7 +148,7 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, haven_pro
             safe_path = get_safe_path(filename)
             result = tpool.execute(_read_file, safe_path)
             if result['status'] == 'success':
-                return {"status": "success", "message": f"Read content from '{filename}'.", "content": result['content']}
+                return {"status": "success", "message": f"Read content from '{filename}'.\", \"content\": result['content']"}
             else:
                 return {"status": "error", "message": result['message']}
         
@@ -160,7 +159,7 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, haven_pro
             project_file_path = os.path.join(os.path.dirname(__file__), filename)
             result = tpool.execute(_read_file, project_file_path)
             if result['status'] == 'success':
-                return {"status": "success", "message": f"Read content from project file '{filename}'.", "content": result['content']}
+                return {"status": "success", "message": f"Read content from project file '{filename}'.\", \"content\": result['content']"}
             else:
                 return {"status": "error", "message": result['message']}
 
@@ -259,7 +258,7 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, haven_pro
             if os.path.exists(target_save_path) and not confirmed:
                 return {
                     "status": "error",
-                    "message": f"File '{target_filename}' already exists. To overwrite, add '\"confirmed\": true' to the parameters of the 'apply_patch' action."
+                    "message": f"File '{target_filename}' already exists. To overwrite, add '\\\"confirmed\\\": true' to the parameters of the 'apply_patch' action."
                 }
 
             # 4. Determine the absolute path to read the source file from
@@ -331,14 +330,11 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, haven_pro
                     for doc, meta in history_tuples:
                         # Convert to the format Haven expects
                         history_for_haven.append({"role": meta.get('role', 'unknown'), "parts": [{"text": doc}]})
+
+                haven_proxy.get_or_create_session(session_name, history_for_haven)
                 
                 chat_wrapper = HavenProxyWrapper(haven_proxy, session_name)
                 memory_manager = MemoryManager(session_name=session_name)
-
-                # MODIFIED: Send only the last 'max_buffer_size' turns to the Haven
-                history_slice_for_haven = history_for_haven[-memory_manager.max_buffer_size:]
-                haven_proxy.get_or_create_session(session_name, history_slice_for_haven)
-
                 chat_sessions[session_id] = {"chat": chat_wrapper, "memory": memory_manager, "name": session_name}
                 
                 socketio.emit('session_name_update', {'name': session_name}, to=session_id)
@@ -407,18 +403,6 @@ def execute_tool_command(command, socketio, session_id, chat_sessions, haven_pro
                 updated_list_result = execute_tool_command({'action': 'list_sessions'}, socketio, session_id, chat_sessions, haven_proxy)
                 socketio.emit('session_list_update', updated_list_result, to=session_id)
 
-                """
-                # If we just deleted the current session, reset the client to a new session state.
-                current_session_data = chat_sessions.get(session_id)
-                if current_session_data and current_session_data.get('name') == session_name:
-                    from app import handle_connect # Import locally to avoid circular dependency
-                    # Disconnecting the old state and reconnecting to a new one
-                    chat_sessions.pop(session_id, None) 
-                    confirmation_events.pop(session_id, None)
-                    handle_connect() # This will create a new session and update the client
-                    logging.info(f"Resetting client {session_id} to a new session after deleting active session '{session_name}'.")
-                """
-                    
                 return {"status": "success", "message": f"Session '{session_name}' deleted from both database and Haven."}
             except Exception as e:
                 logging.error(f"Error deleting session '{session_name}': {e}")

@@ -54,6 +54,7 @@ except Exception as e:
     # We should exit if the model fails to load, as the Haven is useless without it.
     exit(1)
 
+
 # This is the single, persistent object that will survive app reboots.
 # The keys will be session_names, and the values will be the live chat objects.
 live_chat_sessions = {}
@@ -65,60 +66,46 @@ class Haven:
     """
     def get_or_create_session(self, session_name, history_dicts):
         """
-        Gets a session if it exists, otherwise creates a new one by
-        storing the history list directly.
+        Gets a session if it exists, otherwise creates a new one.
+        History_dicts is a list of dictionaries, which needs to be converted
+        to a list of Content objects before starting the chat.
         """
         if session_name not in live_chat_sessions:
-            logging.info(f"Haven: Creating new history list for session: '{session_name}'")
-            # Convert the raw dictionaries to a list of Content objects
-            history_content = [Content(role=turn.get('role'), parts=[Part.from_text((turn.get('parts', [{}])[0] or {}).get('text', ''))]) for turn in history_dicts]
-            # Store the list directly, INSTEAD of a chat object
-            live_chat_sessions[session_name] = history_content
+            logging.info(f"Haven: Creating new live chat session: '{session_name}'")
+            # Convert the history from dicts to Content objects
+            history_content = []
+            for turn in history_dicts:
+                role = turn.get('role')
+                text = (turn.get('parts', [{}])[0] or {}).get('text', '')
+                if role and text:
+                    history_content.append(Content(role=role, parts=[Part.from_text(text)]))
+
+            # The expensive model.start_chat() call happens here.
+            live_chat_sessions[session_name] = model.start_chat(history=history_content)
         else:
-            logging.info(f"Haven: Reconnecting to existing history list for session: '{session_name}'")
-        return True
+            logging.info(f"Haven: Reconnecting to existing live chat session: '{session_name}'")
+        return True # Return a simple confirmation
 
     def send_message(self, session_name, prompt):
         """
-        Sends a message by appending to the history and making a stateless
-        call to model.generate_content().
+        Sends a message to a specific chat session and returns the response.
         """
         if session_name not in live_chat_sessions:
             logging.error(f"Haven: Attempted to send message to non-existent session: '{session_name}'")
-            return {"status": "error", "message": "Session history not found in Haven."}
-        
-        try:
-            # 1. Retrieve the current history list
-            history = live_chat_sessions[session_name]
-            
-            # 2. Append the new user prompt to the history
-            history.append(Content(role='user', parts=[Part.from_text(prompt)]))
+            return {"status": "error", "message": "Session not found in Haven."}
 
-            # 3. Make the stateless API call with the entire history
-            response = model.generate_content(history)
-            
-            # 4. Append the model's response to the history to keep it current
-            history.append(response.candidates[0].content)
-            
-            # 5. Return the response text
+        chat = live_chat_sessions[session_name]
+        try:
+            response = chat.send_message(prompt)
+            # We need to return the text part of the response, as the full object is not picklable.
             return {"status": "success", "text": response.text}
         except Exception as e:
-            logging.error(f"Haven: Error during generate_content for session '{session_name}': {e}")
+            logging.error(f"Haven: Error during send_message for session '{session_name}': {e}")
             return {"status": "error", "message": str(e)}
 
     def list_sessions(self):
         """Returns a list of the names of the live sessions."""
         return list(live_chat_sessions.keys())
-        
-    def delete_session(self, session_name):
-        """ NEW: Deletes a session from the live dictionary to prevent memory leaks."""
-        if session_name in live_chat_sessions:
-            del live_chat_sessions[session_name]
-            logging.info(f"Haven: Deleted live session '{session_name}'.")
-            return {"status": "success", "message": f"Live session '{session_name}' deleted."}
-        else:
-            logging.warning(f"Haven: Attempted to delete non-existent live session '{session_name}'.")
-            return {"status": "success", "message": "Session was not live in Haven."}
 
     def has_session(self, session_name):
         """Checks if a session exists in the Haven."""
@@ -136,6 +123,7 @@ def start_haven():
     # Register the Haven class itself with the manager.
     # We can now access any method of the Haven instance remotely.
     HavenManager.register('get_haven', lambda: haven_instance)
+
     manager = HavenManager(address=('', 50000), authkey=b'phoenixhaven')
 
     logging.info("Haven server started. Serving the persistent Haven object on port 50000.")

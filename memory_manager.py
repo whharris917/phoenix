@@ -30,14 +30,13 @@ except Exception as e:
     # Set to None so the application can handle the failure gracefully.
     embedding_function = None
 
-
 class MemoryManager:
     """
     Manages the Tiered Memory Architecture for the AI agent.
 
     Tier 1: Conversational Buffer (Short-Term Memory)
-    Tier 2: Summaries & Segments (Mid-Term Memory) # NOT CURRENTLY OPERATIONAL
-    Tier 3: Vector Store (Long-Term, Specific Recall) # NOT CURRENTLY OPERATIONAL
+    Tier 2: Summaries & Segments (Mid-Term Memory)
+    Tier 3: Vector Store (Long-Term, Specific Recall)
     """
     def __init__(self, session_name):
         """
@@ -45,7 +44,7 @@ class MemoryManager:
         This will create or load a persistent ChromaDB collection based on the name.
         """
         self.session_name = session_name
-        self.max_buffer_size = 30 # Increased buffer size for better context
+        self.max_buffer_size = 10
 
         # Tier 1: Conversational Buffer
         self.conversational_buffer = []
@@ -75,10 +74,19 @@ class MemoryManager:
 
             # Repopulate buffer from DB on init
             self._repopulate_buffer_from_db()
+            
+            # NEW: Create a dedicated collection for code artifacts
+            code_collection_name = f"code-{collection_name}"
+            self.code_collection = self.chroma_client.get_or_create_collection(
+                name=code_collection_name,
+                embedding_function=embedding_function
+            )
+            logging.info(f"ChromaDB code collection '{code_collection_name}' loaded/created.")
 
         except Exception as e:
             logging.error(f"FATAL: Failed to initialize ChromaDB for session '{self.session_name}': {e}")
             self.collection = None
+            self.code_collection = None # NEW
 
     def _repopulate_buffer_from_db(self):
         """
@@ -108,35 +116,39 @@ class MemoryManager:
             logging.error(f"Could not repopulate buffer from ChromaDB for session '{self.session_name}': {e}")
             self.conversational_buffer = []
 
-    def add_turn(self, role, content, metadata=None):
-        """
-        Adds a new turn to the memory, updating both Tier 1 and Tier 3.
-        Role is 'user' or 'model'.
-        Metadata is an optional dictionary for storing additional info like summaries.
-        """
-        # --- Create Content object using Part.from_text() ---
-        turn = Content(role=role, parts=[Part.from_text(content)])
-        self.conversational_buffer.append(turn)
-        if len(self.conversational_buffer) > self.max_buffer_size:
-            self.conversational_buffer.pop(0)
+    def add_turn(self, role, content, metadata=None, augmented_prompt=None):
+            """
+            Adds a new turn to the memory, updating both Tier 1 and Tier 3.
+            Role is 'user' or 'model'.
+            Metadata is an optional dictionary for storing additional info.
+            augmented_prompt is the full prompt including RAG context.
+            """
+            turn = Content(role=role, parts=[Part.from_text(content)])
+            self.conversational_buffer.append(turn)
+            if len(self.conversational_buffer) > self.max_buffer_size:
+                self.conversational_buffer.pop(0)
 
-        if self.collection:
-            try:
-                doc_id = str(uuid.uuid4())
-                
-                # Start with base metadata and update with any provided metadata
-                meta = {'role': role, 'timestamp': time.time()}
-                if metadata:
-                    meta.update(metadata)
+            if self.collection:
+                try:
+                    doc_id = str(uuid.uuid4())
+                    
+                    # Start with base metadata and update with any provided metadata
+                    meta = {'role': role, 'timestamp': time.time()}
+                    if metadata:
+                        meta.update(metadata)
+                    
+                    # NEW: Add the augmented prompt to the metadata if it exists
+                    if augmented_prompt:
+                        meta['augmented_prompt'] = augmented_prompt
 
-                self.collection.add(
-                    documents=[content], # Store the raw content directly as the document
-                    metadatas=[meta],
-                    ids=[doc_id]
-                )
-                logging.info(f"Added document to ChromaDB for session '{self.session_name}' with metadata: {meta}")
-            except Exception as e:
-                logging.error(f"Could not add document to ChromaDB for session '{self.session_name}': {e}")
+                    self.collection.add(
+                        documents=[content], # The document remains the clean, base content
+                        metadatas=[meta],    # The metadata now contains the full context
+                        ids=[doc_id]
+                    )
+                    logging.info(f"Added document to ChromaDB for session '{self.session_name}' with metadata: {meta}")
+                except Exception as e:
+                    logging.error(f"Could not add document to ChromaDB for session '{self.session_name}': {e}")
     
     # --- Function to update existing records ---
     def update_turns_metadata(self, ids, metadatas):
@@ -185,23 +197,40 @@ class MemoryManager:
             logging.error(f"Could not retrieve all turns from ChromaDB for session '{self.session_name}': {e}")
             return []
 
-    def get_context_for_prompt(self, prompt, n_results=3):
+    def get_context_for_prompt(self, prompt, n_results=5): # Increased default results
         """
-        Retrieves relevant historical conversations from the vector store (Tier 3).
+        Retrieves relevant historical conversations from the vector store,
+        sorts them chronologically, and returns them.
         """
         if not self.collection or self.collection.count() == 0:
             return []
 
         try:
+            # Step 1: Query ChromaDB including metadata
             query_results = self.collection.query(
                 query_texts=[prompt],
-                n_results=min(n_results, self.collection.count())
+                n_results=min(n_results, self.collection.count()),
+                include=["documents", "metadatas"] # Crucially, include metadatas
             )
 
-            if query_results and query_results['documents']:
-                logging.info(f"Retrieved {len(query_results['documents'][0])} docs from ChromaDB for session '{self.session_name}'.")
-                return query_results['documents'][0]
-            return []
+            if not query_results or not query_results.get('ids', [[]])[0]:
+                return []
+
+            # Step 2: Combine documents and metadata into a list of objects
+            results_with_meta = []
+            for i, doc_id in enumerate(query_results['ids'][0]):
+                results_with_meta.append({
+                    "id": doc_id,
+                    "document": query_results['documents'][0][i],
+                    "metadata": query_results['metadatas'][0][i]
+                })
+
+            # Step 3: Sort the results by timestamp (oldest to newest)
+            results_with_meta.sort(key=lambda x: x['metadata'].get('timestamp', 0))
+
+            logging.info(f"Retrieved and sorted {len(results_with_meta)} docs from ChromaDB for session '{self.session_name}'.")
+            return results_with_meta
+
         except Exception as e:
             logging.error(f"Could not query ChromaDB for session '{self.session_name}': {e}")
             return []
@@ -220,3 +249,27 @@ class MemoryManager:
                 logging.info(f"Cleared and deleted ChromaDB collection: {collection_name} for session '{self.session_name}'")
             except Exception as e:
                 logging.error(f"Error clearing collection {self.collection.name} for session '{self.session_name}': {e}")
+
+    # NEW: Method to add a code artifact and return a pointer
+    def add_code_artifact(self, filename, content):
+        """Saves a code artifact to the dedicated collection and returns a pointer."""
+        if not self.code_collection:
+            logging.error("Cannot add code artifact: code_collection is not initialized.")
+            return None
+
+        try:
+            artifact_uuid = str(uuid.uuid4())
+            pointer_id = f"[CODE-ARTIFACT-{artifact_uuid}:{filename}]"
+            
+            # We don't need to vectorize code for semantic search, so we store
+            # the content in the metadata. The document can be a simple description.
+            self.code_collection.add(
+                documents=[f"Content of file: {filename}"],
+                metadatas=[{'filename': filename, 'content': content, 'timestamp': time.time()}],
+                ids=[pointer_id] # Use the pointer as the unique ID
+            )
+            logging.info(f"Saved code artifact with pointer: {pointer_id}")
+            return pointer_id
+        except Exception as e:
+            logging.error(f"Could not add code artifact: {e}")
+            return None

@@ -17,7 +17,7 @@ import time
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s') #, handlers=[logging.FileHandler("agent.log"), logging.StreamHandler()])
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler("agent.log"), logging.StreamHandler()])
 
 # --- HAVEN SETUP ---
 class HavenManager(BaseManager):
@@ -96,11 +96,6 @@ def handle_connect():
 
     if haven_proxy:
         try:
-            # Explicitly create a new session in the Haven service upon connection.
-            # We pass an empty history [] because it's a new session.
-            haven_proxy.get_or_create_session(new_session_name, [])
-            app.logger.info(f"Live session '{new_session_name}' created or confirmed in Haven.")
-
             memory = MemoryManager(session_name=new_session_name)
             
             # Use the imported HavenProxyWrapper
@@ -114,9 +109,6 @@ def handle_connect():
             
             socketio.emit('session_name_update', {'name': new_session_name}, to=session_id)
             
-            # NEW: Send the max_buffer_size to the client for UI management
-            socketio.emit('session_config_update', {'max_buffer_size': memory.max_buffer_size}, to=session_id)
-
             # Restore history rendering
             full_history = memory.get_full_history()
             if full_history:

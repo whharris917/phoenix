@@ -58,19 +58,25 @@
             z-index: 10;
         }
         
-        /* --- COLUMN SELECTORS --- */
-        .col-arrow { width: 5%; }
+        /* --- COLUMN SELECTORS (WIDTHS ADJUSTED) --- */
+        .col-arrow { width: 3%; }
         .col-timestamp { width: 8%; }
-        .col-id { width: 15%; }
-        .col-role { width: 5%; }
-        .col-document { width: 67%; }
+        .col-type { width: 8%; } /* NEW */
+        .col-role { width: 4%; }
+        .col-summary { width: 23%; }
+        .col-document { width: 23%; }
+        .col-augmented-prompt { width: 23%; }
+        .col-segment-id { width: 8%; } /* NEW */
 
-        /* --- NEW: Column Visibility --- */
+        /* --- Column Visibility --- */
         #data-table.hide-arrow .col-arrow,
         #data-table.hide-timestamp .col-timestamp,
-        #data-table.hide-id .col-id,
+        #data-table.hide-type .col-type, /* NEW */
         #data-table.hide-role .col-role,
-        #data-table.hide-document .col-document {
+        #data-table.hide-summary .col-summary,
+        #data-table.hide-document .col-document,
+        #data-table.hide-augmented-prompt .col-augmented-prompt,
+        #data-table.hide-segment-id .col-segment-id { /* NEW */
             display: none;
         }
         
@@ -113,6 +119,14 @@
         .expandable-row.expanded .arrow {
             transform: rotate(-135deg);
         }
+
+        /* NEW: Special style for segment summary rows */
+        .segment-summary-row {
+            background-color: #e6f7ff; /* A light blue highlight */
+        }
+        .segment-summary-row td {
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -124,31 +138,32 @@
                 <option>Loading collections...</option>
             </select>
         </div>
-        <!-- NEW: Column Toggle Checkboxes -->
         <div id="column-toggles">
             <label>Show/Hide Columns:</label>
             <label><input type="checkbox" data-col="arrow" checked> Arrow</label>
             <label><input type="checkbox" data-col="timestamp" checked> Timestamp</label>
-            <label><input type="checkbox" data-col="id"> ID</label> <!-- Unchecked by default -->
-            <label><input type="checkbox" data-col="role" checked> Role</label>
-            <label><input type="checkbox" data-col="document" checked> Document</label>
-        </div>
+            <label><input type="checkbox" data-col="type" checked> Type</label> <label><input type="checkbox" data-col="role" checked> Role</label>
+            <label><input type="checkbox" data-col="summary" checked> Summary</label>
+            <label><input type="checkbox" data-col="document" checked> Raw Content</label>
+            <label><input type="checkbox" data-col="augmented-prompt"> Augmented Prompt</label>
+            <label><input type="checkbox" data-col="segment-id"> Segment ID</label> </div>
         <h2 id="table-title">No Collection Selected</h2>
     </div>
 
     <table id="data-table">
         <thead>
             <tr>
-                <th class="col-arrow"><!-- Arrow --></th>
+                <th class="col-arrow"></th>
                 <th class="col-timestamp">Timestamp</th>
-                <th class="col-id">ID</th>
-                <th class="col-role">Role</th>
-                <th class="col-document">Document (Memory Content)</th>
-            </tr>
+                <th class="col-type">Type</th> <th class="col-role">Role</th>
+                <th class="col-summary">Summary</th>
+                <th class="col-document">Raw Content</th>
+                <th class="col-augmented-prompt">Augmented Prompt</th>
+                <th class="col-segment-id">Segment ID</th> </tr>
         </thead>
         <tbody>
             <tr>
-                <td colspan="5" style="padding-left: 2em;">Select a collection to view its data.</td>
+                <td colspan="8" style="padding-left: 2em;">Select a collection to view its data.</td>
             </tr>
         </tbody>
     </table>
@@ -171,16 +186,14 @@
                 });
             }
 
-            // --- NEW: Column Toggle Logic ---
             function setupColumnToggles() {
                 columnToggles.addEventListener('change', (e) => {
                     if (e.target.type === 'checkbox') {
                         const colName = e.target.dataset.col;
                         table.classList.toggle(`hide-${colName}`, !e.target.checked);
-                        adjustTableHeaderPosition(); // Re-calculate widths/positions
+                        adjustTableHeaderPosition();
                     }
                 });
-                // Initial setup to hide default columns
                 document.querySelectorAll('#column-toggles input[type="checkbox"]').forEach(checkbox => {
                     const colName = checkbox.dataset.col;
                     if (!checkbox.checked) {
@@ -211,13 +224,13 @@
 
             selector.addEventListener('change', () => {
                 const collectionName = selector.value;
-                tableBody.innerHTML = '<tr><td colspan="5" style="padding-left: 2em;">Loading data...</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="8" style="padding-left: 2em;">Loading data...</td></tr>';
                 if (collectionName) {
                     tableTitle.textContent = `Data for: ${collectionName}`;
                     socket.emit('request_db_collection_data', { collection_name: collectionName });
                 } else {
                     tableTitle.textContent = 'No Collection Selected';
-                    tableBody.innerHTML = '<tr><td colspan="5" style="padding-left: 2em;">Select a collection to view its data.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="8" style="padding-left: 2em;">Select a collection to view its data.</td></tr>';
                 }
                 adjustTableHeaderPosition();
             });
@@ -231,35 +244,60 @@
                         const row = tableBody.insertRow();
                         row.classList.add('expandable-row');
 
-                        const arrowCell = row.insertCell(0);
-                        arrowCell.classList.add('arrow-cell', 'col-arrow');
-                        arrowCell.innerHTML = '<span class="arrow"></span>';
+                        // NEW: Add special styling for segment summary rows
+                        if (item.Type === 'segment_summary') {
+                            row.classList.add('segment-summary-row');
+                        }
+
+                        row.insertCell(0).className = 'arrow-cell col-arrow';
+                        row.cells[0].innerHTML = '<span class="arrow"></span>';
 
                         row.insertCell(1).className = 'col-timestamp';
                         row.cells[1].textContent = item.Timestamp || 'N/A';
                         
-                        row.insertCell(2).className = 'col-id';
-                        row.cells[2].textContent = item.ID || 'N/A';
-
+                        // --- NEW: Type Cell ---
+                        row.insertCell(2).className = 'col-type';
+                        row.cells[2].textContent = item.Type || 'turn'; // Default to 'turn'
+                        
                         row.insertCell(3).className = 'col-role';
-                        row.cells[3].textContent = item.Role || 'N/A';
+                        row.cells[3].textContent = item.Role || 'CHAPTER'; // Default to 'CHAPTER' for summaries
                         
-                        const docCell = row.insertCell(4);
-                        docCell.classList.add('document-cell', 'col-document');
+                        const summaryCell = row.insertCell(4);
+                        summaryCell.classList.add('document-cell', 'col-summary');
+                        const summaryContentDiv = document.createElement('div');
+                        summaryContentDiv.classList.add('content');
+                        const summaryPreElement = document.createElement('pre');
+                        summaryPreElement.textContent = item.Summary || 'N/A';
+                        summaryContentDiv.appendChild(summaryPreElement);
+                        summaryCell.appendChild(summaryContentDiv);
 
-                        const contentDiv = document.createElement('div');
-                        contentDiv.classList.add('content');
+                        const docCell = row.insertCell(5);
+                        docCell.classList.add('document-cell', 'col-document');
+                        const docContentDiv = document.createElement('div');
+                        docContentDiv.classList.add('content');
+                        const docPreElement = document.createElement('pre');
+                        docPreElement.textContent = item['Document (Memory Content)'] || 'N/A';
+                        docContentDiv.appendChild(docPreElement);
+                        docCell.appendChild(docContentDiv);
+
+                        const augCell = row.insertCell(6);
+                        augCell.classList.add('document-cell', 'col-augmented-prompt');
+                        const augContentDiv = document.createElement('div');
+                        augContentDiv.classList.add('content');
+                        const augPreElement = document.createElement('pre');
+                        augPreElement.textContent = item['Augmented Prompt'] || 'N/A';
+                        augContentDiv.appendChild(augPreElement);
+                        augCell.appendChild(augContentDiv);
                         
-                        const preElement = document.createElement('pre');
-                        preElement.textContent = item['Document (Memory Content)'] || 'N/A';
-                        
-                        contentDiv.appendChild(preElement);
-                        docCell.appendChild(contentDiv);
+                        // --- NEW: Segment ID Cell ---
+                        row.insertCell(7).className = 'col-segment-id';
+                        row.cells[7].textContent = item['Segment ID'] || 'N/A';
+
                     });
                 } else if (res.status === 'error') {
-                    tableBody.innerHTML = `<tr><td colspan="5" style="padding-left: 2em;">Error loading data: ${res.message}</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="8" style="padding-left: 2em;">Error loading data: ${res.message}</td></tr>`;
                 } else {
-                    tableBody.innerHTML = '<tr><td colspan="5" style="padding-left: 2em;">No data found in this collection.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="8" style="padding-left: 2em;">No data found in this collection.</td></tr>';
                 }
                 adjustTableHeaderPosition();
             });

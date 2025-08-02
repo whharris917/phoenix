@@ -41,7 +41,7 @@ def _mask_payloads(text: str) -> str:
     This prevents the JSON extraction logic from accidentally finding JSON within a payload.
     """
     # This regex finds all instances of "START @@PLACEHOLDER ... END @@PLACEHOLDER" and removes them.
-    # It uses a backreference \1 to ensure the start and end placeholders match.
+    # It uses a backreference \\1 to ensure the start and end placeholders match.
     # re.DOTALL ensures that '.' matches newlines, covering multi-line payloads.
     pattern = re.compile(r"START (@@\\w+).*?END \\1", re.DOTALL)
     return pattern.sub("", text)
@@ -72,7 +72,7 @@ def parse_agent_response(response_text: str) -> (str | None, dict | None, bool):
         if not prose_string:
             return True
         # Regex to find a timestamp like [YYYY-MM-DD HH:MM:SS] at the start of the string
-        timestamp_pattern = r'^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]\s*'
+        timestamp_pattern = r'^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\]\\s*'
         # Remove the timestamp from the prose
         prose_without_timestamp = re.sub(timestamp_pattern, '', prose_string.strip())
         # The prose is considered empty if nothing remains after stripping whitespace
@@ -125,7 +125,7 @@ def _extract_json_with_fences(text: str) -> (str | None, str | None):
     Extracts the largest JSON block and its full enclosing ``` fences.
     Returns the full matched block and the inner JSON string.
     """
-    pattern = r"(```json\s*\n?({.*?})\s*\n?```)"
+    pattern = r"(```json\\s*\\n?({.*?})\\s*\\n?```)"
     matches = list(re.finditer(pattern, text, re.DOTALL))
     
     if not matches:
@@ -153,7 +153,7 @@ def _extract_json_with_brace_counting(text: str) -> (str | None, str | None):
         in_string = False
         # We must check every possible end point for each start point
         for i, char in enumerate(text[start_index:]):
-            if char == '"' and (i == 0 or text[start_index + i - 1] != '\\'):
+            if char == '\"' and (i == 0 or text[start_index + i - 1] != '\\\\'):
                 in_string = not in_string
             if not in_string:
                 if char == '{':
@@ -175,7 +175,7 @@ def _extract_json_with_brace_counting(text: str) -> (str | None, str | None):
                         # The prose is what's before and after this candidate
                         prose_before = text[:start_index].strip()
                         prose_after = text[start_index + i + 1:].strip()
-                        best_candidate_prose = f"{prose_before}\n{prose_after}".strip()
+                        best_candidate_prose = f"{prose_before}\\n{prose_after}".strip()
                 except json.JSONDecodeError:
                     # Not a valid JSON, continue searching within this start_index
                     continue
@@ -202,7 +202,7 @@ def _repair_json(s: str) -> str:
             if "Invalid control character at" in e.msg:
                 char_pos = e.pos
                 char_to_escape = s[char_pos]
-                escape_map = {'\n': '\\n', '\r': '\\r', '\t': '\\t'}
+                escape_map = {'\\n': '\\\\n', '\\r': '\\\\r', '\\t': '\\\\t'}
                 if char_to_escape in escape_map:
                     s = s[:char_pos] + escape_map[char_to_escape] + s[char_pos+1:]
                     error_fixed = True
@@ -211,17 +211,17 @@ def _repair_json(s: str) -> str:
             # This often leads to "Expecting ',' delimiter" or "Unterminated string".
             elif "Expecting" in e.msg or "Unterminated string" in e.msg:
                 # Find the last quote before the error position.
-                quote_pos = s.rfind('"', 0, e.pos)
+                quote_pos = s.rfind('\"', 0, e.pos)
                 if quote_pos != -1:
                     # Check if it's already properly escaped by counting preceding backslashes.
                     p = quote_pos - 1
                     slashes = 0
-                    while p >= 0 and s[p] == '\\':
+                    while p >= 0 and s[p] == '\\\\':
                         slashes += 1
                         p -= 1
                     # If the number of preceding backslashes is even, the quote is not escaped.
                     if slashes % 2 == 0:
-                        s = s[:quote_pos] + '\\' + s[quote_pos:]
+                        s = s[:quote_pos] + '\\\\' + s[quote_pos:]
                         error_fixed = True
             if not error_fixed:
                 # If we can't identify a fix in this iteration, break the loop.
@@ -460,7 +460,7 @@ def replay_history_for_client(socketio, session_id, session_name, history):
             socketio.sleep(0.01)
     except Exception as e:
         logging.error(f"Error during history replay for session {session_name}: {e}")
-        socketio.emit('log_message', {'type': 'error', 'data': f"Failed to replay history: {e}"}, to=session_id)
+        socketio.emit('log_message', {'type': 'error', 'data': f\"Failed to replay history: {e}\"}, to=session_id)
 
 def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, haven_proxy, loop_id=None):
     loop_id = str(uuid.uuid4())
@@ -497,46 +497,39 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
         for i in range(ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP):
             socketio.sleep(0)
 
-            # --- RAG: Retrieve and Inject Context to create the final_prompt ---
-            retrieved_context = memory.get_context_for_prompt(current_prompt)
+            # retrieved_context = memory.get_context_for_prompt(current_prompt)
 
-            final_prompt = current_prompt # Default to current prompt
+            final_prompt = current_prompt
 
+            final_prompt = (
+                f"This is iteration {i+1} of {NOMINAL_MAX_ITERATIONS_REASONING_LOOP} of the reasoning loop.\\n"
+                f"You MUST issue a resonse to the user on or before the final iteration.\\n"
+                f"The prompt for the current iteration is below:\\n\\n"
+                f\"{final_prompt}\"
+            )
+
+            """
             if retrieved_context:
-                context_str = "\n".join(
-                    f"- {item['metadata']['role']}: {item['document']}"
-                    for item in retrieved_context
-                )
+                context_str = "\\n".join(retrieved_context)
                 final_prompt = (
-                    "CONTEXT FROM PAST CONVERSATIONS (IN CHRONOLOGICAL ORDER):\n"
-                    f"{context_str}\n\n"
-                    "--- CURRENT TASK ---\n"
-                    "Based on the above context, please respond to the following prompt:\n"
+                    "CONTEXT FROM PAST CONVERSATIONS:\\n"
+                    f"{context_str}\\n\\n"
+                    "Based on the above context, please respond to the following prompt:\\n"
                     f"{current_prompt}"
                 )
                 log_message = f"Augmented prompt with {len(retrieved_context)} documents from memory."
                 logging.info(log_message)
-                socketio.emit('tool_log', {'data': f"[{log_message}]"}, to=session_id)
+            """
 
-            # Add iteration information to the final composed prompt
-            final_prompt_with_iteration = (
-                f"This is iteration {i+1} of {NOMINAL_MAX_ITERATIONS_REASONING_LOOP} of the reasoning loop.\n"
-                f"You MUST issue a response to the user on or before the final iteration.\n\n"
-                f"{final_prompt}"
-            )
-            
-            # --- Save User Turn to Memory ---
-            # We save the base prompt as the main 'document' for clean history rendering,
-            # and the full augmented prompt in the metadata for auditing.
-            memory.add_turn("user", current_prompt, augmented_prompt=final_prompt_with_iteration)
+            memory.add_turn("user", current_prompt)
 
-            # Get raw response text from model using the full prompt
-            response = tpool.execute(chat.send_message, final_prompt_with_iteration)
+            # Get raw response text from model
+            response = tpool.execute(chat.send_message, final_prompt)
             response_text = response.text
             
             # Check if timestamp of form [YYYY-MM-DD HH:MM:SS] already exists
             # If not, add timestamp to beginning of response text
-            if not re.match(r'^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]', response_text):
+            if not re.match(r'^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\]', response_text):
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 response_text = f"[{timestamp}] {response_text}"
 
@@ -582,7 +575,7 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
 
             # --- TOOL EXECUTION AND RE-ORDERED RESPONSE ---
             
-            tool_result = execute_tool_command(command_json, socketio, session_id, chat_sessions, haven_proxy, loop_id)
+            tool_result = execute_tool_command(command_json, socketio, session_id, chat_sessions, haven_proxy, loop_id)            
 
             destruction_confirmed = False
 
@@ -598,7 +591,7 @@ def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, c
                 return
 
             """
-            # STEP 2: Now, send the agent's "thinking out loud" prose that came with the command.
+            # STEP 2: Now, send the agent's \"thinking out loud\" prose that came with the command.
             if command_json.get('attachment'):
                 prose_text = command_json.get('attachment', '')
                 if prose_text and prose_text.strip() and not prose_is_empty:
