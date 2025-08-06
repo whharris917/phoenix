@@ -1,572 +1,380 @@
 import os
 import io
-from contextlib import redirect_stdout
 import logging
-from eventlet import tpool
+from contextlib import redirect_stdout
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Optional
+
 import chromadb
-from code_parser import analyze_codebase, generate_mermaid_diagram
+from eventlet import tpool
+
 import patcher
-from config import CHROMA_DB_PATH, ALLOWED_PROJECT_FILES
+from config import ALLOWED_PROJECT_FILES, CHROMA_DB_PATH
+from data_models import ToolCommand, ToolResult
+from memory_manager import ChromaDBStore, MemoryManager
+from proxies import HavenProxyWrapper
+from session_models import ActiveSession
 
 
-# --- NEW: Haven Proxy Wrapper for seamless integration ---
-class HavenProxyWrapper:
-    """
-    Acts as a near-perfect drop-in replacement for a local chat session object.
-    It holds a reference to the main Haven proxy and a specific session name.
-    """
+# A data class to neatly pass context-dependent objects to tool handlers.
+@dataclass
+class ToolContext:
+    socketio: Any
+    session_id: str
+    chat_sessions: dict[str, ActiveSession]
+    haven_proxy: object
+    loop_id: Optional[str]
 
-    def __init__(self, haven_service_proxy, session_name):
-        self.haven = haven_service_proxy
-        self.session = session_name
+# --- Low-Level File System Helpers ---
 
-    def send_message(self, prompt):
-        """
-        Has the same signature as the original chat object's send_message.
-        Calls the main Haven proxy's remote method, providing the session name it already knows.
-        """
-        response_dict = self.haven.send_message(self.session, prompt)
-
-        class MockResponse:
-            def __init__(self, text):
-                self.text = text
-
-        if response_dict and response_dict.get("status") == "success":
-            return MockResponse(response_dict.get("text", ""))
-        else:
-            # Raise an exception instead of returning a mock response with an error.
-            error_message = response_dict.get("message", "Unknown error in Haven.")
-            logging.error(
-                f"Error from Haven send_message for session '{self.session}': {error_message}"
-            )
-            raise RuntimeError(
-                f"Haven service failed for session '{self.session}': {error_message}"
-            )
-
-
-# --- Helper functions ---
-def _execute_script(script_content):
+def _execute_script(script_content: str) -> ToolResult:
+    """Executes a Python script in a restricted environment and captures its output."""
     string_io = io.StringIO()
     try:
+        # Define a highly restricted set of globals to prevent malicious code execution.
         restricted_globals = {
             "__builtins__": {
-                "print": print,
-                "range": range,
-                "len": len,
-                "str": str,
-                "int": int,
-                "float": float,
-                "list": list,
-                "dict": dict,
-                "set": set,
-                "abs": abs,
-                "max": max,
-                "min": min,
-                "sum": sum,
+                "print": print, "range": range, "len": len, "str": str, "int": int,
+                "float": float, "list": list, "dict": dict, "set": set, "abs": abs,
+                "max": max, "min": min, "sum": sum,
             }
         }
-
-        # global_scope = {"__builtins__": builtins.__dict_}  # Use this instead of restricted_globals to give agent abiltiy to import
         with redirect_stdout(string_io):
             exec(script_content, restricted_globals, {})
-        return {"status": "success", "output": string_io.getvalue()}
+        return ToolResult(status="success", message="Script executed.", content=string_io.getvalue())
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return ToolResult(status="error", message=str(e))
 
-
-def _write_file(path, content):
+def _write_file(path: str, content: str) -> ToolResult:
+    """Writes content to a file, creating directories if necessary."""
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
-        return {"status": "success"}
+        return ToolResult(status="success", message=f"File '{os.path.basename(path)}' written successfully.")
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return ToolResult(status="error", message=str(e))
 
-
-def _read_file(path):
+def _read_file(path: str) -> ToolResult:
+    """Reads the content of a file."""
     try:
         if not os.path.exists(path):
-            return {"status": "error", "message": "File not found."}
+            return ToolResult(status="error", message="File not found.")
         with open(path, "r", encoding="utf-8") as f:
             content = f.read()
-        return {"status": "success", "content": content}
+        return ToolResult(status="success", content=content, message=f"Read content from '{os.path.basename(path)}'.")
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return ToolResult(status="error", message=str(e))
 
-
-def _delete_file(path):
+def _delete_file(path: str) -> ToolResult:
+    """Deletes a file from the filesystem."""
     try:
         if not os.path.exists(path):
-            return {"status": "error", "message": "File not found."}
+            return ToolResult(status="error", message="File not found.")
         os.remove(path)
-        return {"status": "success"}
+        return ToolResult(status="success", message=f"File '{os.path.basename(path)}' deleted.")
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return ToolResult(status="error", message=str(e))
 
-
-def _list_directory(path):
+def _list_directory(path: str) -> ToolResult:
+    """Lists all files in a directory recursively, ignoring certain subdirectories."""
     try:
         file_list = []
         for root, dirs, files in os.walk(path):
-            if "chroma_db" in dirs:
-                dirs.remove("chroma_db")
-            if "sessions" in dirs:
-                dirs.remove("sessions")
+            # Exclude specified directories from the walk.
+            dirs[:] = [d for d in dirs if d not in ["chroma_db", "sessions", ".git", "__pycache__"]]
             for name in files:
                 relative_path = os.path.relpath(os.path.join(root, name), path)
-                file_list.append(relative_path.replace("\\\\", "/"))
-        return {"status": "success", "files": file_list}
+                file_list.append(relative_path.replace("\\", "/"))
+        return ToolResult(status="success", content=file_list, message="Listed files in directory.")
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return ToolResult(status="error", message=str(e))
 
-
-def get_safe_path(filename, base_dir_name="sandbox"):
+def get_safe_path(filename: str, base_dir_name: str = "sandbox") -> str:
+    """Constructs a safe file path within a designated directory, preventing path traversal."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
     target_dir = os.path.join(base_dir, base_dir_name)
     os.makedirs(target_dir, exist_ok=True)
+    # Get the absolute path of the requested file.
     requested_path = os.path.abspath(os.path.join(target_dir, filename))
+    # Ensure the resolved path is still within the target directory.
     if not requested_path.startswith(target_dir):
-        raise ValueError("Attempted path traversal outside of allowed directory.")
+        raise ValueError("Attempted path traversal outside of the allowed directory.")
     return requested_path
 
+# --- Decomposed `apply_patch` Helpers ---
 
-# --- Core Tooling Logic (Modified for Haven) ---
-def execute_tool_command(
-    command, socketio, session_id, chat_sessions, haven_proxy, loop_id=None
-):
-    action = command.get("action")
-    params = command.get("parameters", {})
+def _extract_patch_paths(diff_content: str) -> tuple[str | None, str | None]:
+    """Extracts source (a) and target (b) filenames from a diff header."""
+    source_filename, target_filename = None, None
+    for line in diff_content.splitlines():
+        if line.startswith("--- a/"):
+            source_filename = line.split("--- a/")[1].strip()
+        if line.startswith("+++ b/"):
+            target_filename = line.split("+++ b/")[1].strip()
+        if source_filename and target_filename:
+            break
+    return source_filename, target_filename
+
+def _validate_patch_paths(source_filename: str, target_filename: str) -> ToolResult | None:
+    """Validates the source and target paths for the patch."""
+    if not target_filename.startswith("sandbox/"):
+        return ToolResult(status="error", message="Target file path in diff header (+++ b/) must start with 'sandbox/'.")
+    if not source_filename.startswith("sandbox/") and source_filename not in ALLOWED_PROJECT_FILES:
+        return ToolResult(status="error", message=f"Access denied. Patching the project file '{source_filename}' is not permitted.")
+    return None
+
+def _get_source_read_path(source_filename: str) -> str:
+    """Determines the absolute path from which to read the source file."""
+    if source_filename.startswith("sandbox/"):
+        relative_source_filename = source_filename[len("sandbox/") :]
+        return get_safe_path(relative_source_filename)
+    else:
+        return os.path.join(os.path.dirname(__file__), source_filename)
+
+# --- Modular Tool Handlers ---
+
+def _handle_create_file(params: dict, context: ToolContext) -> ToolResult:
+    """Handles the 'create_file' action."""
+    filename = params.get("filename", "default.txt")
+    content = params.get("content", "")
+    safe_path = get_safe_path(filename)
+    return tpool.execute(_write_file, safe_path, content)
+
+def _handle_read_file(params: dict, context: ToolContext) -> ToolResult:
+    """Handles the 'read_file' action."""
+    filename = params.get("filename")
+    if not filename:
+        return ToolResult(status="error", message="Missing required parameter: filename.")
+    safe_path = get_safe_path(filename)
+    return tpool.execute(_read_file, safe_path)
+
+def _handle_read_project_file(params: dict, context: ToolContext) -> ToolResult:
+    """Handles the 'read_project_file' action with validation."""
+    filename = params.get("filename")
+    if not filename:
+        return ToolResult(status="error", message="Missing required parameter: filename.")
+    if filename not in ALLOWED_PROJECT_FILES:
+        return ToolResult(status="error", message=f"Access denied. Reading the project file '{filename}' is not permitted.")
+    project_file_path = os.path.join(os.path.dirname(__file__), filename)
+    return tpool.execute(_read_file, project_file_path)
+
+def _handle_list_allowed_project_files(params: dict, context: ToolContext) -> ToolResult:
+    """Handles the 'list_allowed_project_files' action."""
+    return ToolResult(status="success", message="Listed allowed project files.", content=ALLOWED_PROJECT_FILES)
+
+def _handle_list_directory(params: dict, context: ToolContext) -> ToolResult:
+    """Handles the 'list_directory' action."""
+    sandbox_dir = os.path.dirname(get_safe_path(""))
+    return tpool.execute(_list_directory, sandbox_dir)
+
+def _handle_delete_file(params: dict, context: ToolContext) -> ToolResult:
+    """Handles the 'delete_file' action."""
+    filename = params.get("filename")
+    if not filename:
+        return ToolResult(status="error", message="Missing required parameter: filename.")
+    safe_path = get_safe_path(filename)
+    return tpool.execute(_delete_file, safe_path)
+
+def _handle_execute_python_script(params: dict, context: ToolContext) -> ToolResult:
+    """Handles the 'execute_python_script' action."""
+    script_content = params.get("script_content", "")
+    return tpool.execute(_execute_script, script_content)
+
+def _handle_apply_patch(params: dict, context: ToolContext) -> ToolResult:
+    """Orchestrates the 'apply_patch' action by calling decomposed helpers."""
+    diff_filename = params.get("diff_filename")
+    confirmed = params.get("confirmed", False)
+    if not diff_filename:
+        return ToolResult(status="error", message="Missing required parameter: diff_filename.")
+
+    # Step 1: Read the content of the diff file.
+    diff_path = get_safe_path(diff_filename)
+    read_result = tpool.execute(_read_file, diff_path)
+    if read_result.status == "error": return read_result
+    diff_content = read_result.content
+
+    # Step 2: Extract and validate paths from the diff header.
+    source_filename, target_filename = _extract_patch_paths(diff_content)
+    if not source_filename or not target_filename:
+        return ToolResult(status="error", message="Could not determine source/target filename from diff header.")
+    
+    validation_error = _validate_patch_paths(source_filename, target_filename)
+    if validation_error: return validation_error
+    
+    # Step 3: Get the safe path to save the target file and check for overwrites.
+    relative_target_filename = target_filename[len("sandbox/") :]
+    target_save_path = get_safe_path(relative_target_filename)
+    if os.path.exists(target_save_path) and not confirmed:
+        return ToolResult(status="error", message=f"File '{target_filename}' already exists. Must request user confirmation to overwrite.")
+
+    # Step 4: Read the original content from the correct source location.
+    source_read_path = _get_source_read_path(source_filename)
+    read_result = tpool.execute(_read_file, source_read_path)
+    if read_result.status == "error": return read_result
+    original_content = read_result.content
+    
+    # Step 5: Apply the patch and write the new content.
+    internal_diff_content = diff_content.replace(f"+++ b/{target_filename}", f"+++ b/{source_filename}")
+    new_content, error_message = patcher.apply_patch(internal_diff_content, original_content, source_filename)
+    if error_message: return ToolResult(status="error", message=error_message)
+    
+    write_result = tpool.execute(_write_file, target_save_path, new_content)
+    if write_result.status == "error": return write_result
+    
+    return ToolResult(status="success", message=f"Patch applied successfully. File saved to '{target_filename}'.")
+
+def _handle_list_sessions(params: dict, context: ToolContext) -> ToolResult:
+    """Handles the 'list_sessions' action."""
     try:
         chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
-
-        if action == "create_file":
-            filename = params.get("filename", "default.txt")
-            content = params.get("content", "")
-            safe_path = get_safe_path(filename)
-            result = tpool.execute(_write_file, safe_path, content)
-            if result["status"] == "success":
-                return {
-                    "status": "success",
-                    "message": f"File '{filename}' created in sandbox.",
-                }
+        db_collections = chroma_client.list_collections()
+        db_sessions = {col.name: {"status": "Saved"} for col in db_collections if col.name.startswith("turns-")}
+        
+        live_session_names = context.haven_proxy.list_sessions()
+        for name in live_session_names:
+            saved_name = f"turns-{name}"
+            if saved_name in db_sessions:
+                db_sessions[saved_name]["status"] = "Live & Saved"
             else:
-                return {
-                    "status": "error",
-                    "message": f"Failed to create file: {result['message']}",
-                }
+                db_sessions[name] = {"status": "Live"}
 
-        elif action == "read_file":
-            filename = params.get("filename")
-            safe_path = get_safe_path(filename)
-            result = tpool.execute(_read_file, safe_path)
-            if result["status"] == "success":
-                return {
-                    "status": "success",
-                    "message": f"Read content from '{filename}'.",
-                    "content": result["content"],
-                }
-            else:
-                return {"status": "error", "message": result["message"]}
-
-        elif action == "read_project_file":
-            filename = params.get("filename")
-            if filename not in ALLOWED_PROJECT_FILES:
-                return {
-                    "status": "error",
-                    "message": f"Access denied. Reading the project file '{filename}' is not permitted.",
-                }
-            project_file_path = os.path.join(os.path.dirname(__file__), filename)
-            result = tpool.execute(_read_file, project_file_path)
-            if result["status"] == "success":
-                return {
-                    "status": "success",
-                    "message": f"Read content from project file '{filename}'.",
-                    "content": result["content"],
-                }
-            else:
-                return {"status": "error", "message": result["message"]}
-
-        elif action == "list_allowed_project_files":
-            return {
-                "status": "success",
-                "message": "Listed allowed project files.",
-                "allowed_files": ALLOWED_PROJECT_FILES,
-            }
-
-        elif action == "list_directory":
-            sandbox_dir = get_safe_path("").rsplit(os.sep, 1)[0]
-            result = tpool.execute(_list_directory, sandbox_dir)
-            if result["status"] == "success":
-                return {
-                    "status": "success",
-                    "message": "Listed files in sandbox.",
-                    "files": result["files"],
-                }
-            else:
-                return {
-                    "status": "error",
-                    "message": f"Failed to list directory: {result['message']}",
-                }
-
-        elif action == "delete_file":
-            filename = params.get("filename")
-            safe_path = get_safe_path(filename)
-            result = tpool.execute(_delete_file, safe_path)
-            if result["status"] == "success":
-                return {"status": "success", "message": f"File '{filename}' deleted."}
-            else:
-                return {"status": "error", "message": result["message"]}
-
-        elif action == "execute_python_script":
-            script_content = params.get("script_content", "")
-            result = tpool.execute(_execute_script, script_content)
-            if result["status"] == "success":
-                return {
-                    "status": "success",
-                    "message": "Script executed.",
-                    "output": result["output"],
-                }
-            else:
-                return {
-                    "status": "error",
-                    "message": f"An error occurred in script: {result['message']}",
-                }
-
-        elif action == "generate_code_diagram":
-            try:
-                project_root = os.path.dirname(__file__)
-                files_to_analyze = [
-                    os.path.join(project_root, "app.py"),
-                    os.path.join(project_root, "orchestrator.py"),
-                    os.path.join(project_root, "tool_agent.py"),
-                ]
-
-                code_structure = analyze_codebase(files_to_analyze)
-                mermaid_code = generate_mermaid_diagram(code_structure)
-
-                output_filename = "code_flow.md"
-                safe_output_path = get_safe_path(output_filename)
-                write_result = tpool.execute(
-                    _write_file, safe_output_path, mermaid_code
-                )
-
-                if write_result["status"] == "success":
-                    return {
-                        "status": "success",
-                        "message": f"Code flow diagram generated and saved to '{output_filename}'.",
-                    }
-                else:
-                    return {
-                        "status": "error",
-                        "message": f"Failed to save diagram: {write_result['message']}",
-                    }
-            except Exception as e:
-                logging.error(f"Error generating code diagram: {e}")
-                return {"status": "error", "message": str(e)}
-
-        elif action == "apply_patch":
-            diff_filename = params.get("diff_filename")
-            confirmed = params.get("confirmed", False)
-
-            if not diff_filename:
-                return {
-                    "status": "error",
-                    "message": "Missing required parameter: diff_filename.",
-                }
-
-            diff_path = get_safe_path(diff_filename)
-            diff_result = tpool.execute(_read_file, diff_path)
-            if diff_result["status"] == "error":
-                return diff_result
-            diff_content = diff_result["content"]
-
-            # 1. Extract source (a) and target (b) filenames from diff header
-            source_filename = None
-            target_filename = None
-            for line in diff_content.splitlines():
-                if line.startswith("--- a/"):
-                    source_filename = line.split("--- a/")[1].strip()
-                if line.startswith("+++ b/"):
-                    target_filename = line.split("+++ b/")[1].strip()
-                if source_filename and target_filename:
-                    break
-
-            if not source_filename or not target_filename:
-                return {
-                    "status": "error",
-                    "message": "Could not determine source and/or target filename from diff header.",
-                }
-
-            # 2. Validate that the target path must be in the sandbox
-            if not target_filename.startswith("sandbox/"):
-                return {
-                    "status": "error",
-                    "message": "Target file path in diff header (+++ b/) must start with 'sandbox/'.",
-                }
-
-            # Strip the 'sandbox/' prefix to use get_safe_path correctly
-            relative_target_filename = target_filename[len("sandbox/") :]
-
-            try:
-                target_save_path = get_safe_path(relative_target_filename)
-            except ValueError as e:
-                return {"status": "error", "message": str(e)}
-
-            # 3. Handle overwrite confirmation
-            if os.path.exists(target_save_path) and not confirmed:
-                return {
-                    "status": "error",
-                    "message": f"File '{target_filename}' already exists. To overwrite, add '\"confirmed\": true' to the parameters of the 'apply_patch' action.",
-                }
-
-            # 4. Determine the absolute path to read the source file from
-            source_read_path = None
-            if source_filename.startswith("sandbox/"):
-                relative_source_filename = source_filename[len("sandbox/") :]
-                try:
-                    source_read_path = get_safe_path(relative_source_filename)
-                except ValueError as e:
-                    return {
-                        "status": "error",
-                        "message": f"Invalid source path in diff: {e}",
-                    }
-            else:
-                # If not in sandbox, it must be an allowed project file
-                if source_filename not in ALLOWED_PROJECT_FILES:
-                    return {
-                        "status": "error",
-                        "message": f"Access denied. Patching the project file '{source_filename}' is not permitted.",
-                    }
-                source_read_path = os.path.join(
-                    os.path.dirname(__file__), source_filename
-                )
-
-            # 5. Read original content from the determined source path
-            read_result = tpool.execute(_read_file, source_read_path)
-            if read_result["status"] == "error":
-                return read_result
-            original_content = read_result["content"]
-
-            # 6. Create a temporary, in-memory version of the diff content where the
-            # target path matches the source path. This is required for the patch
-            # utility to work correctly in its isolated temporary directory.
-            internal_diff_content = diff_content.replace(
-                f"+++ b/{target_filename}", f"+++ b/{source_filename}"
-            )
-
-            # 7. Apply the patch using the patcher utility with the modified diff
-            new_content, error_message = patcher.apply_patch(
-                internal_diff_content, original_content, source_filename
-            )
-
-            if error_message:
-                return {"status": "error", "message": error_message}
-
-            # 8. Write the new, patched content to the validated target path
-            write_result = tpool.execute(_write_file, target_save_path, new_content)
-            if write_result["status"] == "error":
-                return write_result
-
-            return {
-                "status": "success",
-                "message": f"Patch applied successfully. File saved to '{target_filename}'.",
-            }
-
-        # --- REFACTORED SESSION MANAGEMENT ---
-        elif action == "list_sessions":
-            try:
-                db_collections = chroma_client.list_collections()
-                db_sessions = {
-                    col.name: {"status": "Saved"}
-                    for col in db_collections
-                    if not col.name.startswith("New_Session_")
-                }
-                live_session_names = haven_proxy.list_sessions()
-                for name in live_session_names:
-                    db_sessions[name] = {
-                        "status": "Live" if name not in db_sessions else "Live & Saved"
-                    }
-
-                session_list = [
-                    {"name": name, "summary": data["status"]}
-                    for name, data in db_sessions.items()
-                ]
-                session_list.sort(key=lambda x: x["name"])
-                return {"status": "success", "sessions": session_list}
-            except Exception as e:
-                return {"status": "error", "message": f"Failed to list sessions: {e}"}
-
-        elif action == "load_session":
-            from orchestrator import replay_history_for_client
-            from memory_manager import MemoryManager
-
-            session_name = params.get("session_name")
-            if not session_name:
-                return {"status": "error", "message": "Session name not provided."}
-
-            try:
-                collection = chroma_client.get_collection(name=session_name)
-                history_data = collection.get(include=["documents", "metadatas"])
-                history_for_haven = []
-                if history_data and history_data["ids"]:
-                    history_tuples = sorted(
-                        zip(history_data["documents"], history_data["metadatas"]),
-                        key=lambda x: x[1].get("timestamp", 0),
-                    )
-                    for doc, meta in history_tuples:
-                        # Convert to the format Haven expects
-                        history_for_haven.append(
-                            {
-                                "role": meta.get("role", "unknown"),
-                                "parts": [{"text": doc}],
-                            }
-                        )
-
-                chat_wrapper = HavenProxyWrapper(haven_proxy, session_name)
-                memory_manager = MemoryManager(session_name=session_name)
-
-                # MODIFIED: Send only the last 'max_buffer_size' turns to the Haven
-                history_slice_for_haven = history_for_haven[
-                    -memory_manager.max_buffer_size :
-                ]
-                haven_proxy.get_or_create_session(session_name, history_slice_for_haven)
-
-                chat_sessions[session_id] = {
-                    "chat": chat_wrapper,
-                    "memory": memory_manager,
-                    "name": session_name,
-                }
-
-                socketio.emit(
-                    "session_name_update", {"name": session_name}, to=session_id
-                )
-
-                # BUG FIX: Ensure the history format is correct for replay.
-                replay_history_for_client(
-                    socketio,
-                    session_id,
-                    session_name,
-                    history_for_haven[-memory_manager.max_buffer_size :],
-                )
-
-                return {
-                    "status": "success",
-                    "message": f"Session '{session_name}' loaded.",
-                }
-            except Exception as e:
-                return {"status": "error", "message": f"Could not load session: {e}"}
-
-        elif action == "save_session":
-            # This now functions as "Save As" or "Clone"
-            new_session_name = params.get("session_name")
-            if not new_session_name:
-                return {"status": "error", "message": "Session name not provided."}
-
-            session_data = chat_sessions.get(session_id)
-            if not session_data:
-                return {"status": "error", "message": "Active session not found."}
-
-            memory = session_data["memory"]
-            source_collection_name = memory.session_name
-
-            try:
-                source_collection = chroma_client.get_collection(
-                    name=source_collection_name
-                )
-                history_to_copy = source_collection.get(
-                    include=["metadatas", "documents"]
-                )
-
-                target_collection = chroma_client.create_collection(
-                    name=new_session_name
-                )
-                if history_to_copy and history_to_copy.get("ids"):
-                    target_collection.add(
-                        ids=history_to_copy["ids"],
-                        documents=history_to_copy["documents"],
-                        metadatas=history_to_copy["metadatas"],
-                    )
-
-                # Update current session to use the new name/collection
-                memory.session_name = new_session_name
-                memory.collection = target_collection
-                session_data["name"] = new_session_name
-                session_data["chat"] = HavenProxyWrapper(
-                    haven_proxy, new_session_name
-                )  # Point wrapper to new name
-
-                # Inform Haven to create a corresponding live object
-                history_for_haven = []
-                if history_to_copy and history_to_copy.get("ids"):
-                    history_tuples = sorted(
-                        zip(history_to_copy["documents"], history_to_copy["metadatas"]),
-                        key=lambda x: x[1].get("timestamp", 0),
-                    )
-                    for doc, meta in history_tuples:
-                        history_for_haven.append(
-                            {
-                                "role": meta.get("role", "unknown"),
-                                "parts": [{"text": doc}],
-                            }
-                        )
-                haven_proxy.get_or_create_session(new_session_name, history_for_haven)
-
-                socketio.emit(
-                    "session_name_update", {"name": new_session_name}, to=session_id
-                )
-                return {
-                    "status": "success",
-                    "message": f"Session saved as '{new_session_name}'.",
-                }
-            except Exception as e:
-                return {"status": "error", "message": f"Failed to save session: {e}"}
-
-        elif action == "delete_session":
-            session_name = params.get("session_name")
-            if not session_name:
-                return {"status": "error", "message": "Session name not provided."}
-
-            try:
-                # 1. Delete from cold storage (ChromaDB)
-                chroma_client.delete_collection(name=session_name)
-
-                # 2. Delete from hot storage (Haven)
-                haven_proxy.delete_session(session_name)
-
-                # 3. Refresh client UI
-                updated_list_result = execute_tool_command(
-                    {"action": "list_sessions"},
-                    socketio,
-                    session_id,
-                    chat_sessions,
-                    haven_proxy,
-                )
-                socketio.emit("session_list_update", updated_list_result, to=session_id)
-
-                """
-                # If we just deleted the current session, reset the client to a new session state.
-                current_session_data = chat_sessions.get(session_id)
-                if current_session_data and current_session_data.get('name') == session_name:
-                    from app import handle_connect # Import locally to avoid circular dependency
-                    # Disconnecting the old state and reconnecting to a new one
-                    chat_sessions.pop(session_id, None) 
-                    confirmation_events.pop(session_id, None)
-                    handle_connect() # This will create a new session and update the client
-                    logging.info(f"Resetting client {session_id} to a new session after deleting active session '{session_name}'.")
-                """
-
-                return {
-                    "status": "success",
-                    "message": f"Session '{session_name}' deleted from both database and Haven.",
-                }
-            except Exception as e:
-                logging.error(f"Error deleting session '{session_name}': {e}")
-                return {"status": "error", "message": f"Could not delete session: {e}"}
-
-        else:
-            return {"status": "error", "message": f"Unknown action: {action}"}
-
+        session_list = [{"name": name.replace("turns-", ""), "summary": data["status"]} for name, data in db_sessions.items()]
+        session_list.sort(key=lambda x: x["name"])
+        return ToolResult(status="success", content=session_list, message="Retrieved all sessions.")
     except Exception as e:
-        logging.error(f"Error in execute_tool_command: {e}")
-        return {"status": "error", "message": f"An internal error occurred: {e}"}
+        return ToolResult(status="error", message=f"Failed to list sessions: {e}")
+
+def _handle_load_session(params: dict, context: ToolContext) -> ToolResult:
+    """Handles the 'load_session' action."""
+    from response_parser import replay_history_for_client
+    session_name = params.get("session_name")
+    if not session_name:
+        return ToolResult(status="error", message="Session name not provided.")
+    try:
+        turn_store = ChromaDBStore(collection_name=f"turns-{session_name}")
+        history_records = turn_store.get_all_records()
+        history_for_haven = [{"role": r.role, "parts": [{"text": r.document}]} for r in history_records if r.role]
+
+        chat_wrapper = HavenProxyWrapper(context.haven_proxy, session_name)
+        memory_manager = MemoryManager(session_name=session_name)
+        history_slice_for_haven = history_for_haven[-memory_manager.max_buffer_size :]
+        context.haven_proxy.get_or_create_session(session_name, history_slice_for_haven)
+
+        context.chat_sessions[context.session_id] = ActiveSession(chat=chat_wrapper, memory=memory_manager, name=session_name)
+        context.socketio.emit("session_name_update", {"name": session_name}, to=context.session_id)
+        replay_history_for_client(context.socketio, context.session_id, session_name, history_slice_for_haven)
+        return ToolResult(status="success", message=f"Session '{session_name}' loaded.")
+    except Exception as e:
+        return ToolResult(status="error", message=f"Could not load session: {e}")
+
+def _handle_save_session(params: dict, context: ToolContext) -> ToolResult:
+    """Handles the 'save_session' action."""
+    new_session_name = params.get("session_name")
+    if not new_session_name:
+        return ToolResult(status="error", message="Session name not provided.")
+    session_data = context.chat_sessions.get(context.session_id)
+    if not session_data:
+        return ToolResult(status="error", message="Active session not found.")
+    try:
+        source_turn_store = session_data.memory.turn_store
+        target_turn_store = ChromaDBStore(collection_name=f"turns-{new_session_name}")
+        records_to_copy = source_turn_store.get_all_records()
+        for record in records_to_copy:
+            target_turn_store.add_record(record, str(record.id))
+
+        source_code_store = session_data.memory.code_store
+        target_code_store = ChromaDBStore(collection_name=f"code-{new_session_name}")
+        code_records_to_copy = source_code_store.get_all_records()
+        for record in code_records_to_copy:
+            pointer_id = f"[CODE-ARTIFACT-{record.id}:{record.filename}]"
+            target_code_store.add_record(record, pointer_id)
+
+        session_data.memory.session_name = new_session_name
+        session_data.memory.turn_store = target_turn_store
+        session_data.memory.code_store = target_code_store
+        session_data.name = new_session_name
+        session_data.chat = HavenProxyWrapper(context.haven_proxy, new_session_name)
+
+        history_for_haven = [{"role": r.role, "parts": [{"text": r.document}]} for r in records_to_copy if r.role]
+        context.haven_proxy.get_or_create_session(new_session_name, history_for_haven)
+        context.socketio.emit("session_name_update", {"name": new_session_name}, to=context.session_id)
+        return ToolResult(status="success", message=f"Session saved as '{new_session_name}'.")
+    except Exception as e:
+        return ToolResult(status="error", message=f"Failed to save session: {e}")
+
+def _handle_delete_session(params: dict, context: ToolContext) -> ToolResult:
+    """Handles the 'delete_session' action."""
+    session_name = params.get("session_name")
+    if not session_name:
+        return ToolResult(status="error", message="Session name not provided.")
+    try:
+        turn_store = ChromaDBStore(collection_name=f"turns-{session_name}")
+        code_store = ChromaDBStore(collection_name=f"code-{session_name}")
+        turn_store.delete_collection()
+        code_store.delete_collection()
+        context.haven_proxy.delete_session(session_name)
+        
+        updated_list_result = _handle_list_sessions({}, context)
+        context.socketio.emit("session_list_update", updated_list_result.model_dump(), to=context.session_id)
+        return ToolResult(status="success", message=f"Session '{session_name}' deleted from both database and Haven.")
+    except Exception as e:
+        logging.error(f"Error deleting session '{session_name}': {e}")
+        return ToolResult(status="error", message=f"Could not delete session: {e}")
+
+# --- Tool Registry (Strategy Pattern) ---
+
+# A dictionary mapping action names to their handler functions.
+TOOL_REGISTRY: Dict[str, Callable[[Dict, ToolContext], ToolResult]] = {
+    "create_file": _handle_create_file,
+    "read_file": _handle_read_file,
+    "read_project_file": _handle_read_project_file,
+    "list_allowed_project_files": _handle_list_allowed_project_files,
+    "list_directory": _handle_list_directory,
+    "delete_file": _handle_delete_file,
+    "execute_python_script": _handle_execute_python_script,
+    "apply_patch": _handle_apply_patch,
+    "list_sessions": _handle_list_sessions,
+    "load_session": _handle_load_session,
+    "save_session": _handle_save_session,
+    "delete_session": _handle_delete_session,
+}
+
+# --- Core Execution Logic ---
+
+def execute_tool_command(
+    command: ToolCommand,
+    socketio,
+    session_id: str,
+    chat_sessions: dict[str, ActiveSession],
+    haven_proxy: object,
+    loop_id: str | None = None,
+) -> ToolResult:
+    """
+    Executes a tool command by dispatching to the appropriate handler.
+    This function is the single entry point for all tool executions. It uses a
+    strategy pattern (TOOL_REGISTRY) to delegate the work to modular handlers.
+    """
+    action = command.action
+    params = command.parameters
+    
+    handler = TOOL_REGISTRY.get(action)
+    
+    if not handler:
+        return ToolResult(status="error", message=f"Unknown action: {action}")
+        
+    try:
+        # Create a context object to pass necessary state to the handlers.
+        context = ToolContext(
+            socketio=socketio,
+            session_id=session_id,
+            chat_sessions=chat_sessions,
+            haven_proxy=haven_proxy,
+            loop_id=loop_id
+        )
+        # Call the appropriate handler with its parameters and context.
+        return handler(params, context)
+        
+    except Exception as e:
+        logging.error(f"Error in execute_tool_command dispatch for action '{action}': {e}", exc_info=True)
+        return ToolResult(status="error", message=f"An internal error occurred during tool execution: {e}")

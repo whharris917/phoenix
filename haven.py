@@ -1,189 +1,169 @@
+"""
+The Haven: A persistent, stateful service for managing AI model chat sessions.
+
+This script runs as a separate, dedicated process. Its sole purpose is to hold the
+expensive GenerativeModel object and the long chat histories in memory, safe
+from the restarts and stateless nature of the main web application. The main app
+connects to this service to send prompts and receive responses.
+"""
 from multiprocessing.managers import BaseManager
 import logging
 import os
+from typing import Any, List
 import vertexai
-from vertexai.generative_models import (
-    GenerativeModel,
-    HarmCategory,
-    HarmBlockThreshold,
-    Content,
-    Part,
-)
-from config import PROJECT_ID, LOCATION
+from vertexai.generative_models import GenerativeModel, Content, Part
+from config import PROJECT_ID, LOCATION, SAFETY_SETTINGS
 
 # --- Setup Logging ---
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - Haven - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - Haven - %(levelname)s - %(message)s")
 
 
-# --- Function to load the system prompt from a file ---
-def load_system_prompt():
+def load_system_prompt() -> str:
+    """Loads the system prompt text from the 'system_prompt.txt' file."""
     try:
-        prompt_path = os.path.join(
-            os.path.dirname(__file__), "public_data", "system_prompt.txt"
-        )
+        prompt_path = os.path.join(os.path.dirname(__file__), "public_data", "system_prompt.txt")
         with open(prompt_path, "r") as f:
             return f.read()
     except FileNotFoundError:
         return "You are a helpful assistant but were unable to locate or open system_prompt.txt, and thus do not have access to your core directives."
 
-
-# --- Function to load the model definition from a file ---
-def load_model_definition():
+def load_model_definition() -> str:
+    """Loads the model name from the 'model_definition.txt' file."""
     try:
-        model_definition_path = os.path.join(
-            os.path.dirname(__file__), "public_data", "model_definition.txt"
-        )
+        model_definition_path = os.path.join(os.path.dirname(__file__), "public_data", "model_definition.txt")
         with open(model_definition_path, "r") as f:
             return f.read().strip()
     except FileNotFoundError:
         return "gemini-1.5-pro-001"
 
-
-SYSTEM_PROMPT = load_system_prompt()
-MODEL_DEFINITION = load_model_definition()
-model = None
-
+# --- Global Model Initialization ---
+# This block configures the connection to Google's Vertex AI and loads the
+# generative model. It runs only once when the Haven service starts.
 try:
     vertexai.init(project=PROJECT_ID, location=LOCATION)
-    safety_settings = {
-        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-    }
     model = GenerativeModel(
-        model_name=MODEL_DEFINITION,
-        system_instruction=[SYSTEM_PROMPT],
-        safety_settings=safety_settings,
+        model_name=load_model_definition(),
+        system_instruction=[load_system_prompt()],
+        safety_settings=SAFETY_SETTINGS,
     )
-    logging.info(
-        f"Haven: Vertex AI configured successfully for project '{PROJECT_ID}' and model '{MODEL_DEFINITION}'."
-    )
+    logging.info(f"Haven: Vertex AI configured successfully for project '{PROJECT_ID}'.")
 except Exception as e:
     logging.critical(f"Haven: FATAL: Failed to configure Vertex AI. Error: {e}")
-    # We should exit if the model fails to load, as the Haven is useless without it.
+    # We exit if the model fails to load, as the Haven is useless without it.
     exit(1)
 
-# This is the single, persistent object that will survive app reboots.
-# The keys will be session_names, and the values will be the live chat objects.
-live_chat_sessions = {}
+# This dictionary is the core state managed by Haven. It holds the complete,
+# ordered list of Content objects (user and model turns) for each session.
+live_chat_sessions: dict[str, list[Content]] = {}
 
 
 class Haven:
     """
-    The Haven class manages the live GenerativeModel chat objects.
-    An instance of this class will be served by the BaseManager.
+    The Haven class manages the live GenerativeModel chat histories.
+    An instance of this class is served by the BaseManager to act as a
+    persistent, stateful service for the main application.
     """
 
-    def get_or_create_session(self, session_name, history_dicts):
+    def get_or_create_session(self, session_name: str, history_dicts: list[dict]) -> bool:
         """
-        Gets a session if it exists, otherwise creates a new one by
-        storing the history list directly.
+        Gets a session history if it exists, otherwise creates a new one.
+
+        This ensures that if the main app restarts, it can reconnect to the
+        histories that have been preserved in this Haven process.
+
+        Args:
+            session_name: The unique identifier for the session.
+            history_dicts: A list of dictionaries representing conversation turns,
+                           used to hydrate a new session's history if it's the first time
+                           it's being loaded in this Haven instance.
+
+        Returns:
+            True, indicating the session history is ready.
         """
         if session_name not in live_chat_sessions:
-            logging.info(
-                f"Haven: Creating new history list for session: '{session_name}'"
-            )
-            # Convert the raw dictionaries to a list of Content objects
+            logging.info(f"Haven: Creating new history list for session: '{session_name}'.")
+            # Convert the raw dictionaries from the client/DB into Vertex AI Content objects.
             history_content = [
                 Content(
                     role=turn.get("role"),
-                    parts=[
-                        Part.from_text(
-                            (turn.get("parts", [{}])[0] or {}).get("text", "")
-                        )
-                    ],
+                    parts=[Part.from_text((turn.get("parts", [{}])[0] or {}).get("text", ""))],
                 )
                 for turn in history_dicts
             ]
-            # Store the list directly, INSTEAD of a chat object
             live_chat_sessions[session_name] = history_content
         else:
-            logging.info(
-                f"Haven: Reconnecting to existing history list for session: '{session_name}'"
-            )
+            logging.info(f"Haven: Reconnecting to existing history list for session: '{session_name}'.")
         return True
 
-    def send_message(self, session_name, prompt):
+    def send_message(self, session_name: str, prompt: str) -> dict[str, Any]:
         """
         Sends a message by appending to the history and making a stateless
         call to model.generate_content().
+
+        Args:
+            session_name: The session to send the message to.
+            prompt: The user's prompt text.
+
+        Returns:
+            A dictionary with 'status' and either 'text' on success or 'message' on error.
         """
         if session_name not in live_chat_sessions:
-            logging.error(
-                f"Haven: Attempted to send message to non-existent session: '{session_name}'"
-            )
+            logging.error(f"Haven: Attempted to send message to non-existent session: '{session_name}'.")
             return {"status": "error", "message": "Session history not found in Haven."}
 
         try:
-            # 1. Retrieve the current history list
+            # 1. Retrieve the current history list for the session.
             history = live_chat_sessions[session_name]
 
-            # 2. Append the new user prompt to the history
+            # 2. Append the new user prompt to the end of the history.
             history.append(Content(role="user", parts=[Part.from_text(prompt)]))
 
-            # 3. Make the stateless API call with the entire history
+            # 3. Make the stateless API call with the entire, updated history.
             response = model.generate_content(history)
 
-            # 4. Append the model's response to the history to keep it current
+            # 4. Append the model's response to the history to keep it current for the next turn.
             history.append(response.candidates[0].content)
 
-            # 5. Return the response text
+            # 5. Return only the new response text to the caller.
             return {"status": "success", "text": response.text}
         except Exception as e:
-            logging.error(
-                f"Haven: Error during generate_content for session '{session_name}': {e}"
-            )
+            logging.error(f"Haven: Error during generate_content for session '{session_name}': {e}.")
             return {"status": "error", "message": str(e)}
 
-    def list_sessions(self):
-        """Returns a list of the names of the live sessions."""
+    def list_sessions(self) -> list[str]:
+        """Returns a list of the names of all currently live sessions."""
         return list(live_chat_sessions.keys())
 
-    def delete_session(self, session_name):
-        """NEW: Deletes a session from the live dictionary to prevent memory leaks."""
+    def delete_session(self, session_name: str) -> dict[str, str]:
+        """Deletes a session from the live dictionary to free up memory."""
         if session_name in live_chat_sessions:
             del live_chat_sessions[session_name]
             logging.info(f"Haven: Deleted live session '{session_name}'.")
-            return {
-                "status": "success",
-                "message": f"Live session '{session_name}' deleted.",
-            }
+            return {"status": "success", "message": f"Live session '{session_name}' deleted."}
         else:
-            logging.warning(
-                f"Haven: Attempted to delete non-existent live session '{session_name}'."
-            )
+            logging.warning(f"Haven: Attempted to delete non-existent live session '{session_name}'.")
             return {"status": "success", "message": "Session was not live in Haven."}
 
-    def has_session(self, session_name):
+    def has_session(self, session_name: str) -> bool:
         """Checks if a session exists in the Haven."""
         return session_name in live_chat_sessions
 
 
 # --- Manager Setup ---
 class HavenManager(BaseManager):
+    """A multiprocessing manager for serving the Haven instance."""
     pass
 
-
-def start_haven():
-    """Starts the Haven server process."""
-    # Create an instance of our Haven class
+def start_haven() -> None:
+    """Initializes and starts the Haven server process."""
     haven_instance = Haven()
-
-    # Register the Haven class itself with the manager.
-    # We can now access any method of the Haven instance remotely.
+    # Register the Haven class with the manager, allowing remote access.
     HavenManager.register("get_haven", lambda: haven_instance)
     manager = HavenManager(address=("", 50000), authkey=b"phoenixhaven")
-
-    logging.info(
-        "Haven server started. Serving the persistent Haven object on port 50000."
-    )
-
+    logging.info("Haven server started. Serving the persistent Haven object on port 50000.")
     server = manager.get_server()
+    # This starts the server loop, making it wait for connections indefinitely.
     server.serve_forever()
-
 
 if __name__ == "__main__":
     logging.info("Initializing Haven...")

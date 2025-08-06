@@ -7,100 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="main.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        html.dark {
-            --bg-color: #111827; --text-color: #d1d5db; --panel-bg: rgba(31, 41, 55, 0.50);
-            --header-bg: rgba(31, 41, 55, 0.50); --border-color: #374151; --input-bg: #374151;
-            --code-bg: #374151; --tool-log-color: #9ca3af; /* Adjusted for better visibility on dark bg */
-        }
-        html {
-            --bg-color: #f9fafb; --text-color: #374151; --panel-bg: rgba(255, 255, 255, 0.50);
-            --header-bg: rgba(255, 255, 255, 0.50); --border-color: #e5e7eb; --input-bg: #f3f4f6;
-            --message-text-color: #ffffff; 
-            --code-bg: #e5e7eb; --tool-log-color: #6b7280; /* Adjusted for better visibility on light bg */
-        }
-        body { 
-            font-family: 'Inter', sans-serif;
-            background-image: url('https://i0.wp.com/picjumbo.com/wp-content/uploads/abstract-wallpaper-mountains-with-a-neon-glowing-circle-free-photo.jpeg?w=2210&quality=70');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            background-color: var(--bg-color); /* Fallback */
-            color: var(--text-color);
-        }
-        .log-entry { 
-            max-width: 95%;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-        .log-entry-user {
-            background-color: #2563EB;
-            border-left: 3px solid #1D4ED8;
-            align-self: flex-end;
-            color: var(--message-text-color);
-        }
-        .log-entry-final_answer, .log-entry-info, .log-entry-system_confirm {
-            background-color: #8B5CF6;
-            border-left: 3px solid #6D28D9;
-            align-self: flex-start;
-            color: var(--message-text-color);
-        }
-        html.dark .log-entry-final_answer, html.dark .log-entry-info, html.dark .log-entry-system_confirm {
-            background-color: #7C3AED;
-            border-left: 3px solid #5B21B6;
-        }
-        .tool-log-entry, .tool-result-entry {
-            text-align: center;
-            font-size: 0.75rem; /* 12px */
-            color: var(--tool-log-color);
-            padding: 0.25rem 0.5rem;
-            margin: 0.5rem auto;
-            border-radius: 0.25rem;
-            background-color: var(--panel-bg);
-            max-width: 90%;
-        }
-        .tool-result-entry > div { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 0.5rem; 
-        }
-        .message-body {
-            color: var(--message-text-color);
-        }
-        .message-body h1, .message-body h2, .message-body h3, .message-body strong { font-weight: 600; }
-        .message-body h1 { font-size: 1.5rem; }
-        .message-body h2 { font-size: 1.25rem; }
-        .message-body h3 { font-size: 1.1rem; }
-        .message-body ul, .message-body ol { margin-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
-        .message-body ul { list-style-type: disc; }
-        .message-body ol { list-style-type: decimal; }
-        .message-body p { margin-bottom: 0.5rem; }
-        .message-body pre {
-            background-color: rgba(0,0,0,0.2); 
-            padding: 0.75rem; 
-            border-radius: 0.375rem; 
-            margin: 0.5rem 0; 
-            font-size: 0.875rem;
-            white-space: pre-wrap;
-            overflow-wrap: break-word;
-        }
-        .message-body code { font-family: monospace; }
-        .message-body pre code { background-color: transparent; padding: 0; }
-        .message-body a { font-weight: 500; text-decoration: underline; }
-        .message-body {
-            color: var(--message-text-color);
-            overflow-wrap: break-word; /* FIX: Force wrap for all message types */
-        }
-        .nav-link { transition: all 0.2s ease-in-out; }
-        .nav-link.active { background-color: #4F46E5; color: white; }
-        html:not(.dark) .nav-link.active { color: white; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="flex flex-col h-screen">
-
     <header class="p-4 flex justify-between items-center border-b flex-shrink-0" style="background-color: var(--header-bg); border-color: var(--border-color);"> 
         <div class="flex items-center space-x-8"> 
             <h1 class="text-xl font-bold" style="color: var(--text-color);">Phoenix</h1> 
@@ -108,280 +19,63 @@
                 <a href="/" class="nav-link active py-2 px-3 rounded-md text-xs font-medium">Agent Chat</a> 
                 <a href="/docs" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Documentation</a> 
                 <a href="/workshop" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Workshop</a> 
-                <a href="/visualizer" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Visualizer</a>
                 <a href="/audit_visualizer" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Audit Visualizer</a>
                 <a href="/database_viewer" target="_blank" class="nav-link py-2 px-3 rounded-md text-xs font-medium hover:bg-gray-200 dark:hover:bg-gray-700">Database Visualizer</a>
             </nav> 
         </div> 
         <div class="flex items-center space-x-6"> 
-            <button id="theme-toggle" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"> <svg id="theme-icon-light" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-1.414 8.486a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"></path></svg> <svg id="theme-icon-dark" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg> </button> <div class="flex items-center space-x-2"> <div id="orchestrator-status" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div> <span id="orchestrator-text" class="text-xs text-gray-400">Orchestrator Offline</span> </div> <div class="flex items-center space-x-2"> <div id="agent-status" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div> <span id="agent-text" class="text-xs text-gray-400">Agent Online</span> </div> </div> 
+            <button id="theme-toggle" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"> 
+                <svg id="theme-icon-light" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-1.414 8.486a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z"></path></svg> <svg id="theme-icon-dark" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                    </svg> 
+                </button> 
+            <div class="flex items-center space-x-2"> 
+                <div id="orchestrator-status" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div> 
+                <span id="orchestrator-text" class="text-xs text-gray-400">Orchestrator Offline</span> 
+            </div> 
+            <div class="flex items-center space-x-2"> 
+                <div id="agent-status" class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div> 
+                <span id="agent-text" class="text-xs text-gray-400">Agent Online</span> 
+            </div>
+        </div> 
     </header>
     <main class="flex-grow flex flex-col md:flex-row p-4 gap-4 overflow-hidden">
         <div class="w-full md:w-1/4 flex flex-col gap-4">
-             <details class="rounded-lg shadow-lg" style="background-color: var(--panel-bg);" open> <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Session Management</summary> <div class="p-4 border-t" style="border-color: var(--border-color);"> <div class="space-y-3"> <div> <label for="session-list" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Load / Delete Session</label> <div class="flex space-x-2"> <select id="session-list" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" style="background-color: var(--input-bg);"></select> <button id="load-session-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Load</button> <button id="delete-session-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Delete</button> </div> </div> <div> <label for="save-session-name" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Save Current Session</label> <div class="flex space-x-2"> <input type="text" id="save-session-name" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="New session name..." style="background-color: var(--input-bg);"> <button id="save-session-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Save</button> </div> </div> </div> </div> </details>
+             <details class="rounded-lg shadow-lg" style="background-color: var(--panel-bg);" open> 
+                <summary class="p-4 font-semibold text-base" style="color: var(--text-color);">Session Management</summary> 
+                <div class="p-4 border-t" style="border-color: var(--border-color);"> 
+                    <div class="space-y-3"> 
+                        <div> 
+                            <label for="session-list" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Load / Delete Session</label> 
+                            <div class="flex space-x-2"> 
+                                <select id="session-list" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" style="background-color: var(--input-bg);"></select> 
+                                <button id="load-session-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Load</button> 
+                                <button id="delete-session-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Delete</button> 
+                            </div> 
+                        </div> 
+                        <div> 
+                            <label for="save-session-name" class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Save Current Session</label> 
+                            <div class="flex space-x-2"> 
+                                <input type="text" id="save-session-name" class="w-full rounded-md p-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="New session name..." style="background-color: var(--input-bg);"> 
+                                <button id="save-session-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-md text-xs transition-colors">Save</button> 
+                            </div> 
+                        </div> 
+                    </div> 
+                </div> 
+            </details>
         </div>
         <div class="w-full md:w-3/4 rounded-lg shadow-lg p-6 flex flex-col min-h-0" style="background-color: var(--panel-bg);">
-            <div class="flex justify-between items-center mb-4"> <h2 class="text-lg font-semibold" style="color: var(--text-color);"> </h2> <span id="session-name-display" class="text-sm font-mono px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">[New Session]</span> </div>
+            <div class="flex justify-between items-center mb-4"> 
+                <h2 class="text-lg font-semibold" style="color: var(--text-color);"> </h2> 
+                <span id="session-name-display" class="text-sm font-mono px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">[New Session]</span> 
+            </div>
             <div id="conversation-log" class="flex-grow overflow-y-auto mb-4 pr-2 flex flex-col"></div>
-            <div class="mt-auto flex items-center border-t pt-4 flex-shrink-0" style="border-color: var(--border-color);"> <textarea id="prompt-input" class="w-full rounded-l-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your command... (Shift+Enter for new line)" rows="1" style="background-color: var(--input-bg);"></textarea> <button id="send-prompt" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-r-md transition-colors self-stretch">Send</button> </div>
+            <div class="mt-auto flex items-center border-t pt-4 flex-shrink-0" style="border-color: var(--border-color);"> 
+                <textarea id="prompt-input" class="w-full rounded-l-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your command... (Shift+Enter for new line)" rows="1" style="background-color: var(--input-bg);"></textarea> 
+                <button id="send-prompt" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-r-md transition-colors self-stretch">Send</button> 
+            </div>
         </div>
     </main>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const conversationLog = document.getElementById('conversation-log');
-            const promptInput = document.getElementById('prompt-input');
-            const sendBtn = document.getElementById('send-prompt');
-            const sessionList = document.getElementById('session-list');
-            const loadSessionBtn = document.getElementById('load-session-btn');
-            const saveSessionNameInput = document.getElementById('save-session-name');
-            const saveSessionBtn = document.getElementById('save-session-btn');
-            const deleteSessionBtn = document.getElementById('delete-session-btn');
-            const themeToggleBtn = document.getElementById('theme-toggle');
-            const sessionNameDisplay = document.getElementById('session-name-display');
-            const orchestratorStatus = document.getElementById('orchestrator-status');
-            const orchestratorText = document.getElementById('orchestrator-text');
-            const agentStatus = document.getElementById('agent-status');
-            const agentText = document.getElementById('agent-text');
-
-            const SERVER_URL = window.location.origin;
-            const socket = io(SERVER_URL);
-            let currentSessionName = '[New Session]';
-
-            const logClientEvent = (eventName, details = {}, destination = "Server", control_flow = null) => {
-                socket.emit('log_audit_event', { 
-                    event: eventName, 
-                    details: details,
-                    source: "Client",
-                    destination: destination,
-                    control_flow: control_flow
-                });
-            };
-            
-            const userIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path></svg>`;
-            const agentIcon = `<svg class="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C3.732 4.943 9.5 3 10 3s6.268 1.943 9.542 7c-3.274 5.057-9.5 7-9.542 7S3.732 15.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>`;
-            const gearIcon = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734-2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path></svg>`;
-            
-            const addConversationLog = (message, type) => {
-                const trimmedMessage = message ? message.trim() : '';
-                if (!trimmedMessage || !type) {
-                    return;
-                }
-                logClientEvent("addConversationLog()", {"type": type, "message": message}, "Client", null);
-                if (type === 'tool_result') {
-                    const entry = document.createElement('div');
-                    entry.className = 'tool-result-entry';
-                    entry.innerHTML = `<div>${gearIcon}<span>${trimmedMessage}</span></div>`;
-                    conversationLog.appendChild(entry);
-                    conversationLog.scrollTop = conversationLog.scrollHeight;
-                    return;
-                }
-                let formattedMessage = marked.parse(trimmedMessage, { gfm: true, breaks: true });
-                let typeDisplay, icon, titleHTML;
-                switch(type) {
-                    case 'user': typeDisplay = 'You'; icon = userIcon; break;
-                    case 'final_answer': typeDisplay = currentSessionName; icon = agentIcon; break;
-                    case 'info': typeDisplay = currentSessionName; icon = agentIcon; break;
-                    case 'system_confirm_replayed': typeDisplay = currentSessionName; icon = agentIcon; break;
-                    case 'system_confirm': typeDisplay = currentSessionName; icon = agentIcon; break;
-                }
-                titleHTML = `<strong class="text-white/80">${typeDisplay}:</strong>`;
-                const content = `<div class="flex items-start">${icon}<div class="flex-1">${titleHTML}<div class="mt-1 text-sm message-body">${formattedMessage}</div></div></div>`;
-                const entry = document.createElement('div');
-                entry.className = `log-entry log-entry-${type}`;
-                entry.innerHTML = content;
-                conversationLog.appendChild(entry);
-                conversationLog.scrollTop = conversationLog.scrollHeight;
-
-                // --- NEW LOGIC for inline confirmation buttons ---
-                if (type === 'system_confirm') {
-                    promptInput.disabled = true; 
-                    sendBtn.disabled = true;
-
-                    const buttonContainer = document.createElement('div');
-                    buttonContainer.className = 'mt-4 flex space-x-2';
-
-                    const yesBtn = document.createElement('button');
-                    yesBtn.textContent = 'Yes';
-                    yesBtn.className = 'bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-4 rounded-md text-sm transition-colors';
-                    yesBtn.onclick = () => {
-                        handleConfirmation('yes');
-                        buttonContainer.remove();
-                    };
-
-                    const noBtn = document.createElement('button');
-                    noBtn.textContent = 'No';
-                    noBtn.className = 'bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-4 rounded-md text-sm transition-colors';
-                    noBtn.onclick = () => {
-                        handleConfirmation('no');
-                        buttonContainer.remove();
-                    };
-
-                    buttonContainer.appendChild(yesBtn);
-                    buttonContainer.appendChild(noBtn);
-
-                    const messageBody = entry.querySelector('.message-body');
-                    if (messageBody) {
-                        messageBody.appendChild(buttonContainer);
-                    } else {
-                        entry.appendChild(buttonContainer);
-                    }
-                    conversationLog.scrollTop = conversationLog.scrollHeight;
-                }
-            };
-
-            const addToolLog = (message) => {
-                logClientEvent("addToolLog()", {"message": message}, "Client", null);
-                const entry = document.createElement('div');
-                entry.className = 'tool-log-entry';
-                entry.textContent = message;
-                conversationLog.appendChild(entry);
-                conversationLog.scrollTop = conversationLog.scrollHeight;
-            };
-
-            const requestSessionList = () => { 
-                logClientEvent("Socket.IO Emit: request_session_list", {}, "Server", "Request");
-                if (socket.connected) socket.emit('request_session_list'); 
-            };
-
-            socket.on('connect', () => {
-                logClientEvent("Socket.IO Event Received: connect", {}, "Client", null);
-                orchestratorStatus.className = 'w-3 h-3 rounded-full bg-green-500'; orchestratorText.textContent = 'Orchestrator Online';
-                agentStatus.className = 'w-3 h-3 rounded-full bg-green-500'; agentText.textContent = 'Agent Online';
-                requestSessionList(); 
-                logClientEvent("Socket.IO Emit: request_session_name", {}, "Client", "Request");
-                socket.emit('request_session_name');
-            });
-
-            socket.on('disconnect', () => {
-                logClientEvent("Socket.IO Event Received: disconnect", {}, "Client", null);
-                orchestratorStatus.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse'; orchestratorText.textContent = 'Orchestrator Offline';
-                agentStatus.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse'; agentText.textContent = 'Agent Offline';
-            });
-            
-            socket.on('log_message', (msg) => {
-                logClientEvent("Socket.IO Event Received: log_message", {"msg": msg}, "Client", null);
-                addConversationLog(msg.data, msg.type);
-            });
-            
-            socket.on('display_user_prompt', (data) => {
-                logClientEvent("Socket.IO Event Received: display_user_prompt", {"data": data}, "Client", null);
-                addConversationLog(data.prompt, 'user');
-            });
-
-            socket.on('tool_log', (msg) => {
-                logClientEvent("Socket.IO Event Received: tool_log", {"msg": msg}, "Client", null);
-                addToolLog(msg.data);
-            });
-
-            socket.on('request_user_confirmation', (data) => {
-                logClientEvent("Socket.IO Event Received: request_user_confirmation", {"data": data}, "Client", null);
-                if (!data || !data.prompt) {
-                    console.error("Confirmation request received with invalid data:", data);
-                    return;
-                }
-                addConversationLog(data.prompt, 'system_confirm');
-            });
-
-            socket.on('session_list_update', (result) => {
-                logClientEvent("Socket.IO Event Received: session_list_update", {"result": result}, "Client", null);
-                sessionList.innerHTML = '';
-                const placeholder = new Option('Choose session...', '', true, true); placeholder.disabled = true; sessionList.add(placeholder);
-                if (result?.status === 'success' && result.sessions) { result.sessions.forEach(session => { sessionList.add(new Option(session.name, session.name)); }); }
-            });
-
-            socket.on('session_name_update', (data) => {
-                logClientEvent("Socket.IO Event Received: session_name_update", {"data": data}, "Client", null);
-                currentSessionName = data.name || '[New Session]';
-                sessionNameDisplay.textContent = currentSessionName;
-            });
-
-            socket.on('clear_chat_history', () => {
-                logClientEvent("Socket.IO Event Received: clear_chat_history", {}, "Client", null);
-                conversationLog.innerHTML = '';
-            });
-
-            const handleUserPrompt = () => {
-                logClientEvent("Event Handler Triggered: handleUserPrompt()", {}, "Client", null);
-                const prompt = promptInput.value.trim();
-                if (!prompt) return;
-                //addConversationLog(prompt, 'user'); // MODIFIED: Do not log immediately. Wait for server echo.
-                promptInput.value = '';
-                adjustTextareaHeight();
-                const payload = { prompt };
-                logClientEvent("Socket.IO Emit: start_task", {"payload": payload}, "Server", null);
-                socket.emit('start_task', payload);
-            };
-
-            const handleSaveSession = () => {
-                logClientEvent("Event Handler Triggered: handleSaveSession()", {}, "Client", null);
-                const name = saveSessionNameInput.value.trim();
-                if (!name) return alert("Please enter a name for the session.");
-                const payload = { prompt: `save this session as \\"${name}\\"` };
-                logClientEvent("Socket.IO Emit: start_task", {"payload": payload}, "Server", null);
-                socket.emit('start_task', payload);
-                saveSessionNameInput.value = '';
-            };
-
-            const handleLoadSession = () => {
-                logClientEvent("Event Handler Triggered: handleLoadSession()", {}, "Client", null);
-                if (!sessionList.value) return alert("Please select a session to load.");
-                const payload = { prompt: `Please load the session named \\"${sessionList.value}\\"` };
-                logClientEvent("Socket.IO Emit: start_task", {"payload": payload}, "Server", null);
-                socket.emit('start_task', payload);
-            };
-
-            const handleDeleteSession = () => {
-                logClientEvent("Event Handler Triggered: handleDeleteSession()", {}, "Client", null);
-                if (!sessionList.value) return alert("Please select a session to delete.");
-                const payload = { prompt: `delete the session named \\"${sessionList.value}\\"` };
-                logClientEvent("Socket.IO Emit: start_task", {"payload": payload}, "Server", null);
-                socket.emit('start_task', payload);
-            };
-
-            const handleConfirmation = (response) => {
-                logClientEvent("Event Handler Triggered: handleConfirmation()", {"response": response}, "Client", null);
-                const payload = { response };
-                logClientEvent("Socket.IO Emit: user_confirmation", {"payload": payload}, "Server", null);
-                socket.emit('user_confirmation', payload);
-                promptInput.disabled = false; sendBtn.disabled = false; promptInput.focus();
-            };
-
-            const setupTheme = () => {
-                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-                const isDark = document.documentElement.classList.contains('dark');
-                document.getElementById('theme-icon-dark').classList.toggle('hidden', !isDark);
-                document.getElementById('theme-icon-light').classList.toggle('hidden', isDark);
-            };
-
-            const toggleTheme = () => {
-                logClientEvent("Event Handler Triggered: toggleTheme", {}, "Client", null);
-                document.documentElement.classList.toggle('dark');
-                localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-                setupTheme();
-            };
-
-            const adjustTextareaHeight = () => {
-                promptInput.style.height = 'auto';
-                promptInput.style.height = `${promptInput.scrollHeight}px`;
-                if (promptInput.scrollHeight > parseFloat(getComputedStyle(promptInput).maxHeight)) { promptInput.style.overflowY = 'auto';
-                } else { promptInput.style.overflowY = 'hidden'; }
-            };
-
-            sendBtn.addEventListener('click', handleUserPrompt);
-            promptInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserPrompt(); } });
-            promptInput.addEventListener('input', adjustTextareaHeight);
-            saveSessionBtn.addEventListener('click', handleSaveSession);
-            loadSessionBtn.addEventListener('click', handleLoadSession);
-            deleteSessionBtn.addEventListener('click', handleDeleteSession);
-            themeToggleBtn.addEventListener('click', toggleTheme);
-            
-            setupTheme(); adjustTextareaHeight();
-        });
-    </script>
 </body>
 </html>

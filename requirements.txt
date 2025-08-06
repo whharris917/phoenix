@@ -13,3 +13,5 @@ jupyter
 google-cloud-aiplatform
 black
 ruff
+pytest
+pytest-mock

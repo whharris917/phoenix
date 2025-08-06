@@ -7,9 +7,7 @@ import json
 
 class AuditLogger:
     def __init__(self, filename="audit_trail.csv"):
-        self.filepath = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), ".sandbox", filename
-        )
+        self.filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".sandbox", filename)
         self.lock = threading.Lock()
         self._initialize_file()
         # Add a placeholder for the socketio object
@@ -58,11 +56,7 @@ class AuditLogger:
         timestamp = datetime.now().isoformat()
 
         details_str = json.dumps(details) if details is not None else ""
-        observer_str = (
-            ", ".join(observers)
-            if isinstance(observers, list)
-            else (observers or "N/A")
-        )
+        observer_str = ", ".join(observers) if isinstance(observers, list) else (observers or "N/A")
 
         def serialize(value):
             if value is None:
@@ -100,9 +94,7 @@ class AuditLogger:
                     "details": details,
                 }
                 # Use a separate thread to avoid blocking
-                self.socketio.start_background_task(
-                    self.socketio.emit, "new_audit_event", log_data_for_broadcast
-                )
+                self.socketio.start_background_task(self.socketio.emit, "new_audit_event", log_data_for_broadcast)
 
 
 # Create a single, global instance to be used by the entire application

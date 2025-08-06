@@ -1,0 +1,111 @@
+{
+  "test_case_1": {
+    "response_text": "\nOkay, I've created the file content. Here is the command to write it:\n```json\n{\n    \"action\": \"create_file\",\n    \"parameters\": {\n        \"filename\": \"broken_json.txt\",\n        \"content\": \"This is a \"test\" with unescaped quotes.\"\n    }\n}\n```\n",
+    "expected_output": {
+      "prose": "Okay, I've created the file content. Here is the command to write it:",
+      "command": {
+        "action": "create_file",
+        "parameters": {
+          "filename": "broken_json.txt",
+          "content": "This is a \"test\" with unescaped quotes."
+        }
+      }
+    }
+  },
+  "test_case_2": {
+    "response_text": "\nYou can use a JSON like this: `{\"key\": \"value\"}`.\nFor your request, I will now create the file.\n{\n    \"action\": \"create_file\",\n    \"parameters\": {\n        \"filename\": \"prose_with_code.txt\",\n        \"content\": \"This content is simple.\"\n    }\n}\nThe command above should work.\n",
+    "expected_output": {
+      "prose": "You can use a JSON like this: `{\"key\": \"value\"}`.\nFor your request, I will now create the file.\nThe command above should work.",
+      "command": {
+        "action": "create_file",
+        "parameters": {
+          "filename": "prose_with_code.txt",
+          "content": "This content is simple."
+        }
+      }
+    }
+  },
+  "test_case_3": {
+    "response_text": "\nHere is the command you requested.\n{\n    \"action\": \"create_file\",\n    \"parameters\": {\n        \"filename\": \"inconsistent_quotes.txt\",\n        \"content\": \"Some text here.\"\n    }\n}\n",
+    "expected_output": {
+      "prose": "Here is the command you requested.",
+      "command": {
+        "action": "create_file",
+        "parameters": {
+          "filename": "inconsistent_quotes.txt",
+          "content": "Some text here."
+        }
+      }
+    }
+  },
+  "test_case_4": {
+    "response_text": "\n```json\n{\n    \"action\": \"reply\",\n    \"parameters\": {\n        \"content\": \"This is a direct reply.\"\n    }\n}\n```\n",
+    "expected_output": {
+      "prose": null,
+      "command": {
+        "action": "reply",
+        "parameters": {
+          "content": "This is a direct reply."
+        }
+      }
+    }
+  },
+  "test_case_5": {
+    "response_text": "Hello! How can I help you today?",
+    "expected_output": {
+      "prose": "Hello! How can I help you today?",
+      "command": null
+    }
+  },
+  "test_case_6": {
+    "response_text": "\nI think the best approach is to use a `create_file` action. For example, you might have something like ```json {\"action\": \"example\"} ``` in your history.\n\nLet's do it. Here is the command:\n```json\n{\n    \"action\": \"create_file\",\n    \"parameters\": {\n        \"filename\": \"very_messy.txt\",\n        \"content\": \"This file's content has a quote: \\\" and another one: \". It's tricky.\"\n    }\n}\n```\nLet me know if this works.\n",
+    "expected_output": {
+      "prose": "I think the best approach is to use a `create_file` action. For example, you might have something like ```json {\"action\": \"example\"} ``` in your history.\n\nLet's do it. Here is the command:\n\nLet me know if this works.",
+      "command": {
+        "action": "create_file",
+        "parameters": {
+          "filename": "very_messy.txt",
+          "content": "This file's content has a quote: \" and another one: \". It's tricky."
+        }
+      }
+    }
+  },
+  "test_case_7": {
+    "response_text": "\nHere is an example of a small JSON:\n```json\n{\"action\": \"small_example\"}\n```\nNow, here is the actual command you should execute, which is larger.\n```json\n{\n    \"action\": \"the_real_deal\",\n    \"parameters\": {\n        \"info\": \"This is the one you want to parse because it is the largest JSON block.\"\n    }\n}\n```\nPlease use the second one.\n",
+    "expected_output": {
+      "prose": "Here is an example of a small JSON:\n```json\n{\"action\": \"small_example\"}\n```\nNow, here is the actual command you should execute, which is larger.\n\nPlease use the second one.",
+      "command": {
+        "action": "the_real_deal",
+        "parameters": {
+          "info": "This is the one you want to parse because it is the largest JSON block."
+        }
+      }
+    }
+  },
+  "test_case_8": {
+    "response_text": "\nHere is the diff you requested.\n```json\n{\n    \"action\": \"create_file\",\n    \"parameters\": {\n        \"filename\": \"history_replay_fix.diff\",\n        \"content\": \"--- a/orchestrator.py\n+++ b/orchestrator.py\n\"\n    }\n}\n```\n",
+    "expected_output": {
+      "prose": "Here is the diff you requested.",
+      "command": {
+        "action": "create_file",
+        "parameters": {
+          "filename": "history_replay_fix.diff",
+          "content": "--- a/orchestrator.py\n+++ b/orchestrator.py\n"
+        }
+      }
+    }
+  },
+  "test_case_9": {
+    "response_text": "Excellent! The test was a success. The successful creation of `rigorous_test_complete.txt` proves that the new parsing and self-healing logic in the orchestrator is working perfectly. It correctly handled the mixed message, the markdown JSON block, the curly braces, and the unescaped quote all at once. Now that this critical bug is resolved, we can finally return to our original mission: **fixing the chat history rendering bug.** I will now, once again, attempt to create the `history_replay_fix.diff` file. With the new robust parser, this command should execute without any issues. ```json { \"action\": \"create_file\", \"parameters\": { \"filename\": \"history_replay_fix.diff\", \"content\": \"--- a/orchestrator.py\n+++ b/orchestrator.py\n@@ -87,29 +87,46 @@\n \n for item in history:\n role = item.get('role')\n- raw_text = \"\"\n- if item.get('parts') and isinstance(item['parts'], list) and len(item['parts']) > 0:\n- part = item['parts'][0]\n- if isinstance(part, dict) and 'text' in part:\n- raw_text = part.get('text', '')\n- elif isinstance(part, str):\n- raw_text = part\n+ raw_text = item.get('parts', [{}])[0].get('text', '')\n \n if not raw_text or not raw_text.strip():\n continue\n \n if role == 'user':\n if raw_text.startswith(('TOOL_RESULT:', 'OBSERVATION:')):\n+ # Attempt to parse the JSON part of the tool result for rich formatting.\n try:\n json_str = raw_text[raw_text.find('{'):]\n tool_result = json.loads(json_str)\n- log_message = tool_result.get('message', f\"Tool executed.\")\n+ status = tool_result.get('status')\n+ message = tool_result.get('message', 'No message.')\n+\n+ # Create a more descriptive log message based on the content\n+ if status == 'error':\n+ log_message = f\"Error: {message}\"\n+ elif 'directory_listing' in tool_result:\n+ listing = ', '.join(tool_result['directory_listing']) or \"No files found.\"\n+ log_message = f\"{message}: {listing}\"\n+ elif 'file_content' in tool_result:\n+ log_message = f\"{message}\\n---\\n{tool_result['file_content']}\"\n+ else:\n+ log_message = message\n+\n+ socketio.emit('tool_log', {'data': f\"[{log_message}]\"}, to=session_id) \n+ except (json.JSONDecodeError, IndexError):\n+ # Fallback for malformed or simple tool results\n+ log_message = raw_text.replace('TOOL_RESULT: ', '').replace('OBSERVATION: ', '').strip()\n+ socketio.emit('tool_log', {'data': f\"[{log_message}]\"}, to=session_id)\n+\n elif not raw_text.startswith('USER_CONFIRMATION:'):\n socketio.emit('log_message', {'type': 'user', 'data': raw_text}, to=session_id)\n \n elif role == 'model':\n- start_index, end_index = find_json_block(raw_text)\n- if start_index is not None:\n- attachment = raw_text[:start_index].strip().strip('```json').strip('`')\n- if attachment:\n- socketio.emit('log_message', {'type': 'info', 'data': attachment}, to=session_id)\n- \n- json_str = raw_text[start_index:end_index]\n+ json_str, prose_str = find_and_extract_json_with_prose(raw_text)\n+\n+ # First, render the prose/preamble if it exists.\n+ if prose_str:\n+ socketio.emit('log_message', {'type': 'info', 'data': prose_str}, to=session_id)\n+ \n+ if json_str:\n try:\n command = json.loads(json_str)\n action = command.get('action')\n params = command.get('parameters', {})\n- if action in ['respond', 'task_complete'] and params.get('response') and params.get('response').strip():\n- socketio.emit('log_message', {'type': 'final_answer', 'data': params['response']}, to=session_id)\n- elif action == 'request_confirmation' and params.get('prompt'):\n+ \n+ # Now, render the action itself.\n+ if action in ['respond', 'task_complete']:\n+ response = params.get('response', '').strip()\n+ if response:\n+ socketio.emit('log_message', {'type': 'final_answer', 'data': response}, to=session_id)\n+ elif action == 'request_confirmation':\n+ prompt = params.get('prompt')\n+ if prompt:\n+ socketio.emit('log_message', {'type': 'system_confirm', 'data': prompt}, to=session_id)\n+ else: # This handles all other tool calls (create_file, list_directory, etc.)\n+ socketio.emit('log_message', {'type': 'info', 'data': f\"(Agent decided to use tool: {action})\"}, to=session_id)\n+\n+ except json.JSONDecodeError:\n+ # If JSON parsing fails, it's likely part of a larger, malformed response.\n+ # The prose_str has already been rendered, so we can often ignore this.\n+ pass\n+ elif not prose_str and raw_text: # No JSON and no prose means the whole thing is the answer\n+ socketio.emit('log_message', {'type': 'final_answer', 'data': raw_text}, to=session_id)\n+ socketio.sleep(0.01)\n+\n \n def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):\n loop_id = str(uuid.uuid4())\n\" } } ```",
+    "expected_output": {
+      "prose": "Excellent! The test was a success. The successful creation of `rigorous_test_complete.txt` proves that the new parsing and self-healing logic in the orchestrator is working perfectly. It correctly handled the mixed message, the markdown JSON block, the curly braces, and the unescaped quote all at once. Now that this critical bug is resolved, we can finally return to our original mission: **fixing the chat history rendering bug.** I will now, once again, attempt to create the `history_replay_fix.diff` file. With the new robust parser, this command should execute without any issues.",
+      "command": {
+        "action": "create_file",
+        "parameters": {
+          "filename": "history_replay_fix.diff",
+          "content": "--- a/orchestrator.py\n+++ b/orchestrator.py\n@@ -87,29 +87,46 @@\n \n for item in history:\n role = item.get('role')\n- raw_text = \"\"\n- if item.get('parts') and isinstance(item['parts'], list) and len(item['parts']) > 0:\n- part = item['parts'][0]\n- if isinstance(part, dict) and 'text' in part:\n- raw_text = part.get('text', '')\n- elif isinstance(part, str):\n- raw_text = part\n+ raw_text = item.get('parts', [{}])[0].get('text', '')\n \n if not raw_text or not raw_text.strip():\n continue\n \n if role == 'user':\n if raw_text.startswith(('TOOL_RESULT:', 'OBSERVATION:')):\n+ # Attempt to parse the JSON part of the tool result for rich formatting.\n try:\n json_str = raw_text[raw_text.find('{'):]\n tool_result = json.loads(json_str)\n- log_message = tool_result.get('message', f\"Tool executed.\")\n+ status = tool_result.get('status')\n+ message = tool_result.get('message', 'No message.')\n+\n+ # Create a more descriptive log message based on the content\n+ if status == 'error':\n+ log_message = f\"Error: {message}\"\n+ elif 'directory_listing' in tool_result:\n+ listing = ', '.join(tool_result['directory_listing']) or \"No files found.\"\n+ log_message = f\"{message}: {listing}\"\n+ elif 'file_content' in tool_result:\n+ log_message = f\"{message}\n---\n{tool_result['file_content']}\"\n+ else:\n+ log_message = message\n+\n+ socketio.emit('tool_log', {'data': f\"[{log_message}]\"}, to=session_id) \n+ except (json.JSONDecodeError, IndexError):\n+ # Fallback for malformed or simple tool results\n+ log_message = raw_text.replace('TOOL_RESULT: ', '').replace('OBSERVATION: ', '').strip()\n+ socketio.emit('tool_log', {'data': f\"[{log_message}]\"}, to=session_id)\n+\n elif not raw_text.startswith('USER_CONFIRMATION:'):\n socketio.emit('log_message', {'type': 'user', 'data': raw_text}, to=session_id)\n \n elif role == 'model':\n- start_index, end_index = find_json_block(raw_text)\n- if start_index is not None:\n- attachment = raw_text[:start_index].strip().strip('```json').strip('`')\n- if attachment:\n- socketio.emit('log_message', {'type': 'info', 'data': attachment}, to=session_id)\n- \n- json_str = raw_text[start_index:end_index]\n+ json_str, prose_str = find_and_extract_json_with_prose(raw_text)\n+\n+ # First, render the prose/preamble if it exists.\n+ if prose_str:\n+ socketio.emit('log_message', {'type': 'info', 'data': prose_str}, to=session_id)\n+ \n+ if json_str:\n try:\n command = json.loads(json_str)\n action = command.get('action')\n params = command.get('parameters', {})\n- if action in ['respond', 'task_complete'] and params.get('response') and params.get('response').strip():\n- socketio.emit('log_message', {'type': 'final_answer', 'data': params['response']}, to=session_id)\n- elif action == 'request_confirmation' and params.get('prompt'):\n+ \n+ # Now, render the action itself.\n+ if action in ['respond', 'task_complete']:\n+ response = params.get('response', '').strip()\n+ if response:\n+ socketio.emit('log_message', {'type': 'final_answer', 'data': response}, to=session_id)\n+ elif action == 'request_confirmation':\n+ prompt = params.get('prompt')\n+ if prompt:\n+ socketio.emit('log_message', {'type': 'system_confirm', 'data': prompt}, to=session_id)\n+ else: # This handles all other tool calls (create_file, list_directory, etc.)\n+ socketio.emit('log_message', {'type': 'info', 'data': f\"(Agent decided to use tool: {action})\"}, to=session_id)\n+\n+ except json.JSONDecodeError:\n+ # If JSON parsing fails, it's likely part of a larger, malformed response.\n+ # The prose_str has already been rendered, so we can often ignore this.\n+ pass\n+ elif not prose_str and raw_text: # No JSON and no prose means the whole thing is the answer\n+ socketio.emit('log_message', {'type': 'final_answer', 'data': raw_text}, to=session_id)\n+ socketio.sleep(0.01)\n+\n \n def execute_reasoning_loop(socketio, session_data, initial_prompt, session_id, chat_sessions, model, api_stats):\n loop_id = str(uuid.uuid4())\n"
+        }
+      }
+    }
+  }
+}

@@ -69,9 +69,7 @@ def _correct_hunk_line_numbers(diff_content, original_content):
         source_line_count = 0
         target_line_count = 0
 
-        while hunk_body_idx < len(diff_lines) and not diff_lines[
-            hunk_body_idx
-        ].startswith("@@ "):
+        while hunk_body_idx < len(diff_lines) and not diff_lines[hunk_body_idx].startswith("@@ "):
             hunk_line = diff_lines[hunk_body_idx]
             hunk_body_lines.append(hunk_line)
 
@@ -91,10 +89,7 @@ def _correct_hunk_line_numbers(diff_content, original_content):
             # Whitespace-agnostic search
             for i in range(len(stripped_original_lines) - len(hunk_search_pattern) + 1):
                 # Compare stripped slices of the original content
-                if (
-                    stripped_original_lines[i : i + len(hunk_search_pattern)]
-                    == hunk_search_pattern
-                ):
+                if stripped_original_lines[i : i + len(hunk_search_pattern)] == hunk_search_pattern:
                     actual_start_line = i + 1
                     break
 
@@ -119,9 +114,7 @@ def _correct_hunk_line_numbers(diff_content, original_content):
             logging.info(f"Corrected Hunk Header: {new_header.strip()}")
 
         else:  # If context not found, keep original header but log a warning
-            logging.warning(
-                "Could not find matching context for hunk. Leaving header unchanged."
-            )
+            logging.warning("Could not find matching context for hunk. Leaving header unchanged.")
             corrected_diff_lines.append(line)
 
         corrected_diff_lines.extend(hunk_body_lines)
@@ -143,13 +136,9 @@ def apply_patch(diff_content, original_content, original_filename):
         normalized_diff = _normalize_text(diff_content)
 
         # --- NEW: Correct hunk line numbers before attempting to patch ---
-        corrected_diff = _correct_hunk_line_numbers(
-            normalized_diff, normalized_original
-        )
+        corrected_diff = _correct_hunk_line_numbers(normalized_diff, normalized_original)
         if corrected_diff != normalized_diff:
-            logging.info(
-                f"Patch for {original_filename} had its hunk headers auto-corrected."
-            )
+            logging.info(f"Patch for {original_filename} had its hunk headers auto-corrected.")
 
         # The diff file expects a specific path, so we recreate it
         full_temp_path = os.path.join(temp_dir, original_filename)
@@ -187,16 +176,12 @@ def apply_patch(diff_content, original_content, original_filename):
                 rejected_hunks = []
                 for reject in patch_set.rejections:
                     # Provide details on which hunk failed to apply
-                    rejected_hunks.append(
-                        f"  - Hunk starting at line {reject.source_start} in the original file could not be applied."
-                    )
+                    rejected_hunks.append(f"  - Hunk starting at line {reject.source_start} in the original file could not be applied.")
                 error_details += "\\n\\nRejected Hunks:\\n" + "\\n".join(rejected_hunks)
             else:
                 error_details += " No specific hunks were rejected, which could indicate a problem with the file paths in the diff header or a malformed patch that the parser did not catch."
 
-            logging.warning(
-                f"Patch application failed for {original_filename}. Details: {error_details}"
-            )
+            logging.warning(f"Patch application failed for {original_filename}. Details: {error_details}")
             return None, error_details
 
     except Exception as e:

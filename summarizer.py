@@ -1,10 +1,13 @@
 import chromadb
 import time
 import logging
-import uuid  # Import uuid for segment IDs
+import uuid
 from datetime import datetime, timezone
 from vertexai.generative_models import GenerativeModel, Part
 import vertexai
+
+# REFACTORED: Import ChromaDBStore from the newly refactored memory_manager
+from memory_manager import ChromaDBStore
 from config import (
     SUMMARIZER_MODEL_NAME,
     SEGMENT_THRESHOLD,
@@ -12,162 +15,107 @@ from config import (
     LOCATION,
     CHROMA_DB_PATH,
 )
+from data_models import MemoryRecord
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - Summarizer - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - Summarizer - %(levelname)s - %(message)s")
 
 
 def main():
     """The main loop for the summarization background process."""
-
-    # --- Initialize Vertex AI and the summarizer model ---
     vertexai.init(project=PROJECT_ID, location=LOCATION)
     summarizer_model = GenerativeModel(SUMMARIZER_MODEL_NAME)
-
-    # --- Initialize ChromaDB client ---
     chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
     logging.info("Summarizer connected to ChromaDB.")
 
-    # Define your date cutoff here
     cutoff_date = datetime(2025, 7, 31, tzinfo=timezone.utc)
     cutoff_timestamp = cutoff_date.timestamp()
 
     while True:
         try:
-            collections = chroma_client.list_collections()
+            all_collections = chroma_client.list_collections()
+            # REFACTORED: Only process 'turns' collections, not 'code' collections.
+            turn_collections = [c for c in all_collections if c.name.startswith("turns-")]
 
-            for collection in collections:
-                # Check the collection's last modified date
-                metadata_for_check = collection.get(include=["metadatas"]).get(
-                    "metadatas"
-                )
-                last_modified = 0
-                if metadata_for_check:
-                    timestamps = [
-                        m.get("timestamp", 0) for m in metadata_for_check if m
-                    ]
-                    if timestamps:
-                        last_modified = max(timestamps)
+            for collection_summary in turn_collections:
+                collection_name = collection_summary.name
+
+                # REFACTORED: Instantiate ChromaDBStore to handle all DB interactions
+                db_store = ChromaDBStore(collection_name=collection_name)
+                if not db_store.collection:
+                    logging.warning(f"Could not initialize store for collection '{collection_name}'. Skipping.")
+                    continue
+
+                all_records = db_store.get_all_records()
+
+                if not all_records:
+                    logging.info(f"Collection '{collection_name}' is empty. Skipping.")
+                    continue
+
+                last_modified = max(r.timestamp for r in all_records)
 
                 if last_modified < cutoff_timestamp:
-                    logging.info(
-                        f"Skipping collection '{collection.name}' as it was last modified before the cutoff date."
-                    )
+                    logging.info(f"Skipping collection '{collection_name}' as it was last modified before the cutoff date.")
                     continue
 
                 # --- Part 1: Per-Turn Summarization ---
-                history = collection.get(include=["metadatas", "documents"])
-                unsummarized_ids = []
-                unsummarized_docs = []
-                unsummarized_metas = []
+                unsummarized_records = [r for r in all_records if not r.summary]
 
-                for i, meta in enumerate(history["metadatas"]):
-                    if "summary" not in meta:
-                        unsummarized_ids.append(history["ids"][i])
-                        unsummarized_docs.append(history["documents"][i])
-                        unsummarized_metas.append(meta)
+                if unsummarized_records:
+                    logging.info(f"Found {len(unsummarized_records)} turns to summarize in '{collection_name}'.")
 
-                # MODIFIED: Wrap the per-turn summarizer in an 'if' block and remove the 'continue'.
-                if unsummarized_ids:
-                    logging.info(
-                        f"Found {len(unsummarized_ids)} turns to summarize in '{collection.name}'."
-                    )
-                    # This loop now only runs if there is work to do.
-                    for i, doc_id in enumerate(unsummarized_ids):
-                        doc_content = unsummarized_docs[i]
-                        original_meta = unsummarized_metas[i]
-
+                    ids_to_update, metadatas_to_update, documents_to_update = [], [], []
+                    for record in unsummarized_records:
+                        doc_content = record.raw_content or record.document
                         prompt = f"Concisely summarize the following text, capturing its core intent and key information:\n\n---\n{doc_content}\n---"
-                        response = summarizer_model.generate_content(
-                            [Part.from_text(prompt)]
-                        )
+                        response = summarizer_model.generate_content([Part.from_text(prompt)])
                         summary_text = response.text.strip()
 
-                        updated_meta = {
-                            "role": original_meta.get("role"),
-                            "timestamp": original_meta.get("timestamp"),
-                            "augmented_prompt": original_meta.get("augmented_prompt"),
-                            "summary": summary_text,
-                            "raw_content": doc_content,
-                        }
-                        updated_meta = {
-                            k: v for k, v in updated_meta.items() if v is not None
-                        }
+                        updated_record = record.model_copy(update={"summary": summary_text})
 
-                        collection.update(
-                            ids=[doc_id],
-                            documents=[summary_text],
-                            metadatas=[updated_meta],
-                        )
-                        logging.info(f"Updated doc {doc_id} with summary.")
+                        ids_to_update.append(str(record.id))
+                        documents_to_update.append(summary_text)  # Main document becomes summary
+                        metadatas_to_update.append(updated_record.model_dump(exclude={"id", "document"}, exclude_none=True))
+
+                        logging.info(f"Summarized doc {record.id}.")
                         time.sleep(1)
 
-                # --- NEW: Part 2: Segment Summarization Logic ---
-                # Re-fetch history to include the turns we just summarized
-                current_history = collection.get(include=["metadatas", "documents"])
+                    db_store.update_records_metadata(ids=ids_to_update, metadatas=metadatas_to_update)
+                    logging.info(f"Bulk updated {len(ids_to_update)} summaries in '{collection_name}'.")
 
-                # Find all turns that have a summary but no segment_id
-                unsegmented_turns = [
-                    # We need the full metadata dictionary, so we get 'meta'
-                    {"id": current_history["ids"][i], "meta": meta}
-                    for i, meta in enumerate(current_history["metadatas"])
-                    if meta.get("summary") and not meta.get("segment_id")
-                ]
+                # --- Part 2: Segment Summarization Logic ---
+                current_records = db_store.get_all_records()
+                unsegmented_records = [r for r in current_records if r.summary and not r.segment_id]
 
-                if len(unsegmented_turns) >= SEGMENT_THRESHOLD:
-                    logging.info(
-                        f"Threshold met. Creating a new segment for {len(unsegmented_turns)} turns in '{collection.name}'."
-                    )
+                if len(unsegmented_records) >= SEGMENT_THRESHOLD:
+                    logging.info(f"Threshold met. Creating a new segment for {len(unsegmented_records)} turns in '{collection_name}'.")
+                    segment_id = uuid.uuid4()
 
-                    segment_id = str(uuid.uuid4())
-
-                    unsegmented_turns.sort(key=lambda x: x["meta"].get("timestamp", 0))
-
-                    summaries_to_process = "\n".join(
-                        [f"- {turn['meta']['summary']}" for turn in unsegmented_turns]
-                    )
-
+                    summaries_to_process = "\n".join([f"- {r.summary}" for r in unsegmented_records])
                     prompt = f"The following is a sequence of conversational summaries. Please provide a single-paragraph 'chapter summary' that describes the overall topic, progress, and outcome of this conversational segment.\n\n---\n{summaries_to_process}\n---"
 
-                    response = summarizer_model.generate_content(
-                        [Part.from_text(prompt)]
-                    )
+                    response = summarizer_model.generate_content([Part.from_text(prompt)])
                     segment_summary_text = response.text.strip()
 
-                    # 1. Add the new segment summary as its own document
-                    collection.add(
-                        ids=[segment_id],
-                        documents=[segment_summary_text],
-                        metadatas=[
-                            {"type": "segment_summary", "timestamp": time.time()}
-                        ],
+                    summary_record = MemoryRecord(
+                        id=segment_id,
+                        type="segment_summary",
+                        timestamp=time.time(),
+                        document=segment_summary_text,
                     )
+                    db_store.add_record(summary_record, str(summary_record.id))
                     logging.info(f"Added new segment summary {segment_id}.")
 
-                    # --- MODIFIED: More robust back-linking logic ---
-                    # 2. Back-link all individual turns to this new segment_id
-                    ids_to_update = [turn["id"] for turn in unsegmented_turns]
-
-                    # Explicitly create a new list of new, updated metadata dictionaries
+                    ids_to_update = [str(r.id) for r in unsegmented_records]
                     updated_metadatas = []
-                    for turn in unsegmented_turns:
-                        new_meta = turn[
-                            "meta"
-                        ].copy()  # Start with a copy of the old metadata
-                        new_meta["segment_id"] = segment_id  # Add the new segment ID
-                        updated_metadatas.append(new_meta)
+                    for record in unsegmented_records:
+                        updated_record = record.model_copy(update={"segment_id": segment_id})
+                        updated_metadatas.append(updated_record.model_dump(exclude={"id", "document"}, exclude_none=True))
 
-                    collection.update(
-                        ids=ids_to_update,
-                        metadatas=updated_metadatas,  # Use the new, explicitly created list
-                    )
-                    logging.info(
-                        f"Tagged {len(ids_to_update)} turns with segment_id {segment_id}."
-                    )
+                    db_store.update_records_metadata(ids=ids_to_update, metadatas=updated_metadatas)
+                    logging.info(f"Tagged {len(ids_to_update)} turns with segment_id {segment_id}.")
 
         except Exception as e:
-            logging.error(f"An error occurred in the summarizer loop: {e}")
+            logging.error(f"An error occurred in the summarizer loop: {e}", exc_info=True)
 
         logging.info("Summarization cycle complete. Sleeping for 60 seconds.")
         time.sleep(60)

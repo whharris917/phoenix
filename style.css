@@ -1,0 +1,89 @@
+html.dark {
+    --bg-color: #111827; --text-color: #d1d5db; --panel-bg: rgba(31, 41, 55, 0.50);
+    --header-bg: rgba(31, 41, 55, 0.50); --border-color: #374151; --input-bg: #374151;
+    --code-bg: #374151; --tool-log-color: #9ca3af; /* Adjusted for better visibility on dark bg */
+}
+html {
+    --bg-color: #f9fafb; --text-color: #374151; --panel-bg: rgba(255, 255, 255, 0.50);
+    --header-bg: rgba(255, 255, 255, 0.50); --border-color: #e5e7eb; --input-bg: #f3f4f6;
+    --message-text-color: #ffffff; 
+    --code-bg: #e5e7eb; --tool-log-color: #6b7280; /* Adjusted for better visibility on light bg */
+}
+body { 
+    font-family: 'Inter', sans-serif;
+    background-image: url('https://i0.wp.com/picjumbo.com/wp-content/uploads/abstract-wallpaper-mountains-with-a-neon-glowing-circle-free-photo.jpeg?w=2210&quality=70');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-color: var(--bg-color); /* Fallback */
+    color: var(--text-color);
+}
+.log-entry { 
+    max-width: 95%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.log-entry-user {
+    background-color: #2563EB;
+    border-left: 3px solid #1D4ED8;
+    align-self: flex-end;
+    color: var(--message-text-color);
+}
+.log-entry-final_answer, .log-entry-info, .log-entry-system_confirm {
+    background-color: #8B5CF6;
+    border-left: 3px solid #6D28D9;
+    align-self: flex-start;
+    color: var(--message-text-color);
+}
+html.dark .log-entry-final_answer, html.dark .log-entry-info, html.dark .log-entry-system_confirm {
+    background-color: #7C3AED;
+    border-left: 3px solid #5B21B6;
+}
+.tool-log-entry, .tool-result-entry {
+    text-align: center;
+    font-size: 0.75rem; /* 12px */
+    color: var(--tool-log-color);
+    padding: 0.25rem 0.5rem;
+    margin: 0.5rem auto;
+    border-radius: 0.25rem;
+    background-color: var(--panel-bg);
+    max-width: 90%;
+}
+.tool-result-entry > div { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    gap: 0.5rem; 
+}
+.message-body {
+    color: var(--message-text-color);
+}
+.message-body h1, .message-body h2, .message-body h3, .message-body strong { font-weight: 600; }
+.message-body h1 { font-size: 1.5rem; }
+.message-body h2 { font-size: 1.25rem; }
+.message-body h3 { font-size: 1.1rem; }
+.message-body ul, .message-body ol { margin-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+.message-body ul { list-style-type: disc; }
+.message-body ol { list-style-type: decimal; }
+.message-body p { margin-bottom: 0.5rem; }
+.message-body pre {
+    background-color: rgba(0,0,0,0.2); 
+    padding: 0.75rem; 
+    border-radius: 0.375rem; 
+    margin: 0.5rem 0; 
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+.message-body code { font-family: monospace; }
+.message-body pre code { background-color: transparent; padding: 0; }
+.message-body a { font-weight: 500; text-decoration: underline; }
+.message-body {
+    color: var(--message-text-color);
+    overflow-wrap: break-word; /* FIX: Force wrap for all message types */
+}
+
+.nav-link { transition: all 0.2s ease-in-out; }
+.nav-link.active { background-color: #4F46E5; color: white; }
+html:not(.dark) .nav-link.active { color: white; }

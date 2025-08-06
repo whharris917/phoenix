@@ -3,6 +3,9 @@ import os
 import pandas as pd
 import json
 from datetime import datetime
+
+# REFACTORED: Import ChromaDBStore and MemoryRecord
+from memory_manager import ChromaDBStore
 from config import CHROMA_DB_PATH
 
 
@@ -14,31 +17,25 @@ def get_db_client():
 
 
 def list_collections_as_json():
-    """
-    Lists all collections, finds their last modified time, sorts them,
-    and returns them as a JSON string.
-    """
+    """Lists all collections, finds their last modified time, sorts them, and returns them as a JSON string."""
     try:
         client = get_db_client()
         collections = client.list_collections()
-
         collection_list = []
         for col in collections:
             last_modified = 0
-            # Get all metadata to find the latest timestamp
+            # Getting all metadata just to find the max timestamp is inefficient.
+            # A better approach would be to store this as a property if needed frequently.
+            # For this tool, we'll keep the existing logic.
             metadata = col.get(include=["metadatas"]).get("metadatas")
             if metadata:
                 timestamps = [m.get("timestamp", 0) for m in metadata if m]
                 if timestamps:
                     last_modified = max(timestamps)
 
-            collection_list.append(
-                {"name": col.name, "count": col.count(), "last_modified": last_modified}
-            )
+            collection_list.append({"name": col.name, "count": col.count(), "last_modified": last_modified})
 
-        # Sort collections by last_modified timestamp, descending
         collection_list.sort(key=lambda x: x["last_modified"], reverse=True)
-
         return json.dumps({"status": "success", "collections": collection_list})
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})
@@ -47,53 +44,35 @@ def list_collections_as_json():
 def get_collection_data_as_json(collection_name):
     """Retrieves all data from a specific collection and returns it as a JSON string."""
     try:
-        client = get_db_client()
-        collection = client.get_collection(name=collection_name)
-        # Ensure you include documents and metadatas
-        data = collection.get(include=["metadatas", "documents"])
+        # REFACTORED: Use ChromaDBStore to fetch and validate all records.
+        db_store = ChromaDBStore(collection_name=collection_name)
+        all_records = db_store.get_all_records()
 
-        if not data or not data["ids"]:
-            return json.dumps(
-                {"status": "success", "collection_name": collection_name, "data": []}
-            )
+        if not all_records:
+            return json.dumps({"status": "success", "collection_name": collection_name, "data": []})
 
         formatted_data = []
-        for i, doc_id in enumerate(data["ids"]):
-            metadata = (
-                data["metadatas"][i]
-                if data["metadatas"] and data["metadatas"][i]
-                else {}
-            )
-            timestamp = metadata.get("timestamp", 0)
-
+        for record in all_records:
+            # REFACTORED: Build the frontend dict from the validated MemoryRecord object.
             try:
-                readable_time = (
-                    datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
-                    if timestamp
-                    else "N/A"
-                )
+                readable_time = datetime.fromtimestamp(record.timestamp).strftime("%Y-%m-%d %H:%M:%S") if record.timestamp else "N/A"
             except (ValueError, TypeError):
                 readable_time = "Invalid Timestamp"
 
-            # This block now includes all the fields we've added
             formatted_data.append(
                 {
-                    "ID": doc_id,
+                    "ID": str(record.id),
                     "Timestamp": readable_time,
-                    "Role": metadata.get("role"),
-                    "Summary": metadata.get("summary"),
-                    "Augmented Prompt": metadata.get("augmented_prompt"),
-                    "Type": metadata.get("type"),
-                    "Segment ID": metadata.get("segment_id"),
-                    "Document (Memory Content)": metadata.get(
-                        "raw_content", data["documents"][i]
-                    ),
+                    "Role": record.role,
+                    "Summary": record.summary,
+                    "Augmented Prompt": record.augmented_prompt,
+                    "Type": record.type,
+                    "Segment ID": str(record.segment_id) if record.segment_id else None,
+                    "Document (Memory Content)": record.raw_content or record.document,
                 }
             )
 
-        # Sort data by timestamp so newest entries appear first in the viewer
         formatted_data.sort(key=lambda x: x.get("Timestamp", ""), reverse=True)
-
         return json.dumps(
             {
                 "status": "success",
@@ -111,6 +90,7 @@ def get_collection_data_as_json(collection_name):
 
 
 def inspect_database_cli():
+    # This function remains unchanged as it only uses the public JSON-producing functions.
     print("--- ChromaDB Inspector (CLI) ---")
     try:
         collections_json = json.loads(list_collections_as_json())
@@ -129,9 +109,7 @@ def inspect_database_cli():
 
         while True:
             try:
-                choice = int(
-                    input("\\nEnter the number of the collection to inspect: ")
-                )
+                choice = int(input("\\nEnter the number of the collection to inspect: "))
                 if 1 <= choice <= len(collections):
                     selected_collection_name = collections[choice - 1]["name"]
                     break
