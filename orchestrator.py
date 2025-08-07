@@ -17,11 +17,13 @@ from data_models import ToolCommand, ParsedAgentResponse
 from session_models import ActiveSession
 from response_parser import parse_agent_response, _handle_payloads, is_prose_effectively_empty
 from config import ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP, NOMINAL_MAX_ITERATIONS_REASONING_LOOP
+from tracer import trace, log_event
 
 # A dictionary to hold event objects for user confirmation, keyed by session_id.
 # This allows the reasoning loop to pause and wait for user input.
 confirmation_events: dict[str, Event] = {}
 
+@trace
 def _emit_agent_message(socketio, session_id: str, message_type: str, content: str) -> None:
     """
     A small wrapper to emit a formatted message to the client.
@@ -38,6 +40,7 @@ def _emit_agent_message(socketio, session_id: str, message_type: str, content: s
     if content and content.strip():
         socketio.emit("log_message", {"type": message_type, "data": content}, to=session_id)
 
+@trace
 def _process_model_response(response_text: str) -> ParsedAgentResponse:
     """
     Parses raw model text into a structured ParsedAgentResponse object.
@@ -78,6 +81,7 @@ def _process_model_response(response_text: str) -> ParsedAgentResponse:
 
     return parsed
 
+@trace
 def _render_agent_turn(socketio, session_id: str, parsed_response: ParsedAgentResponse, is_live: bool = False) -> None:
     """
     Renders the agent's turn to the client from a ParsedAgentResponse object.
@@ -128,6 +132,7 @@ def _render_agent_turn(socketio, session_id: str, parsed_response: ParsedAgentRe
         if not parsed_response.is_prose_empty:
             _emit_agent_message(socketio, session_id, "info", prose)
 
+@trace
 def execute_reasoning_loop(
     socketio,
     session_data: ActiveSession,
@@ -167,6 +172,7 @@ def execute_reasoning_loop(
 
         # The core cognitive loop, limited to a max number of iterations for safety.
         for i in range(ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP):
+            log_event(f"BEGINNING ITERATION {i} of RESONING LOOP", {})
             socketio.sleep(0)  # Yield to other greenlets, keeping the server responsive.
 
             # --- Step 1: Prepare the Prompt ---

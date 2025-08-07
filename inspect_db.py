@@ -3,19 +3,19 @@ import os
 import pandas as pd
 import json
 from datetime import datetime
+from tracer import trace
 
-# REFACTORED: Import ChromaDBStore and MemoryRecord
 from memory_manager import ChromaDBStore
 from config import CHROMA_DB_PATH
 
-
+@trace
 def get_db_client():
     """Initializes and returns a ChromaDB client."""
     if not os.path.exists(CHROMA_DB_PATH):
         raise FileNotFoundError("ChromaDB directory not found.")
     return chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
-
+@trace
 def list_collections_as_json():
     """Lists all collections, finds their last modified time, sorts them, and returns them as a JSON string."""
     try:
@@ -40,7 +40,7 @@ def list_collections_as_json():
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})
 
-
+@trace
 def get_collection_data_as_json(collection_name):
     """Retrieves all data from a specific collection and returns it as a JSON string."""
     try:
@@ -88,7 +88,7 @@ def get_collection_data_as_json(collection_name):
             }
         )
 
-
+@trace
 def inspect_database_cli():
     # This function remains unchanged as it only uses the public JSON-producing functions.
     print("--- ChromaDB Inspector (CLI) ---")

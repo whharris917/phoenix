@@ -1,0 +1,1048 @@
+{
+  "app.py": {
+    "classes": {},
+    "public_functions": [
+      {
+        "name": "connect_to_haven",
+        "args": [],
+        "returns": "Optional[BaseManager]"
+      },
+      {
+        "name": "serve_index",
+        "args": [],
+        "returns": "None"
+      },
+      {
+        "name": "serve_static_files",
+        "args": [
+          "filename: str"
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "serve_audit_visualizer",
+        "args": [],
+        "returns": "None"
+      },
+      {
+        "name": "serve_database_viewer",
+        "args": [],
+        "returns": "None"
+      },
+      {
+        "name": "serve_docs",
+        "args": [],
+        "returns": "None"
+      },
+      {
+        "name": "serve_markdown",
+        "args": [],
+        "returns": "None"
+      },
+      {
+        "name": "serve_workshop",
+        "args": [],
+        "returns": "None"
+      }
+    ],
+    "private_functions": [],
+    "global_variables": [
+      {
+        "name": "app",
+        "type": "Any"
+      },
+      {
+        "name": "socketio",
+        "type": "Any"
+      },
+      {
+        "name": "haven_proxy",
+        "type": "Any"
+      }
+    ]
+  },
+  "audit_logger.py": {
+    "classes": {
+      "AuditLogger": {
+        "attributes": [],
+        "public_methods": [
+          {
+            "name": "register_socketio",
+            "args": [
+              "self: Any",
+              "sio: Any"
+            ],
+            "returns": "None"
+          },
+          {
+            "name": "log_event",
+            "args": [
+              "self: Any",
+              "event: Any",
+              "session_id: Any",
+              "session_name: Any",
+              "loop_id: Any",
+              "source: Any",
+              "destination: Any",
+              "observers: Any",
+              "details: Any",
+              "control_flow: Any"
+            ],
+            "returns": "None"
+          }
+        ],
+        "private_methods": [
+          {
+            "name": "__init__",
+            "args": [
+              "self: Any",
+              "filename: Any"
+            ],
+            "returns": "None"
+          },
+          {
+            "name": "_initialize_file",
+            "args": [
+              "self: Any"
+            ],
+            "returns": "None"
+          }
+        ]
+      }
+    },
+    "public_functions": [],
+    "private_functions": [],
+    "global_variables": [
+      {
+        "name": "audit_log",
+        "type": "Any"
+      }
+    ]
+  },
+  "config.py": {
+    "classes": {},
+    "public_functions": [],
+    "private_functions": [],
+    "global_variables": [
+      {
+        "name": "PROJECT_ID",
+        "type": "Any"
+      },
+      {
+        "name": "LOCATION",
+        "type": "Any"
+      },
+      {
+        "name": "SUMMARIZER_MODEL_NAME",
+        "type": "Any"
+      },
+      {
+        "name": "SEGMENT_THRESHOLD",
+        "type": "Any"
+      },
+      {
+        "name": "ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP",
+        "type": "Any"
+      },
+      {
+        "name": "NOMINAL_MAX_ITERATIONS_REASONING_LOOP",
+        "type": "Any"
+      },
+      {
+        "name": "ALLOWED_PROJECT_FILES",
+        "type": "Any"
+      },
+      {
+        "name": "DEBUG_MODE",
+        "type": "Any"
+      },
+      {
+        "name": "SAFETY_SETTINGS",
+        "type": "Any"
+      },
+      {
+        "name": "CHROMA_DB_PATH",
+        "type": "Any"
+      },
+      {
+        "name": "SERVER_PORT",
+        "type": "Any"
+      },
+      {
+        "name": "HAVEN_ADDRESS",
+        "type": "Any"
+      },
+      {
+        "name": "HAVEN_AUTH_KEY",
+        "type": "Any"
+      }
+    ]
+  },
+  "data_models.py": {
+    "classes": {
+      "ParsedAgentResponse": {
+        "attributes": [
+          {
+            "name": "command",
+            "type": "Optional['ToolCommand']"
+          },
+          {
+            "name": "is_prose_empty",
+            "type": "bool"
+          },
+          {
+            "name": "prose",
+            "type": "Optional[str]"
+          }
+        ],
+        "public_methods": [],
+        "private_methods": []
+      },
+      "ToolCommand": {
+        "attributes": [
+          {
+            "name": "action",
+            "type": "str"
+          },
+          {
+            "name": "attachment",
+            "type": "Optional[str]"
+          },
+          {
+            "name": "parameters",
+            "type": "dict[str, Any]"
+          }
+        ],
+        "public_methods": [],
+        "private_methods": []
+      },
+      "ToolResult": {
+        "attributes": [
+          {
+            "name": "content",
+            "type": "Optional[Any]"
+          },
+          {
+            "name": "message",
+            "type": "str"
+          },
+          {
+            "name": "status",
+            "type": "Literal['success', 'error']"
+          }
+        ],
+        "public_methods": [],
+        "private_methods": []
+      },
+      "MemoryRecord": {
+        "attributes": [
+          {
+            "name": "augmented_prompt",
+            "type": "Optional[str]"
+          },
+          {
+            "name": "document",
+            "type": "str"
+          },
+          {
+            "name": "filename",
+            "type": "Optional[str]"
+          },
+          {
+            "name": "id",
+            "type": "uuid.UUID"
+          },
+          {
+            "name": "raw_content",
+            "type": "Optional[str]"
+          },
+          {
+            "name": "role",
+            "type": "Optional[Literal['user', 'model']]"
+          },
+          {
+            "name": "segment_id",
+            "type": "Optional[uuid.UUID]"
+          },
+          {
+            "name": "summary",
+            "type": "Optional[str]"
+          },
+          {
+            "name": "timestamp",
+            "type": "float"
+          },
+          {
+            "name": "type",
+            "type": "Literal['turn', 'segment_summary', 'code_artifact']"
+          }
+        ],
+        "public_methods": [],
+        "private_methods": []
+      }
+    },
+    "public_functions": [],
+    "private_functions": [],
+    "global_variables": []
+  },
+  "events.py": {
+    "classes": {},
+    "public_functions": [
+      {
+        "name": "replay_history_for_client",
+        "args": [
+          "socketio: Any",
+          "session_id: Any",
+          "session_name: Any",
+          "history: Any"
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "register_events",
+        "args": [
+          "socketio: SocketIO",
+          "haven_proxy: object"
+        ],
+        "returns": "None"
+      }
+    ],
+    "private_functions": [
+      {
+        "name": "_create_new_session",
+        "args": [
+          "session_id: str",
+          "proxy: object"
+        ],
+        "returns": "ActiveSession"
+      }
+    ],
+    "global_variables": [
+      {
+        "name": "chat_sessions",
+        "type": "dict[str, ActiveSession]"
+      },
+      {
+        "name": "_haven_proxy",
+        "type": "Any"
+      }
+    ]
+  },
+  "generate_code_map.py": {
+    "classes": {
+      "CodeVisitor": {
+        "attributes": [],
+        "public_methods": [
+          {
+            "name": "visit_Import",
+            "args": [
+              "self: Any",
+              "node: Any"
+            ],
+            "returns": "None"
+          },
+          {
+            "name": "visit_ImportFrom",
+            "args": [
+              "self: Any",
+              "node: Any"
+            ],
+            "returns": "None"
+          },
+          {
+            "name": "visit_FunctionDef",
+            "args": [
+              "self: Any",
+              "node: Any"
+            ],
+            "returns": "None"
+          },
+          {
+            "name": "visit_ClassDef",
+            "args": [
+              "self: Any",
+              "node: Any"
+            ],
+            "returns": "None"
+          }
+        ],
+        "private_methods": [
+          {
+            "name": "__init__",
+            "args": [
+              "self: Any",
+              "file_path: Any"
+            ],
+            "returns": "None"
+          }
+        ]
+      }
+    },
+    "public_functions": [
+      {
+        "name": "parse_module",
+        "args": [
+          "file_path: str"
+        ],
+        "returns": "dict | None"
+      },
+      {
+        "name": "generate_map",
+        "args": [
+          "root_dir: str",
+          "output_file: str"
+        ],
+        "returns": "None"
+      }
+    ],
+    "private_functions": [],
+    "global_variables": []
+  },
+  "haven.py": {
+    "classes": {
+      "Haven": {
+        "attributes": [],
+        "public_methods": [
+          {
+            "name": "get_or_create_session",
+            "args": [
+              "self: Any",
+              "session_name: str",
+              "history_dicts: list[dict]"
+            ],
+            "returns": "bool"
+          },
+          {
+            "name": "send_message",
+            "args": [
+              "self: Any",
+              "session_name: str",
+              "prompt: str"
+            ],
+            "returns": "dict[str, Any]"
+          },
+          {
+            "name": "list_sessions",
+            "args": [
+              "self: Any"
+            ],
+            "returns": "list[str]"
+          },
+          {
+            "name": "delete_session",
+            "args": [
+              "self: Any",
+              "session_name: str"
+            ],
+            "returns": "dict[str, str]"
+          },
+          {
+            "name": "has_session",
+            "args": [
+              "self: Any",
+              "session_name: str"
+            ],
+            "returns": "bool"
+          }
+        ],
+        "private_methods": []
+      },
+      "HavenManager": {
+        "attributes": [],
+        "public_methods": [],
+        "private_methods": []
+      }
+    },
+    "public_functions": [
+      {
+        "name": "load_system_prompt",
+        "args": [],
+        "returns": "str"
+      },
+      {
+        "name": "load_model_definition",
+        "args": [],
+        "returns": "str"
+      },
+      {
+        "name": "start_haven",
+        "args": [],
+        "returns": "None"
+      }
+    ],
+    "private_functions": [],
+    "global_variables": [
+      {
+        "name": "model",
+        "type": "Any"
+      },
+      {
+        "name": "live_chat_sessions",
+        "type": "dict[str, list[Content]]"
+      }
+    ]
+  },
+  "inspect_db.py": {
+    "classes": {},
+    "public_functions": [
+      {
+        "name": "get_db_client",
+        "args": [],
+        "returns": "None"
+      },
+      {
+        "name": "list_collections_as_json",
+        "args": [],
+        "returns": "None"
+      },
+      {
+        "name": "get_collection_data_as_json",
+        "args": [
+          "collection_name: Any"
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "inspect_database_cli",
+        "args": [],
+        "returns": "None"
+      }
+    ],
+    "private_functions": [],
+    "global_variables": []
+  },
+  "memory_manager.py": {
+    "classes": {
+      "ChromaDBStore": {
+        "attributes": [],
+        "public_methods": [
+          {
+            "name": "add_record",
+            "args": [
+              "self: Any",
+              "record: MemoryRecord",
+              "record_id: str"
+            ],
+            "returns": "None"
+          },
+          {
+            "name": "get_all_records",
+            "args": [
+              "self: Any"
+            ],
+            "returns": "List[MemoryRecord]"
+          },
+          {
+            "name": "query",
+            "args": [
+              "self: Any",
+              "query_text: str",
+              "n_results: int"
+            ],
+            "returns": "List[MemoryRecord]"
+          },
+          {
+            "name": "update_records_metadata",
+            "args": [
+              "self: Any",
+              "ids: List[str]",
+              "metadatas: List[dict]"
+            ],
+            "returns": "None"
+          },
+          {
+            "name": "delete_collection",
+            "args": [
+              "self: Any"
+            ],
+            "returns": "None"
+          }
+        ],
+        "private_methods": [
+          {
+            "name": "__init__",
+            "args": [
+              "self: Any",
+              "collection_name: str"
+            ],
+            "returns": "None"
+          }
+        ]
+      },
+      "MemoryManager": {
+        "attributes": [],
+        "public_methods": [
+          {
+            "name": "add_turn",
+            "args": [
+              "self: Any",
+              "role: str",
+              "content: str",
+              "metadata: dict",
+              "augmented_prompt: str"
+            ],
+            "returns": "None"
+          },
+          {
+            "name": "get_all_turns",
+            "args": [
+              "self: Any"
+            ],
+            "returns": "List[MemoryRecord]"
+          },
+          {
+            "name": "get_context_for_prompt",
+            "args": [
+              "self: Any",
+              "prompt: str",
+              "n_results: int"
+            ],
+            "returns": "List[MemoryRecord]"
+          },
+          {
+            "name": "get_conversational_buffer",
+            "args": [
+              "self: Any"
+            ],
+            "returns": "List[Content]"
+          },
+          {
+            "name": "prepare_augmented_prompt",
+            "args": [
+              "self: Any",
+              "prompt: str"
+            ],
+            "returns": "str"
+          },
+          {
+            "name": "delete_memory_collection",
+            "args": [
+              "self: Any"
+            ],
+            "returns": "None"
+          },
+          {
+            "name": "add_code_artifact",
+            "args": [
+              "self: Any",
+              "filename: str",
+              "content: str"
+            ],
+            "returns": "Optional[str]"
+          }
+        ],
+        "private_methods": [
+          {
+            "name": "__init__",
+            "args": [
+              "self: Any",
+              "session_name: str"
+            ],
+            "returns": "None"
+          },
+          {
+            "name": "_repopulate_buffer_from_db",
+            "args": [
+              "self: Any"
+            ],
+            "returns": "None"
+          }
+        ]
+      }
+    },
+    "public_functions": [],
+    "private_functions": [],
+    "global_variables": [
+      {
+        "name": "embedding_function",
+        "type": "Any"
+      },
+      {
+        "name": "embedding_function",
+        "type": "Any"
+      }
+    ]
+  },
+  "orchestrator.py": {
+    "classes": {},
+    "public_functions": [
+      {
+        "name": "execute_reasoning_loop",
+        "args": [
+          "socketio: Any",
+          "session_data: ActiveSession",
+          "initial_prompt: str",
+          "session_id: str",
+          "chat_sessions: dict[str, ActiveSession]",
+          "haven_proxy: object"
+        ],
+        "returns": "None"
+      }
+    ],
+    "private_functions": [
+      {
+        "name": "_emit_agent_message",
+        "args": [
+          "socketio: Any",
+          "session_id: str",
+          "message_type: str",
+          "content: str"
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "_process_model_response",
+        "args": [
+          "response_text: str"
+        ],
+        "returns": "ParsedAgentResponse"
+      },
+      {
+        "name": "_render_agent_turn",
+        "args": [
+          "socketio: Any",
+          "session_id: str",
+          "parsed_response: ParsedAgentResponse",
+          "is_live: bool"
+        ],
+        "returns": "None"
+      }
+    ],
+    "global_variables": [
+      {
+        "name": "confirmation_events",
+        "type": "dict[str, Event]"
+      }
+    ]
+  },
+  "patcher.py": {
+    "classes": {},
+    "public_functions": [
+      {
+        "name": "apply_patch",
+        "args": [
+          "diff_content: Any",
+          "original_content: Any",
+          "original_filename: Any"
+        ],
+        "returns": "None"
+      }
+    ],
+    "private_functions": [
+      {
+        "name": "_normalize_text",
+        "args": [
+          "text: Any"
+        ],
+        "returns": "None"
+      },
+      {
+        "name": "_correct_hunk_line_numbers",
+        "args": [
+          "diff_content: Any",
+          "original_content: Any"
+        ],
+        "returns": "None"
+      }
+    ],
+    "global_variables": []
+  },
+  "proxies.py": {
+    "classes": {
+      "HavenProxyWrapper": {
+        "attributes": [],
+        "public_methods": [
+          {
+            "name": "send_message",
+            "args": [
+              "self: Any",
+              "prompt: Any"
+            ],
+            "returns": "None"
+          }
+        ],
+        "private_methods": [
+          {
+            "name": "__init__",
+            "args": [
+              "self: Any",
+              "haven_service_proxy: Any",
+              "session_name: Any"
+            ],
+            "returns": "None"
+          }
+        ]
+      }
+    },
+    "public_functions": [],
+    "private_functions": [],
+    "global_variables": []
+  },
+  "session_models.py": {
+    "classes": {
+      "ActiveSession": {
+        "attributes": [
+          {
+            "name": "chat",
+            "type": "HavenProxyWrapper"
+          },
+          {
+            "name": "memory",
+            "type": "MemoryManager"
+          },
+          {
+            "name": "model_config",
+            "type": "Any"
+          },
+          {
+            "name": "name",
+            "type": "str"
+          }
+        ],
+        "public_methods": [],
+        "private_methods": []
+      }
+    },
+    "public_functions": [],
+    "private_functions": [],
+    "global_variables": []
+  },
+  "summarizer.py": {
+    "classes": {},
+    "public_functions": [
+      {
+        "name": "main",
+        "args": [],
+        "returns": "None"
+      }
+    ],
+    "private_functions": [],
+    "global_variables": []
+  },
+  "tool_agent.py": {
+    "classes": {
+      "ToolContext": {
+        "attributes": [
+          {
+            "name": "chat_sessions",
+            "type": "dict[str, ActiveSession]"
+          },
+          {
+            "name": "haven_proxy",
+            "type": "object"
+          },
+          {
+            "name": "loop_id",
+            "type": "Optional[str]"
+          },
+          {
+            "name": "session_id",
+            "type": "str"
+          },
+          {
+            "name": "socketio",
+            "type": "Any"
+          }
+        ],
+        "public_methods": [],
+        "private_methods": []
+      }
+    },
+    "public_functions": [
+      {
+        "name": "get_safe_path",
+        "args": [
+          "filename: str",
+          "base_dir_name: str"
+        ],
+        "returns": "str"
+      },
+      {
+        "name": "execute_tool_command",
+        "args": [
+          "command: ToolCommand",
+          "socketio: Any",
+          "session_id: str",
+          "chat_sessions: dict[str, ActiveSession]",
+          "haven_proxy: object",
+          "loop_id: str | None"
+        ],
+        "returns": "ToolResult"
+      }
+    ],
+    "private_functions": [
+      {
+        "name": "_execute_script",
+        "args": [
+          "script_content: str"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_write_file",
+        "args": [
+          "path: str",
+          "content: str"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_read_file",
+        "args": [
+          "path: str"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_delete_file",
+        "args": [
+          "path: str"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_list_directory",
+        "args": [
+          "path: str"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_extract_patch_paths",
+        "args": [
+          "diff_content: str"
+        ],
+        "returns": "tuple[str | None, str | None]"
+      },
+      {
+        "name": "_validate_patch_paths",
+        "args": [
+          "source_filename: str",
+          "target_filename: str"
+        ],
+        "returns": "ToolResult | None"
+      },
+      {
+        "name": "_get_source_read_path",
+        "args": [
+          "source_filename: str"
+        ],
+        "returns": "str"
+      },
+      {
+        "name": "_handle_create_file",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_handle_read_file",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_handle_read_project_file",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_handle_list_allowed_project_files",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_handle_list_directory",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_handle_delete_file",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_handle_execute_python_script",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_handle_apply_patch",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_handle_list_sessions",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_handle_load_session",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_handle_save_session",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      },
+      {
+        "name": "_handle_delete_session",
+        "args": [
+          "params: dict",
+          "context: ToolContext"
+        ],
+        "returns": "ToolResult"
+      }
+    ],
+    "global_variables": [
+      {
+        "name": "TOOL_REGISTRY",
+        "type": "Dict[str, Callable[[Dict, ToolContext], ToolResult]]"
+      }
+    ]
+  },
+  "utils.py": {
+    "classes": {},
+    "public_functions": [
+      {
+        "name": "get_timestamp",
+        "args": [],
+        "returns": "str"
+      }
+    ],
+    "private_functions": [],
+    "global_variables": []
+  }
+}

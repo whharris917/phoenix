@@ -16,8 +16,8 @@ from vertexai.generative_models import Content, Part
 import chromadb.utils.embedding_functions as embedding_functions
 from config import CHROMA_DB_PATH
 from data_models import MemoryRecord
-from typing import List, Any
-from typing import Optional
+from typing import List, Any, Optional
+from tracer import trace
 
 # --- Global Setup ---
 # Initialize the embedding function once to be reused across all ChromaDBStore instances.
@@ -35,7 +35,7 @@ class ChromaDBStore:
     This class acts as a Data Access Layer (DAL), abstracting away the specifics
     of the ChromaDB library from the main memory management logic.
     """
-
+    @trace
     def __init__(self, collection_name: str):
         self.name = collection_name
         self.collection = None
@@ -58,6 +58,7 @@ class ChromaDBStore:
         except Exception as e:
             logging.error(f"FATAL: Failed to initialize ChromaDBStore for collection '{self.name}': {e}")
 
+    @trace
     def add_record(self, record: MemoryRecord, record_id: str) -> None:
         """Adds a single MemoryRecord to the collection."""
         if not self.collection:
@@ -69,6 +70,7 @@ class ChromaDBStore:
         except Exception as e:
             logging.error(f"Could not add record to collection '{self.name}': {e}")
 
+    @trace
     def get_all_records(self) -> List[MemoryRecord]:
         """Retrieves and validates all records from the collection, sorted by time."""
         if not self.collection or self.collection.count() == 0:
@@ -98,6 +100,7 @@ class ChromaDBStore:
             logging.error(f"Could not retrieve records from collection '{self.name}': {e}")
             return []
 
+    @trace
     def query(self, query_text: str, n_results: int = 5) -> List[MemoryRecord]:
         """Queries the collection for similar documents and returns validated records."""
         if not self.collection or self.collection.count() == 0:
@@ -129,6 +132,7 @@ class ChromaDBStore:
             logging.error(f"Could not query collection '{self.name}': {e}")
             return []
 
+    @trace
     def update_records_metadata(self, ids: List[str], metadatas: List[dict]):
         """Updates metadata for existing records in the collection."""
         if not self.collection:
@@ -138,6 +142,7 @@ class ChromaDBStore:
         except Exception as e:
             logging.error(f"Could not update metadata in collection '{self.name}': {e}")
 
+    @trace
     def delete_collection(self):
         """Deletes the entire collection from the database."""
         if not self.collection:
@@ -156,7 +161,7 @@ class MemoryManager:
     the conversational buffer and the long-term vector store. This is the main
     high-level interface for the rest of the application to interact with memory.
     """
-
+    @trace
     def __init__(self, session_name: str):
         self.session_name = session_name
         self.max_buffer_size = 10 # Defines the size of the short-term working memory.
@@ -169,6 +174,7 @@ class MemoryManager:
         # On initialization, rehydrate the working memory from the database.
         self._repopulate_buffer_from_db()
 
+    @trace
     def _repopulate_buffer_from_db(self):
         """Loads the most recent history from the DB into the conversational buffer."""
         all_turns = self.turn_store.get_all_records()
@@ -182,6 +188,7 @@ class MemoryManager:
             logging.error(f"Could not repopulate buffer for session '{self.session_name}': {e}")
             self.conversational_buffer = []
 
+    @trace
     def add_turn(self, role: str, content: str, metadata: dict = None, augmented_prompt: str = None):
         """Adds a new turn to both the buffer (Tier 1) and vector store (Tier 2)."""
         # Add to the short-term buffer.
@@ -205,18 +212,22 @@ class MemoryManager:
         self.turn_store.add_record(record, str(record.id))
         logging.info(f"Added turn to memory for session '{self.session_name}' with id: {record.id}")
 
+    @trace
     def get_all_turns(self) -> List[MemoryRecord]:
         """Delegates retrieval of all turns to the data store."""
         return self.turn_store.get_all_records()
 
+    @trace
     def get_context_for_prompt(self, prompt: str, n_results: int = 5) -> List[MemoryRecord]:
         """Delegates context retrieval (vector search) to the data store."""
         return self.turn_store.query(prompt, n_results)
 
+    @trace
     def get_conversational_buffer(self) -> List[Content]:
         """Returns the short-term conversational buffer for the chat history."""
         return self.conversational_buffer
         
+    @trace
     def prepare_augmented_prompt(self, prompt: str) -> str:
         """
         Retrieves relevant context from memory and constructs an augmented prompt.
@@ -250,6 +261,7 @@ class MemoryManager:
         
         return final_prompt
 
+    @trace
     def delete_memory_collection(self):
         """Deletes the entire memory for the session from all data stores."""
         self.conversational_buffer = []
@@ -257,6 +269,7 @@ class MemoryManager:
         self.code_store.delete_collection()
         logging.info(f"Deleted memory collections for session '{self.session_name}'")
 
+    @trace
     def add_code_artifact(self, filename: str, content: str) -> Optional[str]:
         """Saves a code artifact to a dedicated vector store and returns a pointer ID."""
         record = MemoryRecord(

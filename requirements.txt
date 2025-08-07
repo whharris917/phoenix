@@ -16,3 +16,4 @@ ruff
 pytest
 pytest-mock
 pytest-json-report
+python-socketio[client]

@@ -12,8 +12,9 @@ malformed JSON, and missing code fences.
 import re
 import json
 from data_models import ToolCommand, ParsedAgentResponse
+from tracer import trace
 
-
+@trace
 def is_prose_effectively_empty(prose_string: str | None) -> bool:
     """
     Checks if a string contains meaningful content beyond a potential timestamp.
@@ -34,7 +35,7 @@ def is_prose_effectively_empty(prose_string: str | None) -> bool:
     # The prose is considered empty if nothing remains after stripping whitespace.
     return prose_without_timestamp.strip() == ""
 
-
+@trace
 def parse_agent_response(response_text: str) -> ParsedAgentResponse:
     """
     Parses a potentially messy agent response to separate prose from a valid command JSON.
@@ -110,7 +111,7 @@ def parse_agent_response(response_text: str) -> ParsedAgentResponse:
         is_prose_empty=is_prose_effectively_empty(response_text)
     )
 
-
+@trace
 def _mask_payloads(text: str) -> str:
     """
     Finds and removes all payload blocks (e.g., START @@... END @@...).
@@ -120,7 +121,7 @@ def _mask_payloads(text: str) -> str:
     pattern = re.compile(r"START (@@\w+).*?END \1", re.DOTALL)
     return pattern.sub("", text)
 
-
+@trace
 def _extract_json_with_fences(text: str) -> tuple[str | None, str | None]:
     """
     Extracts the largest JSON block enclosed in ```json fences.
@@ -134,7 +135,7 @@ def _extract_json_with_fences(text: str) -> tuple[str | None, str | None]:
     # Return both the full block (with fences) and the inner JSON content.
     return largest_match.group(1), largest_match.group(2)
 
-
+@trace
 def _extract_json_with_brace_counting(text: str) -> tuple[str | None, str | None]:
     """
     Finds the largest valid JSON object in a string by counting braces.
@@ -169,7 +170,7 @@ def _extract_json_with_brace_counting(text: str) -> tuple[str | None, str | None
     # Returns the candidate for both tuple values for a consistent interface.
     return best_json_candidate, best_json_candidate
 
-
+@trace
 def _repair_json(s: str) -> str:
     """
     Attempts to repair a malformed JSON string by iteratively fixing common errors.
@@ -206,12 +207,12 @@ def _repair_json(s: str) -> str:
                 return s_before_loop
     return s
 
-
+@trace
 def _clean_prose(prose: str | None) -> str | None:
     """A simple utility to clean up the final prose string."""
     return prose.strip() if prose else None
 
-
+@trace
 def _handle_payloads(prose: str | None, command: ToolCommand | None) -> tuple[str | None, ToolCommand | None]:
     """
     Finds and replaces payload placeholders in a command's parameters

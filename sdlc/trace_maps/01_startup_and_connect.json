@@ -1,0 +1,20 @@
+{
+  "scenario_name": "01_startup_and_connect",
+  "description": "Traces the initial connection of a client, session creation, and disconnection without any prompts.",
+  "trace": [
+    {
+      "id": 1,
+      "module": "events.py",
+      "type": "RETURN",
+      "function": "register_events.<locals>.handle_reset_tracer",
+      "args": {}
+    },
+    {
+      "id": 2,
+      "module": "events.py",
+      "type": "CALL",
+      "function": "register_events.<locals>.handle_get_trace_log",
+      "args": {}
+    }
+  ]
+}

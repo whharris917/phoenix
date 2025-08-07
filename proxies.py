@@ -1,4 +1,5 @@
 import logging
+from tracer import trace
 
 
 class HavenProxyWrapper:
@@ -6,11 +7,12 @@ class HavenProxyWrapper:
     Acts as a near-perfect drop-in replacement for a local chat session object.
     It holds a reference to the main Haven proxy and a specific session name.
     """
-
+    @trace
     def __init__(self, haven_service_proxy, session_name):
         self.haven = haven_service_proxy
         self.session = session_name
 
+    @trace
     def send_message(self, prompt):
         """
         Has the same signature as the original chat object's send_message.

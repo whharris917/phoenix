@@ -13,11 +13,12 @@ from typing import Any, List
 import vertexai
 from vertexai.generative_models import GenerativeModel, Content, Part
 from config import PROJECT_ID, LOCATION, SAFETY_SETTINGS
+from tracer import trace
 
 # --- Setup Logging ---
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - Haven - %(levelname)s - %(message)s")
 
-
+@trace
 def load_system_prompt() -> str:
     """Loads the system prompt text from the 'system_prompt.txt' file."""
     try:
@@ -27,6 +28,7 @@ def load_system_prompt() -> str:
     except FileNotFoundError:
         return "You are a helpful assistant but were unable to locate or open system_prompt.txt, and thus do not have access to your core directives."
 
+@trace
 def load_model_definition() -> str:
     """Loads the model name from the 'model_definition.txt' file."""
     try:
@@ -63,7 +65,7 @@ class Haven:
     An instance of this class is served by the BaseManager to act as a
     persistent, stateful service for the main application.
     """
-
+    @trace
     def get_or_create_session(self, session_name: str, history_dicts: list[dict]) -> bool:
         """
         Gets a session history if it exists, otherwise creates a new one.
@@ -95,6 +97,7 @@ class Haven:
             logging.info(f"Haven: Reconnecting to existing history list for session: '{session_name}'.")
         return True
 
+    @trace
     def send_message(self, session_name: str, prompt: str) -> dict[str, Any]:
         """
         Sends a message by appending to the history and making a stateless
@@ -130,10 +133,12 @@ class Haven:
             logging.error(f"Haven: Error during generate_content for session '{session_name}': {e}.")
             return {"status": "error", "message": str(e)}
 
+    @trace
     def list_sessions(self) -> list[str]:
         """Returns a list of the names of all currently live sessions."""
         return list(live_chat_sessions.keys())
 
+    @trace
     def delete_session(self, session_name: str) -> dict[str, str]:
         """Deletes a session from the live dictionary to free up memory."""
         if session_name in live_chat_sessions:
@@ -144,6 +149,7 @@ class Haven:
             logging.warning(f"Haven: Attempted to delete non-existent live session '{session_name}'.")
             return {"status": "success", "message": "Session was not live in Haven."}
 
+    @trace
     def has_session(self, session_name: str) -> bool:
         """Checks if a session exists in the Haven."""
         return session_name in live_chat_sessions
@@ -154,6 +160,7 @@ class HavenManager(BaseManager):
     """A multiprocessing manager for serving the Haven instance."""
     pass
 
+@trace
 def start_haven() -> None:
     """Initializes and starts the Haven server process."""
     haven_instance = Haven()

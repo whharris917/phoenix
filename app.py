@@ -16,7 +16,8 @@ import debugpy
 from typing import Optional
 
 from config import DEBUG_MODE, SERVER_PORT, HAVEN_ADDRESS, HAVEN_AUTH_KEY
-import events  # Import the new events module
+import events
+from tracer import trace
 
 # --- CONFIGURATION ---
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -24,7 +25,7 @@ app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
-
+@trace
 def connect_to_haven() -> Optional[BaseManager]:
     """
     Establishes a connection to the Haven service with a retry loop.
@@ -64,36 +65,43 @@ events.register_events(socketio, haven_proxy)
 
 # --- SERVER ROUTES ---
 @app.route("/")
+@trace
 def serve_index():
     """Serves the main chat interface."""
     return send_from_directory(".", "index.html")
 
 @app.route("/<path:filename>")
+@trace
 def serve_static_files(filename: str):
     """Serves static files like CSS and JS from the root directory."""
     return send_from_directory(".", filename)
 
 @app.route("/audit_visualizer")
+@trace
 def serve_audit_visualizer():
     """Serves the audit log visualization tool."""
     return send_from_directory(".", "audit_visualizer.html")
 
 @app.route("/database_viewer")
+@trace
 def serve_database_viewer():
     """Serves the ChromaDB inspection tool."""
     return send_from_directory(".", "database_viewer.html")
 
 @app.route("/docs")
+@trace
 def serve_docs():
     """Serves the documentation viewer."""
     return send_from_directory(".", "documentation_viewer.html")
 
 @app.route("/documentation.md")
+@trace
 def serve_markdown():
     """Serves the raw markdown documentation file."""
     return send_from_directory(".", "documentation.md")
 
 @app.route("/workshop")
+@trace
 def serve_workshop():
     """Serves the workshop/testing interface."""
     return send_from_directory(".", "workshop.html")

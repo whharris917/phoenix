@@ -21,6 +21,7 @@ from proxies import HavenProxyWrapper
 from tool_agent import execute_tool_command
 from utils import get_timestamp
 from response_parser import parse_agent_response, _handle_payloads
+from tracer import trace, global_tracer
 
 # --- Module-level state ---
 # These dictionaries hold the state for all active user connections.
@@ -28,6 +29,7 @@ chat_sessions: dict[str, ActiveSession] = {}
 # A reference to the haven_proxy object initialized in app.py
 _haven_proxy = None
 
+@trace
 def replay_history_for_client(socketio, session_id, session_name, history):
     """
     Parses raw chat history and emits granular rendering events to the client.
@@ -91,7 +93,7 @@ def replay_history_for_client(socketio, session_id, session_name, history):
         logging.error(f"Error during history replay for session {session_name}: {e}")
         socketio.emit("log_message", {"type": "error", "data": f"Failed to replay history: {e}"}, to=session_id)
 
-
+@trace
 def _create_new_session(session_id: str, proxy: object) -> ActiveSession:
     """
     Creates a new user session and initializes all necessary components.
@@ -121,7 +123,7 @@ def _create_new_session(session_id: str, proxy: object) -> ActiveSession:
     )
     return session_data
 
-
+@trace
 def register_events(socketio: SocketIO, haven_proxy: object):
     """
     Registers all SocketIO event handlers with the main application.
@@ -133,6 +135,7 @@ def register_events(socketio: SocketIO, haven_proxy: object):
     _haven_proxy = haven_proxy
 
     @socketio.on("connect")
+    @trace
     def handle_connect(auth=None) -> None:
         """
         Handles a new client connection by creating and initializing a new session.
@@ -158,6 +161,7 @@ def register_events(socketio: SocketIO, haven_proxy: object):
             socketio.emit("log_message", {"type": "error", "data": "Failed to initialize session."}, to=session_id)
 
     @socketio.on("disconnect")
+    @trace
     def handle_disconnect(auth=None) -> None:
         """Handles client disconnection by cleaning up session data."""
         session_id = request.sid
@@ -169,6 +173,7 @@ def register_events(socketio: SocketIO, haven_proxy: object):
             confirmation_events.pop(session_id, None)
 
     @socketio.on("start_task")
+    @trace
     def handle_start_task(data: dict) -> None:
         """
         Receives a task from the client and starts the agent's reasoning loop.
@@ -194,6 +199,7 @@ def register_events(socketio: SocketIO, haven_proxy: object):
             )
 
     @socketio.on("request_session_list")
+    @trace
     def handle_session_list_request(auth=None) -> None:
         """Handles a client's request for the list of available sessions."""
         session_id = request.sid
@@ -205,6 +211,7 @@ def register_events(socketio: SocketIO, haven_proxy: object):
         socketio.emit("session_list_update", tool_result.model_dump(), to=session_id)
 
     @socketio.on("request_session_name")
+    @trace
     def handle_session_name_request(auth=None) -> None:
         """Handles a client's request for its current session name."""
         session_id = request.sid
@@ -212,6 +219,7 @@ def register_events(socketio: SocketIO, haven_proxy: object):
             socketio.emit("session_name_update", {"name": session_data.name}, to=session_id)
 
     @socketio.on("request_db_collections")
+    @trace
     def handle_db_collections_request(auth=None) -> None:
         """Forwards a request for DB collections to the db_inspector."""
         session_id = request.sid
@@ -219,6 +227,7 @@ def register_events(socketio: SocketIO, haven_proxy: object):
         socketio.emit("db_collections_list", collections_json, to=session_id)
 
     @socketio.on("request_db_collection_data")
+    @trace
     def handle_db_collection_data_request(data: dict) -> None:
         """Forwards a request for specific collection data to the db_inspector."""
         session_id = request.sid
@@ -227,6 +236,7 @@ def register_events(socketio: SocketIO, haven_proxy: object):
             socketio.emit("db_collection_data", collection_data_json, to=session_id)
 
     @socketio.on("user_confirmation")
+    @trace
     def handle_user_confirmation(data: dict) -> None:
         """Receives a 'yes' or 'no' from the user and forwards it to a waiting event."""
         session_id = request.sid
@@ -234,6 +244,7 @@ def register_events(socketio: SocketIO, haven_proxy: object):
             event.send(data.get("response"))
 
     @socketio.on("log_audit_event")
+    @trace
     def handle_audit_log(data: dict) -> None:
         """Receives an audit log event from the client."""
         session_id = request.sid
@@ -249,3 +260,22 @@ def register_events(socketio: SocketIO, haven_proxy: object):
             details=data.get("details"),
             control_flow=data.get("control_flow"),
         )
+        
+    @socketio.on('reset_tracer')
+    @trace
+    def handle_reset_tracer(data=None):
+        """Handles a request from the scenario runner to reset the global tracer."""
+        logging.info("Received request to reset global tracer.")
+        global_tracer.reset()
+
+    @socketio.on('get_trace_log')
+    @trace
+    def handle_get_trace_log(data=None):
+        """
+        Handles a request from the scenario runner to get the trace log
+        and sends it back.
+        """
+        logging.info("Received request to get trace log.")
+        session_id = request.sid
+        trace_log = global_tracer.get_trace()
+        socketio.emit("trace_log_response", {"trace": trace_log}, to=session_id)

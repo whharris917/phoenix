@@ -14,6 +14,7 @@ from data_models import ToolCommand, ToolResult
 from memory_manager import ChromaDBStore, MemoryManager
 from proxies import HavenProxyWrapper
 from session_models import ActiveSession
+from tracer import trace
 
 
 # A data class to neatly pass context-dependent objects to tool handlers.
@@ -26,7 +27,7 @@ class ToolContext:
     loop_id: Optional[str]
 
 # --- Low-Level File System Helpers ---
-
+@trace
 def _execute_script(script_content: str) -> ToolResult:
     """Executes a Python script in a restricted environment and captures its output."""
     string_io = io.StringIO()
@@ -45,6 +46,7 @@ def _execute_script(script_content: str) -> ToolResult:
     except Exception as e:
         return ToolResult(status="error", message=str(e))
 
+@trace
 def _write_file(path: str, content: str) -> ToolResult:
     """Writes content to a file, creating directories if necessary."""
     try:
@@ -55,6 +57,7 @@ def _write_file(path: str, content: str) -> ToolResult:
     except Exception as e:
         return ToolResult(status="error", message=str(e))
 
+@trace
 def _read_file(path: str) -> ToolResult:
     """Reads the content of a file."""
     try:
@@ -66,6 +69,7 @@ def _read_file(path: str) -> ToolResult:
     except Exception as e:
         return ToolResult(status="error", message=str(e))
 
+@trace
 def _delete_file(path: str) -> ToolResult:
     """Deletes a file from the filesystem."""
     try:
@@ -76,6 +80,7 @@ def _delete_file(path: str) -> ToolResult:
     except Exception as e:
         return ToolResult(status="error", message=str(e))
 
+@trace
 def _list_directory(path: str) -> ToolResult:
     """Lists all files in a directory recursively, ignoring certain subdirectories."""
     try:
@@ -90,6 +95,7 @@ def _list_directory(path: str) -> ToolResult:
     except Exception as e:
         return ToolResult(status="error", message=str(e))
 
+@trace
 def get_safe_path(filename: str, base_dir_name: str = "sandbox") -> str:
     """Constructs a safe file path within a designated directory, preventing path traversal."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -103,7 +109,7 @@ def get_safe_path(filename: str, base_dir_name: str = "sandbox") -> str:
     return requested_path
 
 # --- Decomposed `apply_patch` Helpers ---
-
+@trace
 def _extract_patch_paths(diff_content: str) -> tuple[str | None, str | None]:
     """Extracts source (a) and target (b) filenames from a diff header."""
     source_filename, target_filename = None, None
@@ -116,6 +122,7 @@ def _extract_patch_paths(diff_content: str) -> tuple[str | None, str | None]:
             break
     return source_filename, target_filename
 
+@trace
 def _validate_patch_paths(source_filename: str, target_filename: str) -> ToolResult | None:
     """Validates the source and target paths for the patch."""
     if not target_filename.startswith("sandbox/"):
@@ -124,6 +131,7 @@ def _validate_patch_paths(source_filename: str, target_filename: str) -> ToolRes
         return ToolResult(status="error", message=f"Access denied. Patching the project file '{source_filename}' is not permitted.")
     return None
 
+@trace
 def _get_source_read_path(source_filename: str) -> str:
     """Determines the absolute path from which to read the source file."""
     if source_filename.startswith("sandbox/"):
@@ -133,7 +141,7 @@ def _get_source_read_path(source_filename: str) -> str:
         return os.path.join(os.path.dirname(__file__), source_filename)
 
 # --- Modular Tool Handlers ---
-
+@trace
 def _handle_create_file(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'create_file' action."""
     filename = params.get("filename", "default.txt")
@@ -141,6 +149,7 @@ def _handle_create_file(params: dict, context: ToolContext) -> ToolResult:
     safe_path = get_safe_path(filename)
     return tpool.execute(_write_file, safe_path, content)
 
+@trace
 def _handle_read_file(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'read_file' action."""
     filename = params.get("filename")
@@ -149,6 +158,7 @@ def _handle_read_file(params: dict, context: ToolContext) -> ToolResult:
     safe_path = get_safe_path(filename)
     return tpool.execute(_read_file, safe_path)
 
+@trace
 def _handle_read_project_file(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'read_project_file' action with validation."""
     filename = params.get("filename")
@@ -159,15 +169,18 @@ def _handle_read_project_file(params: dict, context: ToolContext) -> ToolResult:
     project_file_path = os.path.join(os.path.dirname(__file__), filename)
     return tpool.execute(_read_file, project_file_path)
 
+@trace
 def _handle_list_allowed_project_files(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'list_allowed_project_files' action."""
     return ToolResult(status="success", message="Listed allowed project files.", content=ALLOWED_PROJECT_FILES)
 
+@trace
 def _handle_list_directory(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'list_directory' action."""
     sandbox_dir = os.path.dirname(get_safe_path(""))
     return tpool.execute(_list_directory, sandbox_dir)
 
+@trace
 def _handle_delete_file(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'delete_file' action."""
     filename = params.get("filename")
@@ -176,11 +189,13 @@ def _handle_delete_file(params: dict, context: ToolContext) -> ToolResult:
     safe_path = get_safe_path(filename)
     return tpool.execute(_delete_file, safe_path)
 
+@trace
 def _handle_execute_python_script(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'execute_python_script' action."""
     script_content = params.get("script_content", "")
     return tpool.execute(_execute_script, script_content)
 
+@trace
 def _handle_apply_patch(params: dict, context: ToolContext) -> ToolResult:
     """Orchestrates the 'apply_patch' action by calling decomposed helpers."""
     diff_filename = params.get("diff_filename")
@@ -224,6 +239,7 @@ def _handle_apply_patch(params: dict, context: ToolContext) -> ToolResult:
     
     return ToolResult(status="success", message=f"Patch applied successfully. File saved to '{target_filename}'.")
 
+@trace
 def _handle_list_sessions(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'list_sessions' action."""
     try:
@@ -245,6 +261,7 @@ def _handle_list_sessions(params: dict, context: ToolContext) -> ToolResult:
     except Exception as e:
         return ToolResult(status="error", message=f"Failed to list sessions: {e}")
 
+@trace
 def _handle_load_session(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'load_session' action."""
     from response_parser import replay_history_for_client
@@ -268,6 +285,7 @@ def _handle_load_session(params: dict, context: ToolContext) -> ToolResult:
     except Exception as e:
         return ToolResult(status="error", message=f"Could not load session: {e}")
 
+@trace
 def _handle_save_session(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'save_session' action."""
     new_session_name = params.get("session_name")
@@ -303,6 +321,7 @@ def _handle_save_session(params: dict, context: ToolContext) -> ToolResult:
     except Exception as e:
         return ToolResult(status="error", message=f"Failed to save session: {e}")
 
+@trace
 def _handle_delete_session(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'delete_session' action."""
     session_name = params.get("session_name")
@@ -341,7 +360,7 @@ TOOL_REGISTRY: Dict[str, Callable[[Dict, ToolContext], ToolResult]] = {
 }
 
 # --- Core Execution Logic ---
-
+@trace
 def execute_tool_command(
     command: ToolCommand,
     socketio,
