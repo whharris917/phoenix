@@ -6,7 +6,7 @@ from collections import defaultdict
 # The files we want to analyze to build the map.
 FILES_TO_ANALYZE = [
     "orchestrator.py",
-    "app.py",
+    "phoenix.py",
     "tool_agent.py",
     "memory_manager.py",
     "proxies.py",
@@ -35,7 +35,7 @@ FUNCTION_OWNER_MAP = {
 # Mapping of filenames to their clean names for the graph nodes.
 MODULE_NODE_MAP = {
     "orchestrator.py": "Orchestrator",
-    "app.py": "Web App",
+    "phoenix.py": "Web App",
     "tool_agent.py": "Tool Agent",
     "memory_manager.py": "Memory Manager",
     "proxies.py": "Haven Proxy",

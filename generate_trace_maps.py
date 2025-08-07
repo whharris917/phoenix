@@ -131,7 +131,7 @@ def main():
 
         # Start the Flask App
         print("Starting Flask App service...")
-        app_process = subprocess.Popen([sys.executable, "app.py"])
+        app_process = subprocess.Popen([sys.executable, "phoenix.py"])
         time.sleep(5) # Wait for Flask app to be ready
 
         # **FIX: Create a new runner for each scenario to ensure a fresh connection.**

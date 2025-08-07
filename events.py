@@ -3,7 +3,7 @@ Handles all SocketIO event logic for the application.
 
 This module centralizes the real-time communication between the client (UI)
 and the server, managing user sessions, tasks, and other client requests.
-It is designed to be registered by the main app.py script.
+It is designed to be registered by the main phoenix.py script.
 """
 
 import logging
@@ -26,7 +26,7 @@ from tracer import trace, global_tracer
 # --- Module-level state ---
 # These dictionaries hold the state for all active user connections.
 chat_sessions: dict[str, ActiveSession] = {}
-# A reference to the haven_proxy object initialized in app.py
+# A reference to the haven_proxy object initialized in phoenix.py
 _haven_proxy = None
 
 @trace

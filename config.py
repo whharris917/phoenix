@@ -10,7 +10,7 @@ NOMINAL_MAX_ITERATIONS_REASONING_LOOP = 3
 
 ALLOWED_PROJECT_FILES = [
     "public_data/system_prompt.txt",
-    "app.py",
+    "phoenix.py",
     "audit_logger.py",
     "audit_visualizer.html",
     "config.py",
