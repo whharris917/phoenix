@@ -1,0 +1,116 @@
+Upon starting the haven service, an attempt shall be made to perform the following:
+(a) initialize a connection to VertexAI using the project ID and location specified in the project configuration file
+(b) load a GenerativeModel model definition from public_data/model_definition.txt
+(c) load a system prompt from public_data/system_prompt.txt
+(d) initialize a GenerativeModel object using the model definition loaded in (b), the system prompt loaded in (c), and the safety settings specified in the project configuration file
+If any step above fails, the haven service shall log a critical failure and abort its startup process.
+
+If a GenerativeModel instance can be successfully created, the haven service shall initialize a persistent Haven object and serve it via a BaseManager on port 50000 for remote access by the phoenix service.
+
+The haven shall contain a module-level 'live_chat_sessions' dictionary storing ordered lists of Content objects (user and model turns) keyed by session name.
+
+The Haven class shall expose a get_or_create_session method 
+
+The Haven class shall expose a send_message method which serves as the sole mediator of communication between the user and agent. 
+
+Upon receiving a session name and user prompt, the send_message method shall
+(a) convert the user prompt into a Content object and append it to the history of the specified agent
+(b) send the updated history to the agent and receive the agent's response
+(c) convert the agent response into a Content object and append it to its history
+(d) return the agent response to the caller
+
+The Haven class shall expose a list_sessions method which returns a list of the names of all currently live sessions.
+
+The Haven class shall expose a delete_session method which deletes a session from the live dictionary.
+
+The Haven class shall expose a has_session method which returns True if a session exists in the haven or False otherwise. 
+
+The Haven class shall expose a get_trace_log method which returns the global trace log from the haven process.
+
+
+
+
+
+
+
+
+
+
+
+
+Claude:
+Haven Service Requirements Specification
+Purpose Statement
+The Haven service shall function as a persistent, stateful backend service responsible for managing AI model instances and chat session histories, ensuring continuity of conversational context across main application lifecycle events.
+Mandatory Initialization Sequence
+The Haven service MUST execute the following initialization steps in order upon startup:
+
+Vertex AI Connection Establishment: Establish connection to Google Vertex AI using project credentials specified in the configuration module
+Model Definition Loading: Load the generative model specification from public_data/model_definition.txt
+System Prompt Loading: Load the system instruction set from public_data/system_prompt.txt
+Model Instance Creation: Instantiate a GenerativeModel object using the loaded model definition, system prompt, and safety configuration parameters
+
+CRITICAL FAILURE HANDLING: If any initialization step fails, the Haven service SHALL log a critical error message and MUST abort the startup process immediately. No partial initialization states are permitted.
+Service Availability Requirements
+Upon successful model initialization, the Haven service SHALL:
+
+Instantiate a persistent Haven object
+Expose the Haven instance via BaseManager on the designated port
+Maintain continuous availability for remote procedure calls from the Phoenix service
+
+Core Data Management
+The Haven service MUST maintain a module-level dictionary (live_chat_sessions) that:
+
+Uses session names as unique identifiers (keys)
+Stores ordered collections of Content objects representing complete conversational histories
+Preserves chronological ordering of user and model interactions
+Maintains data integrity across all operations
+
+Mandatory API Surface
+The Haven class SHALL expose the following methods with non-negotiable behavior:
+get_or_create_session(session_name, history_dicts) -> bool
+
+MUST retrieve existing session history if present
+MUST create new session with provided history if not present
+SHALL return boolean confirmation of operation success
+
+send_message(session_name, prompt) -> dict
+
+SHALL serve as the exclusive communication gateway between users and the AI model
+MUST execute the following atomic sequence:
+
+Convert user prompt to Content object and append to session history
+Submit complete updated history to the AI model
+Capture model response and convert to Content object
+Append model response to session history
+Return response payload to caller
+
+
+SHALL return structured response with status and content fields
+
+list_sessions() -> List[str]
+
+MUST return complete list of all active session identifiers
+SHALL reflect real-time state of live sessions
+
+delete_session(session_name) -> dict
+
+MUST permanently remove specified session from active memory
+SHALL return operation status confirmation
+
+has_session(session_name) -> bool
+
+MUST return definitive boolean indicating session existence
+SHALL provide reliable session state verification
+
+get_trace_log() -> Any
+
+MUST return complete execution trace log from the Haven process
+SHALL support debugging and system monitoring requirements
+
+Non-Negotiable Operational Constraints
+
+The Haven service SHALL NOT be restarted during normal Phoenix application lifecycle events
+All session data MUST persist in memory for the duration of the Haven process lifetime
+The service SHALL maintain thread-safe operations for concurrent access
+Model responses MUST be captured and stored before being returned to prevent data loss

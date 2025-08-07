@@ -5,7 +5,10 @@ vector storage using ChromaDB.
 This module implements a Tiered Memory Architecture:
 - Tier 1: A short-term "working memory" in the form of a conversational buffer.
 - Tier 2: A long-term, searchable "reference memory" in a ChromaDB vector store.
-It also encapsulates the logic for Retrieval-Augmented Generation (RAG).
+
+It encapsulates the logic for Retrieval-Augmented Generation (RAG) and provides
+the main interface (MemoryManager) for the application to interact with memory.
+The core state is the global 'embedding_function' used for all DB operations.
 """
 
 import chromadb
@@ -19,15 +22,26 @@ from data_models import MemoryRecord
 from typing import List, Any, Optional
 from tracer import trace
 
-# --- Global Setup ---
-# Initialize the embedding function once to be reused across all ChromaDBStore instances.
-try:
-    embedding_function = embedding_functions.DefaultEmbeddingFunction()
-    logging.info("Successfully initialized the default sentence-transformer embedding model.")
-except Exception as e:
-    logging.critical(f"FATAL: Failed to initialize the embedding model: {e}")
-    embedding_function = None
+@trace
+def initialize_embedding_function() -> Optional[embedding_functions.EmbeddingFunction]:
+    """
+    Initializes the default sentence-transformer embedding model.
 
+    This is a critical, one-time setup step for the memory system.
+
+    Returns:
+        An initialized embedding function object on success, otherwise None.
+    """
+    try:
+        embedding_function = embedding_functions.DefaultEmbeddingFunction()
+        logging.info("Successfully initialized the default sentence-transformer embedding model.")
+        return embedding_function
+    except Exception as e:
+        logging.critical(f"FATAL: Failed to initialize the embedding model: {e}")
+        return None
+
+# --- Bootstrap Sequence ---
+embedding_function = initialize_embedding_function()
 
 class ChromaDBStore:
     """
@@ -37,8 +51,14 @@ class ChromaDBStore:
     """
     @trace
     def __init__(self, collection_name: str):
-        self.name = collection_name
-        self.collection = None
+        """
+        Initializes the data store and connects to a ChromaDB collection.
+
+        Args:
+            collection_name: The name of the collection to connect to.
+        """
+        self.name: str = collection_name
+        self.collection: Optional[chromadb.Collection] = None
 
         if embedding_function is None:
             logging.error(f"Cannot initialize ChromaDBStore for '{self.name}': embedding function not available.")
@@ -163,13 +183,19 @@ class MemoryManager:
     """
     @trace
     def __init__(self, session_name: str):
-        self.session_name = session_name
-        self.max_buffer_size = 10 # Defines the size of the short-term working memory.
+        """
+        Initializes the memory manager for a specific session.
+
+        Args:
+            session_name: The unique name of the session to manage.
+        """
+        self.session_name: str = session_name
+        self.max_buffer_size: int = 10 # Defines the size of the short-term working memory.
         self.conversational_buffer: List[Content] = []
 
-        # Creates instances of the data layer for different types of memory.
-        self.turn_store = ChromaDBStore(collection_name=f"turns-{session_name}")
-        self.code_store = ChromaDBStore(collection_name=f"code-{session_name}")
+		# Creates instances of the data layer for different types of memory.
+        self.turn_store: ChromaDBStore = ChromaDBStore(collection_name=f"turns-{session_name}")
+        self.code_store: ChromaDBStore = ChromaDBStore(collection_name=f"code-{session_name}")
 
         # On initialization, rehydrate the working memory from the database.
         self._repopulate_buffer_from_db()

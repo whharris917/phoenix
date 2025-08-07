@@ -5,6 +5,7 @@ import subprocess
 import sys
 import threading
 import socketio
+from typing import List, Dict, Any
 
 # --- Configuration ---
 OUTPUT_DIR = "sdlc/trace_maps"
@@ -30,6 +31,62 @@ SCENARIOS = {
     }
 }
 
+def _get_participants_from_trace(trace_log: List[Dict[str, Any]]) -> List[str]:
+    """Recursively finds all unique module participants in a trace log."""
+    participants = set()
+    for entry in trace_log:
+        if entry.get("type") == "EVENT":
+            continue
+        
+        module = entry.get("function", "").split('.')[0]
+        if module:
+            participants.add(module)
+        
+        if "nested_calls" in entry:
+            participants.update(_get_participants_from_trace(entry["nested_calls"]))
+    return sorted(list(participants))
+
+def _generate_mermaid_lines(trace_log: List[Dict[str, Any]], from_participant: str) -> List[str]:
+    """Recursively traverses the trace and generates Mermaid syntax lines."""
+    lines = []
+    for entry in trace_log:
+        if entry.get("type") == "EVENT":
+            lines.append(f"    note over {from_participant}: {entry.get('event_name', 'Unnamed Event')}")
+            continue
+
+        full_func_name = entry.get("function", "unknown.function")
+        to_participant, func_name = full_func_name.split('.', 1)
+        
+        lines.append(f"    {from_participant}->>+{to_participant}: {func_name}()")
+        
+        if "nested_calls" in entry:
+            lines.extend(_generate_mermaid_lines(entry["nested_calls"], to_participant))
+        
+        return_value = "exception" if "exception" in entry else "return_value"
+        lines.append(f"    {to_participant}-->>-{from_participant}: {return_value}")
+        
+    return lines
+
+def _generate_sequence_diagram(trace_log: List[Dict[str, Any]], scenario_name: str) -> str:
+    """Generates a full Mermaid sequence diagram from a trace log."""
+    participants = _get_participants_from_trace(trace_log)
+    
+    mermaid_string = "```mermaid\n"
+    mermaid_string += "sequenceDiagram\n"
+    mermaid_string += "    autonumber\n"
+    mermaid_string += "    actor Client\n"
+    
+    for p in participants:
+        if p != "Client":
+            mermaid_string += f"    participant {p}\n"
+            
+    mermaid_string += "\n"
+    # The initial calls in the trace are from the Client to the first participant.
+    first_participant = participants[0] if participants else "Server"
+    mermaid_string += "\n".join(_generate_mermaid_lines(trace_log, "Client"))
+    mermaid_string += "\n```"
+    return mermaid_string
+
 class ScenarioRunner:
     """
     An E2E test runner that starts the application, connects as a real client,
@@ -39,6 +96,7 @@ class ScenarioRunner:
         self.sio = socketio.Client()
         self.task_complete_event = threading.Event()
         self.trace_log = None
+        self.haven_trace_log = None
         self.setup_client_handlers()
 
     def setup_client_handlers(self):
@@ -70,16 +128,17 @@ class ScenarioRunner:
             self.trace_log = data.get("trace")
             self.task_complete_event.set()
 
+        @self.sio.on('haven_trace_log_response')
+        def on_haven_trace_log_response(data):
+            """Receives the Haven trace log from the server."""
+            self.haven_trace_log = data.get("trace")
+            self.task_complete_event.set()
+
     def run_scenario(self, scenario_name, scenario_config):
         print(f"\n--- Running Scenario: {scenario_name} ---")
-        self.sio.connect(APP_URL, wait_timeout=10)
-        
-        # 1. Reset the tracer on the server.
-        self.task_complete_event.clear()
-        self.sio.emit('reset_tracer')
-        time.sleep(0.5) # Give a moment for the event to process
+        self.sio.connect(APP_URL, wait_timeout=10, auth={'is_runner': True})
 
-        # 2. Execute scenario steps.
+        # 1. Execute scenario steps.
         for step in scenario_config["steps"]:
             action = step["action"]
             print(f"  Client: Executing step: {action}...")
@@ -91,65 +150,108 @@ class ScenarioRunner:
                 if not completed:
                     print("  Client: WARNING - Task timed out.")
 
-        # 3. Request the trace log from the server.
+        # 2. Request the trace log from the server.
         self.task_complete_event.clear()
         self.trace_log = None
         self.sio.emit('get_trace_log')
         self.task_complete_event.wait(timeout=5)
 
+        # 3. Request the Haven trace log from the server.
+        print("  Client: Requesting Haven trace log...")
+        self.task_complete_event.clear()
+        self.haven_trace_log = None
+        self.sio.emit('get_haven_trace_log')
+        self.task_complete_event.wait(timeout=5)
+
         # 4. Disconnect and save the results.
         self.sio.disconnect()
-        self.save_trace(scenario_name, scenario_config)
+        self.save_results(scenario_name, scenario_config)
         print(f"--- Scenario Complete. ---")
 
-    def save_trace(self, scenario_name, scenario_config):
+    def save_results(self, scenario_name, scenario_config):
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        output_path = os.path.join(OUTPUT_DIR, f"{scenario_name}.json")
         
+        # --- Step 1: Save the raw JSON trace map (unchanged) ---
+        json_path = os.path.join(OUTPUT_DIR, f"{scenario_name}.json")
         output_data = {
             "scenario_name": scenario_name,
             "description": scenario_config["description"],
             "trace": self.trace_log or "Trace log could not be retrieved."
         }
-        
-        with open(output_path, "w") as f:
+        with open(json_path, "w") as f:
             json.dump(output_data, f, indent=2)
-        print(f"Trace map saved to '{output_path}'")
+        print(f"Trace map JSON saved to '{json_path}'")
+
+        # --- Step 2: Generate and save the sequence diagram (additive) ---
+        if self.trace_log:
+            diagram_content = _generate_sequence_diagram(self.trace_log, scenario_name)
+            md_path = os.path.join(OUTPUT_DIR, f"{scenario_name}_sequence.md")
+            with open(md_path, "w") as f:
+                f.write(f"# Sequence Diagram for: {scenario_name}\n\n")
+                f.write(f"**Description**: {scenario_config['description']}\n\n")
+                f.write(diagram_content)
+            print(f"Sequence diagram saved to '{md_path}'")
+
+        # --- Step 3: Generate and save the Haven sequence diagram ---
+        if self.haven_trace_log:
+            # Save the raw Haven trace JSON
+            haven_json_path = os.path.join(OUTPUT_DIR, f"{scenario_name}_haven.json")
+            haven_output_data = {
+                "scenario_name": f"{scenario_name} (Haven)",
+                "description": scenario_config["description"],
+                "trace": self.haven_trace_log
+            }
+            with open(haven_json_path, "w") as f:
+                json.dump(haven_output_data, f, indent=2)
+            print(f"Haven trace map JSON saved to '{haven_json_path}'")
+
+            # Save the Haven sequence diagram
+            haven_diagram_content = _generate_sequence_diagram(self.haven_trace_log, scenario_name)
+            haven_md_path = os.path.join(OUTPUT_DIR, f"{scenario_name}_haven_sequence.md")
+            with open(haven_md_path, "w") as f:
+                f.write(f"# Sequence Diagram for: {scenario_name} (Haven Service)\n\n")
+                f.write(f"**Description**: {scenario_config['description']}\n\n")
+                f.write(haven_diagram_content)
+            print(f"Haven sequence diagram saved to '{haven_md_path}'")
 
 
 def main():
     """
     Main function to start servers, run scenarios, and stop servers.
     """
-    haven_process = None
-    app_process = None
-    try:
-        # Start Haven
-        print("Starting Haven service...")
-        haven_process = subprocess.Popen([sys.executable, "haven.py"])
-        time.sleep(3) # Wait for Haven to be ready
+    # The main loop now encapsulates the entire lifecycle for each scenario.
+    for name, config in SCENARIOS.items():
+        haven_process = None
+        app_process = None
+        try:
+            # Start Haven for the current scenario
+            print(f"\n--- [{name}] Starting Services ---")
+            print("Starting Haven service...")
+            haven_process = subprocess.Popen([sys.executable, "haven.py"])
+            time.sleep(5) # Wait for Haven to be ready
 
-        # Start the Flask App
-        print("Starting Flask App service...")
-        app_process = subprocess.Popen([sys.executable, "phoenix.py"])
-        time.sleep(5) # Wait for Flask app to be ready
+            # Start the Flask App for the current scenario
+            print("Starting Flask App service...")
+            app_process = subprocess.Popen([sys.executable, "phoenix.py"])
+            time.sleep(5) # Wait for Flask app to be ready
 
-        # **FIX: Create a new runner for each scenario to ensure a fresh connection.**
-        for name, config in SCENARIOS.items():
+            # Run the single scenario with the fresh services.
             runner = ScenarioRunner()
             runner.run_scenario(name, config)
 
-    finally:
-        # Ensure all background processes are terminated
-        if app_process:
-            print("\nTerminating Flask App service...")
-            app_process.terminate()
-            app_process.wait()
-        if haven_process:
-            print("Terminating Haven service...")
-            haven_process.terminate()
-            haven_process.wait()
-        print("All services terminated.")
+        finally:
+            # Ensure all background processes are terminated after the scenario.
+            print(f"--- [{name}] Tearing Down Services ---")
+            if app_process:
+                print("Terminating Flask App service...")
+                app_process.terminate()
+                app_process.wait()
+            if haven_process:
+                print("Terminating Haven service...")
+                haven_process.terminate()
+                haven_process.wait()
+            print("--- Teardown Complete ---")
+
 
 if __name__ == "__main__":
     main()

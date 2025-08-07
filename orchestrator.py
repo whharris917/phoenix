@@ -4,6 +4,9 @@ Core cognitive engine for the AI agent.
 This module contains the primary reasoning loop that drives the agent's behavior.
 It orchestrates the interaction between the agent's memory, the generative model,
 and the tool execution system, forming the "brain" of the application.
+
+The core state is managed in the module-level 'confirmation_events' dictionary,
+which allows the reasoning loop to pause and wait for user input.
 """
 from eventlet import tpool
 from eventlet.event import Event
@@ -17,7 +20,7 @@ from data_models import ToolCommand, ParsedAgentResponse
 from session_models import ActiveSession
 from response_parser import parse_agent_response, _handle_payloads, is_prose_effectively_empty
 from config import ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP, NOMINAL_MAX_ITERATIONS_REASONING_LOOP
-from tracer import trace, log_event
+from tracer import trace
 
 # A dictionary to hold event objects for user confirmation, keyed by session_id.
 # This allows the reasoning loop to pause and wait for user input.
@@ -86,10 +89,8 @@ def _render_agent_turn(socketio, session_id: str, parsed_response: ParsedAgentRe
     """
     Renders the agent's turn to the client from a ParsedAgentResponse object.
 
-    This function is highly declarative, using the pre-calculated attributes of the
-    ParsedAgentResponse object to render the UI without further calculations.
-    It translates the agent's internal command into a user-facing message,
-    confirmation prompt, or informational text.
+    This function translates the agent's internal command into a user-facing
+    message, confirmation prompt, or informational text.
 
     Args:
         socketio: The SocketIO server instance.
@@ -150,7 +151,7 @@ def execute_reasoning_loop(
     3. Process the model's response into a command.
     4. Render the agent's "thought" or action to the user.
     5. Execute the command.
-    6. Use the result of the action as the prompt for the next cycle.
+    6. Use the tool result as the prompt for the next cycle.
     This continues until the task is complete or a limit is reached.
 
     Args:
@@ -172,7 +173,6 @@ def execute_reasoning_loop(
 
         # The core cognitive loop, limited to a max number of iterations for safety.
         for i in range(ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP):
-            log_event(f"BEGINNING ITERATION {i} of RESONING LOOP", {})
             socketio.sleep(0)  # Yield to other greenlets, keeping the server responsive.
 
             # --- Step 1: Prepare the Prompt ---

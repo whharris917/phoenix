@@ -1,0 +1,124 @@
+{
+  "project": "Phoenix Agent",
+  "document_version": "1.0",
+  "description": "This document contains all functional and qualitative requirements for the Phoenix Agent project.",
+  "modules": {
+    "response_parser.py": {
+      "description": "Requirements for the module that parses raw LLM output into structured data.",
+      "functions": {
+        "parse_agent_response": [
+          {
+            "id": "RSP-PAR-001",
+            "requirement": "Shall correctly parse a model's response string into a ParsedAgentResponse object, separating the natural language prose from the JSON command."
+          },
+          {
+            "id": "RSP-PAR-002",
+            "requirement": "Shall successfully extract a JSON command that is enclosed in ```json markdown fences."
+          },
+          {
+            "id": "RSP-PAR-003",
+            "requirement": "When no markdown fences are present, it shall fall back to a brace-counting mechanism to find and extract a valid JSON object."
+          },
+          {
+            "id": "RSP-PAR-004",
+            "requirement": "If the extracted JSON is malformed, it shall attempt to repair it using the _repair_json helper function."
+          },
+          {
+            "id": "RSP-PAR-005",
+            "requirement": "If no valid JSON command can be found or repaired, the entire input string shall be treated as prose, and no command shall be returned."
+          }
+        ],
+        "_handle_payloads": [
+          {
+            "id": "RSP-HPL-001",
+            "requirement": "Shall identify payload placeholders (e.g., `@@content`) within a command's parameters."
+          },
+          {
+            "id": "RSP-HPL-002",
+            "requirement": "Shall replace the identified placeholders with the corresponding content defined in `START @@... END @@...` blocks found in the prose."
+          },
+          {
+            "id": "RSP-HPL-003",
+            "requirement": "Shall remove the `START @@... END @@...` blocks from the prose after successfully processing them."
+          }
+        ],
+        "_repair_json": [
+          {
+            "id": "RSP-RPJ-001",
+            "requirement": "Shall fix common JSON errors, including unescaped newline characters and unescaped double quotes within string values."
+          }
+        ],
+        "is_prose_effectively_empty": [
+          {
+            "id": "RSP-IPE-001",
+            "requirement": "Shall return `True` for `None`, an empty string, or a string containing only a timestamp and whitespace."
+          },
+          {
+            "id": "RSP-IPE-002",
+            "requirement": "Shall return `False` for any string containing other meaningful characters, even if a timestamp is present."
+          }
+        ]
+      }
+    },
+    "haven.py": {
+      "description": "Requirements for the persistent, stateful service that manages AI model chat sessions.",
+      "functions": {
+        "load_system_prompt": [
+          {
+            "id": "HAV-LSP-001",
+            "requirement": "Shall load and return the content of the 'system_prompt.txt' file."
+          },
+          {
+            "id": "HAV-LSP-002",
+            "requirement": "Shall return a default error message if the 'system_prompt.txt' file is not found."
+          }
+        ],
+        "Haven.get_or_create_session": [
+          {
+            "id": "HAV-GCS-001",
+            "requirement": "Shall create a new in-memory session history if the provided session_name does not exist."
+          },
+          {
+            "id": "HAV-GCS-002",
+            "requirement": "Shall use an existing in-memory session history if the provided session_name already exists."
+          }
+        ],
+        "Haven.send_message": [
+          {
+            "id": "HAV-SND-001",
+            "requirement": "Shall append the user's prompt to the correct session history."
+          },
+          {
+            "id": "HAV-SND-002",
+            "requirement": "Shall call the generative model with the complete, updated session history."
+          },
+          {
+            "id": "HAV-SND-003",
+            "requirement": "Shall append the model's response to the session history to maintain state."
+          },
+          {
+            "id": "HAV-SND-004",
+            "requirement": "Shall return a dictionary containing the status and the model's response text."
+          }
+        ],
+        "Haven.delete_session": [
+          {
+            "id": "HAV-DEL-001",
+            "requirement": "Shall remove the specified session history from its in-memory dictionary."
+          }
+        ]
+      }
+    }
+  },
+  "qualitative_requirements": {
+    "description": "General requirements related to code style, legibility, and architecture that apply project-wide.",
+    "categories": {
+      "Style and Code Legibility": [
+        {
+          "id": "QLT-SCL-001",
+          "requirement": "All code will be written in a way that minimizes redundancy, maximizes agent legibility, avoids circular imports, and prioritizes declarative code."
+        }
+      ]
+    }
+  }
+}

@@ -1,15 +1,21 @@
 """
-Handles all SocketIO event logic for the application.
+Defines the exclusive real-time communication bridge for the application.
 
-This module centralizes the real-time communication between the client (UI)
-and the server, managing user sessions, tasks, and other client requests.
-It is designed to be registered by the main phoenix.py script.
+This module serves as the secure "airlock" between the client-side user
+interface and the backend application logic. It defines all SocketIO event
+handlers, which are the only "levers" a user can pull to interact with the
+system. It is responsible for session initialization, task delegation, and
+forwarding all user requests to the appropriate backend components.
+
+The core state is managed in the module-level 'chat_sessions' dictionary,
+which maps client session IDs to their corresponding ActiveSession objects.
 """
 
 import logging
 from flask import request
 from flask_socketio import SocketIO
 import json
+from typing import Dict, Any, List
 
 from audit_logger import audit_log
 import inspect_db as db_inspector
@@ -24,13 +30,14 @@ from response_parser import parse_agent_response, _handle_payloads
 from tracer import trace, global_tracer
 
 # --- Module-level state ---
-# These dictionaries hold the state for all active user connections.
+# This dictionary holds the state for all active user connections, mapping a
+# temporary SocketIO session ID to a persistent ActiveSession object.
 chat_sessions: dict[str, ActiveSession] = {}
-# A reference to the haven_proxy object initialized in phoenix.py
+# A global reference to the haven_proxy object initialized in phoenix.py.
 _haven_proxy = None
 
 @trace
-def replay_history_for_client(socketio, session_id, session_name, history):
+def replay_history_for_client(socketio: SocketIO, session_id: str, session_name: str, history: List[Dict[str, Any]]) -> None:
     """
     Parses raw chat history and emits granular rendering events to the client.
     This allows a saved session to be loaded and displayed correctly.
@@ -140,6 +147,9 @@ def register_events(socketio: SocketIO, haven_proxy: object):
         """
         Handles a new client connection by creating and initializing a new session.
         """
+        if auth and auth.get('is_runner'):
+            logging.info("Connection from scenario runner detected.")
+
         session_id = request.sid
         logging.info(f"Client connected: {session_id}")
 
@@ -260,13 +270,7 @@ def register_events(socketio: SocketIO, haven_proxy: object):
             details=data.get("details"),
             control_flow=data.get("control_flow"),
         )
-        
-    @socketio.on('reset_tracer')
-    @trace
-    def handle_reset_tracer(data=None):
-        """Handles a request from the scenario runner to reset the global tracer."""
-        logging.info("Received request to reset global tracer.")
-        global_tracer.reset()
+
 
     @socketio.on('get_trace_log')
     @trace
@@ -279,3 +283,16 @@ def register_events(socketio: SocketIO, haven_proxy: object):
         session_id = request.sid
         trace_log = global_tracer.get_trace()
         socketio.emit("trace_log_response", {"trace": trace_log}, to=session_id)
+
+
+    @socketio.on('get_haven_trace_log')
+    @trace
+    def handle_get_haven_trace_log(data=None):
+        """
+        Handles a request for the Haven service's trace log.
+        """
+        logging.info("Received request to get Haven trace log.")
+        session_id = request.sid
+        if _haven_proxy:
+            haven_trace_log = _haven_proxy.get_trace_log()
+            socketio.emit("haven_trace_log_response", {"trace": haven_trace_log}, to=session_id)

@@ -3,476 +3,161 @@
   "description": "Traces a simple user prompt that the agent can answer without using any tools.",
   "trace": [
     {
-      "id": 1,
-      "module": "events.py",
-      "type": "RETURN",
-      "function": "register_events.<locals>.handle_reset_tracer",
-      "args": {}
+      "function": "memory_manager.initialize_embedding_function",
+      "return_value": "<chromadb.utils.embedding_functions.DefaultEmbeddingFunction object>"
     },
     {
-      "id": 2,
-      "module": "events.py",
-      "type": "CALL",
-      "function": "register_events.<locals>.handle_start_task",
-      "args": {
-        "data": "{'prompt': 'What is the capital of Poland?'}"
-      }
+      "function": "phoenix.configure_servers",
+      "return_value": "(<Flask 'phoenix'>, <flask_socketio.SocketIO object>)"
     },
     {
-      "id": 3,
-      "module": "utils.py",
-      "type": "CALL",
-      "function": "get_timestamp",
-      "args": {}
+      "function": "phoenix.initialize_services",
+      "nested_calls": [
+        {
+          "function": "phoenix.connect_to_haven",
+          "return_value": "<AutoProxy[get_haven] object, typeid 'get_haven'>"
+        },
+        {
+          "function": "events.register_events"
+        }
+      ],
+      "return_value": "<AutoProxy[get_haven] object, typeid 'get_haven'>"
     },
     {
-      "id": 4,
-      "module": "utils.py",
-      "type": "RETURN",
-      "function": "get_timestamp",
-      "args": {},
-      "return_value": "'07AUG2025_095459AM'"
+      "function": "events.register_events.<locals>.handle_connect",
+      "nested_calls": [
+        {
+          "function": "events._create_new_session",
+          "nested_calls": [
+            {
+              "function": "utils.get_timestamp",
+              "return_value": "'07AUG2025_044645PM'"
+            },
+            {
+              "function": "proxies.HavenProxyWrapper.__init__"
+            },
+            {
+              "function": "memory_manager.MemoryManager.__init__",
+              "nested_calls": [
+                {
+                  "function": "memory_manager.ChromaDBStore.__init__"
+                },
+                {
+                  "function": "memory_manager.ChromaDBStore.__init__"
+                },
+                {
+                  "function": "memory_manager.MemoryManager._repopulate_buffer_from_db",
+                  "nested_calls": [
+                    {
+                      "function": "memory_manager.ChromaDBStore.get_all_records"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "return_value": "ActiveSession(chat=<proxies.HavenProxyWrapper object>, memory=<memory_manager.MemoryManager object>, name='New_Session_07AUG2025_044645PM')"
+        }
+      ]
     },
     {
-      "id": 5,
-      "module": "events.py",
-      "type": "RETURN",
-      "function": "register_events.<locals>.handle_start_task",
-      "args": {
-        "data": "{'prompt': 'What is the capital of Poland?'}"
-      }
+      "function": "events.register_events.<locals>.handle_start_task",
+      "nested_calls": [
+        {
+          "function": "utils.get_timestamp",
+          "return_value": "'07AUG2025_044645PM'"
+        }
+      ]
     },
     {
-      "id": 6,
-      "module": "orchestrator.py",
-      "type": "CALL",
-      "function": "execute_reasoning_loop",
-      "args": {
-        "socketio": "<flask_socketio.SocketIO object>",
-        "session_data": "ActiveSession(chat=<proxies.HavenProxyWrapper object>, memory=<memory_manager.MemoryManager object>, name='New_Session_07AUG2025_095458AM')",
-        "initial_prompt": "'[07AUG2025_095459AM] What is the capital of Poland?'",
-        "session_id": "'LgP7kJ2M-hW_2_o1AAAD'",
-        "chat_sessions": "{'LgP7kJ2M-hW_2_o1AAAD': ActiveSession(chat=<proxies.HavenProxyWrapper object>, memory=<memory_manager.MemoryManager object>, name='New_Session_07AUG2025_095458AM')}",
-        "haven_proxy": "<AutoProxy[get_haven] object, typeid 'get_haven'>"
-      }
+      "function": "orchestrator.execute_reasoning_loop",
+      "nested_calls": [
+        {
+          "function": "memory_manager.MemoryManager.prepare_augmented_prompt",
+          "nested_calls": [
+            {
+              "function": "memory_manager.MemoryManager.get_context_for_prompt",
+              "nested_calls": [
+                {
+                  "function": "memory_manager.ChromaDBStore.query"
+                }
+              ]
+            }
+          ],
+          "return_value": "'[07AUG2025_044645PM] What is the capital of Poland?'"
+        },
+        {
+          "function": "memory_manager.MemoryManager.add_turn",
+          "nested_calls": [
+            {
+              "function": "memory_manager.ChromaDBStore.add_record"
+            }
+          ]
+        },
+        {
+          "function": "proxies.HavenProxyWrapper.send_message",
+          "return_value": "<proxies.HavenProxyWrapper.send_message.<locals>.MockResponse object>"
+        },
+        {
+          "function": "utils.get_timestamp",
+          "return_value": "'07AUG2025_044649PM'"
+        },
+        {
+          "function": "memory_manager.MemoryManager.add_turn",
+          "nested_calls": [
+            {
+              "function": "memory_manager.ChromaDBStore.add_record"
+            }
+          ]
+        },
+        {
+          "function": "orchestrator._process_model_response",
+          "nested_calls": [
+            {
+              "function": "response_parser.parse_agent_response",
+              "nested_calls": [
+                {
+                  "function": "response_parser._mask_payloads",
+                  "return_value": "'[07AUG2025_044649PM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
+                },
+                {
+                  "function": "response_parser._extract_json_with_fences",
+                  "return_value": "('```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```', '{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}')"
+                },
+                {
+                  "function": "response_parser._clean_prose",
+                  "return_value": "'[07AUG2025_044649PM]'"
+                },
+                {
+                  "function": "response_parser.is_prose_effectively_empty",
+                  "return_value": "True"
+                }
+              ],
+              "return_value": "ParsedAgentResponse(prose='[07AUG2025_044649PM]', command=ToolCommand(action='respond', parameters={'response': 'The capital of Poland is Warsaw.'}, attachment=None), is_prose_empty=True)"
+            },
+            {
+              "function": "response_parser._handle_payloads",
+              "return_value": "('[07AUG2025_044649PM]', ToolCommand(action='respond', parameters={'response': 'The capital of Poland is Warsaw.'}, attachment=None))"
+            }
+          ],
+          "return_value": "ParsedAgentResponse(prose='[07AUG2025_044649PM]', command=ToolCommand(action='respond', parameters={'response': 'The capital of Poland is Warsaw.'}, attachment='[07AUG2025_044649PM]'), is_prose_empty=True)"
+        },
+        {
+          "function": "orchestrator._render_agent_turn",
+          "nested_calls": [
+            {
+              "function": "response_parser.is_prose_effectively_empty",
+              "return_value": "False"
+            },
+            {
+              "function": "orchestrator._emit_agent_message"
+            }
+          ]
+        }
+      ]
     },
     {
-      "id": 7,
-      "module": "orchestrator.py",
-      "type": "EVENT",
-      "function": "BEGINNING ITERATION 0 of RESONING LOOP",
-      "args": {}
-    },
-    {
-      "id": 8,
-      "module": "memory_manager.py",
-      "type": "CALL",
-      "function": "MemoryManager.prepare_augmented_prompt",
-      "args": {
-        "self": "<memory_manager.MemoryManager object>",
-        "prompt": "'[07AUG2025_095459AM] What is the capital of Poland?'"
-      }
-    },
-    {
-      "id": 9,
-      "module": "memory_manager.py",
-      "type": "CALL",
-      "function": "MemoryManager.get_context_for_prompt",
-      "args": {
-        "self": "<memory_manager.MemoryManager object>",
-        "prompt": "'[07AUG2025_095459AM] What is the capital of Poland?'"
-      }
-    },
-    {
-      "id": 10,
-      "module": "memory_manager.py",
-      "type": "CALL",
-      "function": "ChromaDBStore.query",
-      "args": {
-        "self": "<memory_manager.ChromaDBStore object>",
-        "query_text": "'[07AUG2025_095459AM] What is the capital of Poland?'",
-        "n_results": "5"
-      }
-    },
-    {
-      "id": 11,
-      "module": "memory_manager.py",
-      "type": "RETURN",
-      "function": "ChromaDBStore.query",
-      "args": {
-        "self": "<memory_manager.ChromaDBStore object>",
-        "query_text": "'[07AUG2025_095459AM] What is the capital of Poland?'",
-        "n_results": "5"
-      }
-    },
-    {
-      "id": 12,
-      "module": "memory_manager.py",
-      "type": "RETURN",
-      "function": "MemoryManager.get_context_for_prompt",
-      "args": {
-        "self": "<memory_manager.MemoryManager object>",
-        "prompt": "'[07AUG2025_095459AM] What is the capital of Poland?'"
-      }
-    },
-    {
-      "id": 13,
-      "module": "memory_manager.py",
-      "type": "RETURN",
-      "function": "MemoryManager.prepare_augmented_prompt",
-      "args": {
-        "self": "<memory_manager.MemoryManager object>",
-        "prompt": "'[07AUG2025_095459AM] What is the capital of Poland?'"
-      },
-      "return_value": "'[07AUG2025_095459AM] What is the capital of Poland?'"
-    },
-    {
-      "id": 14,
-      "module": "memory_manager.py",
-      "type": "CALL",
-      "function": "MemoryManager.add_turn",
-      "args": {
-        "self": "<memory_manager.MemoryManager object>",
-        "role": "'user'",
-        "content": "'[07AUG2025_095459AM] What is the capital of Poland?'",
-        "augmented_prompt": "'This is iteration 1 of 3 of the reasoning loop.\\nYou MUST issue a `respond` command on or before the final iteration.\\n\\n[07AUG2025_095459AM] What is the capital of Poland?'"
-      }
-    },
-    {
-      "id": 15,
-      "module": "memory_manager.py",
-      "type": "CALL",
-      "function": "ChromaDBStore.add_record",
-      "args": {
-        "self": "<memory_manager.ChromaDBStore object>",
-        "record": "MemoryRecord(id=UUID('0113232d-1fdb-4a25-8da6-cadefb1baeff'), type='turn', role='user', timestamp=1754574899.9455383, document='[07AUG2025_095459AM] What is the capital of Poland?', summary=None, augmented_prompt='This is iteration 1 of 3 of the reasoning loop.\\nYou MUST issue a `respond` command on or before the final iteration.\\n\\n[07AUG2025_095459AM] What is the capital of Poland?', raw_content='[07AUG2025_095459AM] What is the capital of Poland?', segment_id=None, filename=None)",
-        "record_id": "'0113232d-1fdb-4a25-8da6-cadefb1baeff'"
-      }
-    },
-    {
-      "id": 16,
-      "module": "memory_manager.py",
-      "type": "RETURN",
-      "function": "ChromaDBStore.add_record",
-      "args": {
-        "self": "<memory_manager.ChromaDBStore object>",
-        "record": "MemoryRecord(id=UUID('0113232d-1fdb-4a25-8da6-cadefb1baeff'), type='turn', role='user', timestamp=1754574899.9455383, document='[07AUG2025_095459AM] What is the capital of Poland?', summary=None, augmented_prompt='This is iteration 1 of 3 of the reasoning loop.\\nYou MUST issue a `respond` command on or before the final iteration.\\n\\n[07AUG2025_095459AM] What is the capital of Poland?', raw_content='[07AUG2025_095459AM] What is the capital of Poland?', segment_id=None, filename=None)",
-        "record_id": "'0113232d-1fdb-4a25-8da6-cadefb1baeff'"
-      }
-    },
-    {
-      "id": 17,
-      "module": "memory_manager.py",
-      "type": "RETURN",
-      "function": "MemoryManager.add_turn",
-      "args": {
-        "self": "<memory_manager.MemoryManager object>",
-        "role": "'user'",
-        "content": "'[07AUG2025_095459AM] What is the capital of Poland?'",
-        "augmented_prompt": "'This is iteration 1 of 3 of the reasoning loop.\\nYou MUST issue a `respond` command on or before the final iteration.\\n\\n[07AUG2025_095459AM] What is the capital of Poland?'"
-      }
-    },
-    {
-      "id": 18,
-      "module": "proxies.py",
-      "type": "CALL",
-      "function": "HavenProxyWrapper.send_message",
-      "args": {
-        "self": "<proxies.HavenProxyWrapper object>",
-        "prompt": "'This is iteration 1 of 3 of the reasoning loop.\\nYou MUST issue a `respond` command on or before the final iteration.\\n\\n[07AUG2025_095459AM] What is the capital of Poland?'"
-      }
-    },
-    {
-      "id": 19,
-      "module": "proxies.py",
-      "type": "RETURN",
-      "function": "HavenProxyWrapper.send_message",
-      "args": {
-        "self": "<proxies.HavenProxyWrapper object>",
-        "prompt": "'This is iteration 1 of 3 of the reasoning loop.\\nYou MUST issue a `respond` command on or before the final iteration.\\n\\n[07AUG2025_095459AM] What is the capital of Poland?'"
-      },
-      "return_value": "<proxies.HavenProxyWrapper.send_message.<locals>.MockResponse object>"
-    },
-    {
-      "id": 20,
-      "module": "utils.py",
-      "type": "CALL",
-      "function": "get_timestamp",
-      "args": {}
-    },
-    {
-      "id": 21,
-      "module": "utils.py",
-      "type": "RETURN",
-      "function": "get_timestamp",
-      "args": {},
-      "return_value": "'07AUG2025_095505AM'"
-    },
-    {
-      "id": 22,
-      "module": "memory_manager.py",
-      "type": "CALL",
-      "function": "MemoryManager.add_turn",
-      "args": {
-        "self": "<memory_manager.MemoryManager object>",
-        "role": "'model'",
-        "content": "'[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
-      }
-    },
-    {
-      "id": 23,
-      "module": "memory_manager.py",
-      "type": "CALL",
-      "function": "ChromaDBStore.add_record",
-      "args": {
-        "self": "<memory_manager.ChromaDBStore object>",
-        "record": "MemoryRecord(id=UUID('274c43ad-9a40-4a0b-a7ea-007862bc5210'), type='turn', role='model', timestamp=1754574905.289668, document='[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```', summary=None, augmented_prompt=None, raw_content='[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```', segment_id=None, filename=None)",
-        "record_id": "'274c43ad-9a40-4a0b-a7ea-007862bc5210'"
-      }
-    },
-    {
-      "id": 24,
-      "module": "memory_manager.py",
-      "type": "RETURN",
-      "function": "ChromaDBStore.add_record",
-      "args": {
-        "self": "<memory_manager.ChromaDBStore object>",
-        "record": "MemoryRecord(id=UUID('274c43ad-9a40-4a0b-a7ea-007862bc5210'), type='turn', role='model', timestamp=1754574905.289668, document='[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```', summary=None, augmented_prompt=None, raw_content='[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```', segment_id=None, filename=None)",
-        "record_id": "'274c43ad-9a40-4a0b-a7ea-007862bc5210'"
-      }
-    },
-    {
-      "id": 25,
-      "module": "memory_manager.py",
-      "type": "RETURN",
-      "function": "MemoryManager.add_turn",
-      "args": {
-        "self": "<memory_manager.MemoryManager object>",
-        "role": "'model'",
-        "content": "'[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
-      }
-    },
-    {
-      "id": 26,
-      "module": "orchestrator.py",
-      "type": "CALL",
-      "function": "_process_model_response",
-      "args": {
-        "response_text": "'[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
-      }
-    },
-    {
-      "id": 27,
-      "module": "response_parser.py",
-      "type": "CALL",
-      "function": "parse_agent_response",
-      "args": {
-        "response_text": "'[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
-      }
-    },
-    {
-      "id": 28,
-      "module": "response_parser.py",
-      "type": "CALL",
-      "function": "_mask_payloads",
-      "args": {
-        "text": "'[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
-      }
-    },
-    {
-      "id": 29,
-      "module": "response_parser.py",
-      "type": "RETURN",
-      "function": "_mask_payloads",
-      "args": {
-        "text": "'[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
-      },
-      "return_value": "'[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
-    },
-    {
-      "id": 30,
-      "module": "response_parser.py",
-      "type": "CALL",
-      "function": "_extract_json_with_fences",
-      "args": {
-        "text": "'[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
-      }
-    },
-    {
-      "id": 31,
-      "module": "response_parser.py",
-      "type": "RETURN",
-      "function": "_extract_json_with_fences",
-      "args": {
-        "text": "'[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
-      },
-      "return_value": "('```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```', '{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}')"
-    },
-    {
-      "id": 32,
-      "module": "response_parser.py",
-      "type": "CALL",
-      "function": "_clean_prose",
-      "args": {
-        "prose": "'[07AUG2025_095505AM]'"
-      }
-    },
-    {
-      "id": 33,
-      "module": "response_parser.py",
-      "type": "RETURN",
-      "function": "_clean_prose",
-      "args": {
-        "prose": "'[07AUG2025_095505AM]'"
-      },
-      "return_value": "'[07AUG2025_095505AM]'"
-    },
-    {
-      "id": 34,
-      "module": "response_parser.py",
-      "type": "CALL",
-      "function": "is_prose_effectively_empty",
-      "args": {
-        "prose_string": "'[07AUG2025_095505AM]'"
-      }
-    },
-    {
-      "id": 35,
-      "module": "response_parser.py",
-      "type": "RETURN",
-      "function": "is_prose_effectively_empty",
-      "args": {
-        "prose_string": "'[07AUG2025_095505AM]'"
-      },
-      "return_value": "True"
-    },
-    {
-      "id": 36,
-      "module": "response_parser.py",
-      "type": "RETURN",
-      "function": "parse_agent_response",
-      "args": {
-        "response_text": "'[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
-      },
-      "return_value": "ParsedAgentResponse(prose='[07AUG2025_095505AM]', command=ToolCommand(action='respond', parameters={'response': 'The capital of Poland is Warsaw.'}, attachment=None), is_prose_empty=True)"
-    },
-    {
-      "id": 37,
-      "module": "response_parser.py",
-      "type": "CALL",
-      "function": "_handle_payloads",
-      "args": {
-        "prose": "'[07AUG2025_095505AM]'",
-        "command": "ToolCommand(action='respond', parameters={'response': 'The capital of Poland is Warsaw.'}, attachment=None)"
-      }
-    },
-    {
-      "id": 38,
-      "module": "response_parser.py",
-      "type": "RETURN",
-      "function": "_handle_payloads",
-      "args": {
-        "prose": "'[07AUG2025_095505AM]'",
-        "command": "ToolCommand(action='respond', parameters={'response': 'The capital of Poland is Warsaw.'}, attachment=None)"
-      },
-      "return_value": "('[07AUG2025_095505AM]', ToolCommand(action='respond', parameters={'response': 'The capital of Poland is Warsaw.'}, attachment=None))"
-    },
-    {
-      "id": 39,
-      "module": "orchestrator.py",
-      "type": "RETURN",
-      "function": "_process_model_response",
-      "args": {
-        "response_text": "'[07AUG2025_095505AM] ```json\\n{\\n\\t\"action\": \"respond\",\\n\\t\"parameters\": {\\n\\t\\t\"response\": \"The capital of Poland is Warsaw.\"\\n\\t}\\n}\\n```'"
-      },
-      "return_value": "ParsedAgentResponse(prose='[07AUG2025_095505AM]', command=ToolCommand(action='respond', parameters={'response': 'The capital of Poland is Warsaw.'}, attachment='[07AUG2025_095505AM]'), is_prose_empty=True)"
-    },
-    {
-      "id": 40,
-      "module": "orchestrator.py",
-      "type": "CALL",
-      "function": "_render_agent_turn",
-      "args": {
-        "socketio": "<flask_socketio.SocketIO object>",
-        "session_id": "'LgP7kJ2M-hW_2_o1AAAD'",
-        "parsed_response": "ParsedAgentResponse(prose='[07AUG2025_095505AM]', command=ToolCommand(action='respond', parameters={'response': 'The capital of Poland is Warsaw.'}, attachment='[07AUG2025_095505AM]'), is_prose_empty=True)",
-        "is_live": "True"
-      }
-    },
-    {
-      "id": 41,
-      "module": "response_parser.py",
-      "type": "CALL",
-      "function": "is_prose_effectively_empty",
-      "args": {
-        "prose_string": "'The capital of Poland is Warsaw.'"
-      }
-    },
-    {
-      "id": 42,
-      "module": "response_parser.py",
-      "type": "RETURN",
-      "function": "is_prose_effectively_empty",
-      "args": {
-        "prose_string": "'The capital of Poland is Warsaw.'"
-      }
-    },
-    {
-      "id": 43,
-      "module": "orchestrator.py",
-      "type": "CALL",
-      "function": "_emit_agent_message",
-      "args": {
-        "socketio": "<flask_socketio.SocketIO object>",
-        "session_id": "'LgP7kJ2M-hW_2_o1AAAD'",
-        "message_type": "'final_answer'",
-        "content": "'The capital of Poland is Warsaw.'"
-      }
-    },
-    {
-      "id": 44,
-      "module": "orchestrator.py",
-      "type": "RETURN",
-      "function": "_emit_agent_message",
-      "args": {
-        "socketio": "<flask_socketio.SocketIO object>",
-        "session_id": "'LgP7kJ2M-hW_2_o1AAAD'",
-        "message_type": "'final_answer'",
-        "content": "'The capital of Poland is Warsaw.'"
-      }
-    },
-    {
-      "id": 45,
-      "module": "orchestrator.py",
-      "type": "RETURN",
-      "function": "_render_agent_turn",
-      "args": {
-        "socketio": "<flask_socketio.SocketIO object>",
-        "session_id": "'LgP7kJ2M-hW_2_o1AAAD'",
-        "parsed_response": "ParsedAgentResponse(prose='[07AUG2025_095505AM]', command=ToolCommand(action='respond', parameters={'response': 'The capital of Poland is Warsaw.'}, attachment='[07AUG2025_095505AM]'), is_prose_empty=True)",
-        "is_live": "True"
-      }
-    },
-    {
-      "id": 46,
-      "module": "orchestrator.py",
-      "type": "RETURN",
-      "function": "execute_reasoning_loop",
-      "args": {
-        "socketio": "<flask_socketio.SocketIO object>",
-        "session_data": "ActiveSession(chat=<proxies.HavenProxyWrapper object>, memory=<memory_manager.MemoryManager object>, name='New_Session_07AUG2025_095458AM')",
-        "initial_prompt": "'[07AUG2025_095459AM] What is the capital of Poland?'",
-        "session_id": "'LgP7kJ2M-hW_2_o1AAAD'",
-        "chat_sessions": "{'LgP7kJ2M-hW_2_o1AAAD': ActiveSession(chat=<proxies.HavenProxyWrapper object>, memory=<memory_manager.MemoryManager object>, name='New_Session_07AUG2025_095458AM')}",
-        "haven_proxy": "<AutoProxy[get_haven] object, typeid 'get_haven'>"
-      }
-    },
-    {
-      "id": 47,
-      "module": "events.py",
-      "type": "CALL",
-      "function": "register_events.<locals>.handle_get_trace_log",
-      "args": {}
+      "function": "events.register_events.<locals>.handle_get_trace_log"
     }
   ]
 }

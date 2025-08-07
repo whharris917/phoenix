@@ -1,0 +1,78 @@
+{
+  "module": "phoenix.py",
+  "description": "Requirements for the main application bootstrap file, which initializes and launches the web server and all its components.",
+  "functions": {
+    "general": [
+      {
+        "id": "PHX-GEN-001",
+        "requirement": "The `phoenix.py` module shall function as the definitive execution entry point for the Phoenix application. When invoked as the main script, it shall perform the complete application bootstrap sequence, which must include: (a) instantiating the core Flask and SocketIO server objects, (b) establishing a successful connection to the persistent Haven service, (c) registering all API routes and real-time event handlers, and (d) launching the server to begin listening for network connections."
+      },
+      {
+        "id": "PHX-GEN-002",
+        "requirement": "The module shall call `events.register_events` during its global initialization phase, passing it the initialized SocketIO server and the Haven proxy object."
+      }
+    ],
+    "connect_to_haven": [
+      {
+        "id": "PHX-CTH-001",
+        "requirement": "The function shall attempt to connect to the Haven service at the address and with the authkey specified in the application's configuration."
+      },
+      {
+        "id": "PHX-CTH-002",
+        "requirement": "If a connection attempt fails, the function shall retry up to a maximum of 5 times with an increasing delay between each attempt."
+      },
+      {
+        "id": "PHX-CTH-003",
+        "requirement": "The function shall log a warning message to the console for each failed connection attempt."
+      },
+      {
+        "id": "PHX-CTH-004",
+        "requirement": "Upon a successful connection, the function shall return the Haven proxy object."
+      },
+      {
+        "id": "PHX-CTH-005",
+        "requirement": "If all connection attempts fail, the function shall log a critical error message and return `None`."
+      }
+    ],
+    "server_routes": [
+      {
+        "id": "PHX-RTE-001",
+        "requirement": "The application shall serve the `index.html` file from the root URL (`/`)."
+      },
+      {
+        "id": "PHX-RTE-002",
+        "requirement": "The application shall serve static files (e.g., CSS, JS) from the root directory via the `/<path:filename>` route."
+      },
+      {
+        "id": "PHX-RTE-003",
+        "requirement": "The application shall serve the `audit_visualizer.html` file from the `/audit_visualizer` route."
+      },
+      {
+        "id": "PHX-RTE-004",
+        "requirement": "The application shall serve the `database_viewer.html` file from the `/database_viewer` route."
+      },
+      {
+        "id": "PHX-RTE-005",
+        "requirement": "The application shall serve the `documentation_viewer.html` file from the `/docs` route."
+      },
+      {
+        "id": "PHX-RTE-006",
+        "requirement": "The application shall serve the `workshop.html` file from the `/workshop` route."
+      }
+    ],
+    "main_execution": [
+      {
+        "id": "PHX-EXE-001",
+        "requirement": "When executed as the main script, the application shall check if the Haven proxy was successfully initialized. If not, it shall log a critical error and prevent the server from starting."
+      },
+      {
+        "id": "PHX-EXE-002",
+        "requirement": "If the `DEBUG_MODE` configuration flag is set to `True`, the application shall start and wait for a `debugpy` client to attach before launching the web server."
+      },
+      {
+        "id": "PHX-EXE-003",
+        "requirement": "The application shall launch the SocketIO web server on the port specified in the application's configuration."
+      }
+    ]
+  }
+}

@@ -1,23 +1,51 @@
+"""
+Provides direct database inspection and command-line interface (CLI) tools.
+
+This module serves as a diagnostic and administrative utility for viewing the
+contents of the ChromaDB vector store. It allows developers or advanced users
+to directly query the database to list all collections (sessions) and view the
+detailed memory records within them, bypassing the main application logic.
+
+The functions in this module are primarily used by the 'Database Visualizer'
+web page and the standalone CLI tool.
+"""
 import chromadb
 import os
 import pandas as pd
 import json
 from datetime import datetime
 from tracer import trace
+from typing import Any
 
 from memory_manager import ChromaDBStore
 from config import CHROMA_DB_PATH
 
 @trace
-def get_db_client():
-    """Initializes and returns a ChromaDB client."""
+def get_db_client() -> chromadb.PersistentClient:
+    """
+    Initializes and returns a persistent ChromaDB client.
+
+    Returns:
+        An instance of the ChromaDB PersistentClient.
+
+    Raises:
+        FileNotFoundError: If the ChromaDB directory specified in the config
+                           does not exist.
+    """
     if not os.path.exists(CHROMA_DB_PATH):
         raise FileNotFoundError("ChromaDB directory not found.")
     return chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
 @trace
-def list_collections_as_json():
-    """Lists all collections, finds their last modified time, sorts them, and returns them as a JSON string."""
+def list_collections_as_json() -> str:
+    """
+    Lists all collections, finds their last modified time, sorts them,
+    and returns them as a JSON string.
+
+    Returns:
+        A JSON string representing a dictionary with a 'status' key and either
+        a 'collections' list on success or a 'message' string on error.
+    """
     try:
         client = get_db_client()
         collections = client.list_collections()
@@ -41,8 +69,18 @@ def list_collections_as_json():
         return json.dumps({"status": "error", "message": str(e)})
 
 @trace
-def get_collection_data_as_json(collection_name):
-    """Retrieves all data from a specific collection and returns it as a JSON string."""
+def get_collection_data_as_json(collection_name: str) -> str:
+    """
+    Retrieves all data from a specific collection, formats it for display,
+    and returns it as a JSON string.
+
+    Args:
+        collection_name: The name of the ChromaDB collection to inspect.
+
+    Returns:
+        A JSON string representing a dictionary with a 'status' key and either
+        'collection_name' and 'data' on success, or a 'message' on error.
+    """
     try:
         # REFACTORED: Use ChromaDBStore to fetch and validate all records.
         db_store = ChromaDBStore(collection_name=collection_name)
@@ -53,7 +91,7 @@ def get_collection_data_as_json(collection_name):
 
         formatted_data = []
         for record in all_records:
-            # REFACTORED: Build the frontend dict from the validated MemoryRecord object.
+            # Build the frontend dict from the validated MemoryRecord object.
             try:
                 readable_time = datetime.fromtimestamp(record.timestamp).strftime("%Y-%m-%d %H:%M:%S") if record.timestamp else "N/A"
             except (ValueError, TypeError):
@@ -89,8 +127,11 @@ def get_collection_data_as_json(collection_name):
         )
 
 @trace
-def inspect_database_cli():
-    # This function remains unchanged as it only uses the public JSON-producing functions.
+def inspect_database_cli() -> None:
+    """
+    Provides a command-line interface for interactively inspecting the database.
+    This function is intended for direct execution by a developer for debugging.
+    """
     print("--- ChromaDB Inspector (CLI) ---")
     try:
         collections_json = json.loads(list_collections_as_json())

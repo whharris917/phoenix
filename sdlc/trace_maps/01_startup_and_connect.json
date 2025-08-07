@@ -3,18 +3,65 @@
   "description": "Traces the initial connection of a client, session creation, and disconnection without any prompts.",
   "trace": [
     {
-      "id": 1,
-      "module": "events.py",
-      "type": "RETURN",
-      "function": "register_events.<locals>.handle_reset_tracer",
-      "args": {}
+      "function": "memory_manager.initialize_embedding_function",
+      "return_value": "<chromadb.utils.embedding_functions.DefaultEmbeddingFunction object>"
     },
     {
-      "id": 2,
-      "module": "events.py",
-      "type": "CALL",
-      "function": "register_events.<locals>.handle_get_trace_log",
-      "args": {}
+      "function": "phoenix.configure_servers",
+      "return_value": "(<Flask 'phoenix'>, <flask_socketio.SocketIO object>)"
+    },
+    {
+      "function": "phoenix.initialize_services",
+      "nested_calls": [
+        {
+          "function": "phoenix.connect_to_haven",
+          "return_value": "<AutoProxy[get_haven] object, typeid 'get_haven'>"
+        },
+        {
+          "function": "events.register_events"
+        }
+      ],
+      "return_value": "<AutoProxy[get_haven] object, typeid 'get_haven'>"
+    },
+    {
+      "function": "events.register_events.<locals>.handle_connect",
+      "nested_calls": [
+        {
+          "function": "events._create_new_session",
+          "nested_calls": [
+            {
+              "function": "utils.get_timestamp",
+              "return_value": "'07AUG2025_044631PM'"
+            },
+            {
+              "function": "proxies.HavenProxyWrapper.__init__"
+            },
+            {
+              "function": "memory_manager.MemoryManager.__init__",
+              "nested_calls": [
+                {
+                  "function": "memory_manager.ChromaDBStore.__init__"
+                },
+                {
+                  "function": "memory_manager.ChromaDBStore.__init__"
+                },
+                {
+                  "function": "memory_manager.MemoryManager._repopulate_buffer_from_db",
+                  "nested_calls": [
+                    {
+                      "function": "memory_manager.ChromaDBStore.get_all_records"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "return_value": "ActiveSession(chat=<proxies.HavenProxyWrapper object>, memory=<memory_manager.MemoryManager object>, name='New_Session_07AUG2025_044631PM')"
+        }
+      ]
+    },
+    {
+      "function": "events.register_events.<locals>.handle_get_trace_log"
     }
   ]
 }

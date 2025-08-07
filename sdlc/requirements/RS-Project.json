@@ -1,124 +1,339 @@
 {
   "project": "Phoenix Agent",
-  "document_version": "1.0",
-  "description": "This document contains all functional and qualitative requirements for the Phoenix Agent project.",
+  "document_version": "1.5",
+  "description": "This document contains all functional, architectural, and qualitative requirements for the Phoenix Agent project.",
+  "project_level_requirements": {
+    "description": "High-level requirements that define the overall purpose and architecture of the system, independent of any single module.",
+    "categories": {
+      "General Purpose": [
+        {
+          "id": "SYS-GEN-001",
+          "requirement": "The system shall provide a web-based graphical user interface (GUI) for a human user to interact in real-time with a vertexai.GenerativeModel."
+        },
+        {
+          "id": "SYS-GEN-002",
+          "requirement": "The system shall provide a suite of tools that allow the vertexai.GenerativeModel to perceive and act upon a local file system within a secure, sandboxed environment."
+        }
+      ],
+      "Core Architecture": [
+        {
+          "id": "SYS-ARC-001",
+          "requirement": "The system shall be architected with a strict separation between a stateless web application (phoenix.py) and a stateful, persistent service (haven.py) that holds the GenerativeModel object and live chat histories in memory."
+        }
+      ],
+      "Session Management": [
+        {
+          "id": "SYS-SES-001",
+          "requirement": "The system shall provide session management capabilities, accessible via both the GUI and agent tool commands, that allow a user to save, load, and delete chat sessions."
+        }
+      ],
+      "Memory and Data": [
+        {
+          "id": "SYS-MEM-001",
+          "requirement": "The system shall utilize a ChromaDB vector database for the persistent storage of all conversational history for saved sessions."
+        },
+        {
+          "id": "SYS-MEM-002",
+          "requirement": "The system shall implement a Retrieval-Augmented Generation (RAG) pattern, where the ChromaDB is queried for relevant context to augment user prompts before they are sent to the generative model."
+        }
+      ]
+    }
+  },
+  "qualitative_requirements": {
+    "description": "General requirements related to code style, legibility, and documentation that apply project-wide and are typically verified by an Auditor Agent.",
+    "categories": {
+      "Code Style and Legibility": [
+        {
+          "id": "QLT-SCL-001",
+          "requirement": "Code shall minimize redundancy. Logically similar or duplicated blocks of code must be refactored into reusable functions, methods, or classes to adhere to the Don't Repeat Yourself (DRY) principle."
+        },
+        {
+          "id": "QLT-SCL-002",
+          "requirement": "Code shall be written to maximize legibility for an AI agent. This includes using clear and descriptive variable and function names, keeping functions concise and focused on a single responsibility, and preferring simple, linear control flows over complex nested logic."
+        },
+        {
+          "id": "QLT-SCL-003",
+          "requirement": "Code shall prioritize a declarative style over an imperative one where appropriate. System behavior should be driven by data structures and configuration (e.g., using a dictionary as a dispatch table like TOOL_REGISTRY) rather than complex, hardcoded conditional logic (e.g., long if/elif/else chains)."
+        }
+      ],
+      "Documentation and Typing": [
+        {
+          "id": "QLT-DOC-001",
+          "requirement": "All public functions, methods, and classes shall contain comprehensive docstrings that clearly explain their purpose, arguments, and return values."
+        },
+        {
+          "id": "QLT-DOC-002",
+          "requirement": "All function and method signatures shall include complete type hinting for all arguments and return values to ensure clarity of data types and contracts between components."
+        }
+      ]
+    }
+  },
   "modules": {
-    "response_parser.py": {
-      "description": "Requirements for the module that parses raw LLM output into structured data.",
+    "phoenix.py": {
+      "description": "Requirements for the main application bootstrap file, which initializes and launches the web server and all its components.",
       "functions": {
-        "parse_agent_response": [
+        "general": [
           {
-            "id": "RSP-PAR-001",
-            "requirement": "Shall correctly parse a model's response string into a ParsedAgentResponse object, separating the natural language prose from the JSON command."
+            "id": "PHX-GEN-001",
+            "requirement": "The `phoenix.py` module shall function as the definitive execution entry point for the Phoenix application. When invoked as the main script, it shall perform the complete application bootstrap sequence, which must include: (a) instantiating the core Flask and SocketIO server objects, (b) establishing a successful connection to the persistent Haven service, (c) registering all API routes and real-time event handlers, and (d) launching the server to begin listening for network connections."
           },
           {
-            "id": "RSP-PAR-002",
-            "requirement": "Shall successfully extract a JSON command that is enclosed in ```json markdown fences."
-          },
-          {
-            "id": "RSP-PAR-003",
-            "requirement": "When no markdown fences are present, it shall fall back to a brace-counting mechanism to find and extract a valid JSON object."
-          },
-          {
-            "id": "RSP-PAR-004",
-            "requirement": "If the extracted JSON is malformed, it shall attempt to repair it using the _repair_json helper function."
-          },
-          {
-            "id": "RSP-PAR-005",
-            "requirement": "If no valid JSON command can be found or repaired, the entire input string shall be treated as prose, and no command shall be returned."
+            "id": "PHX-GEN-002",
+            "requirement": "The module shall call `events.register_events` during its global initialization phase, passing it the initialized SocketIO server and the Haven proxy object."
           }
         ],
-        "_handle_payloads": [
+        "connect_to_haven": [
           {
-            "id": "RSP-HPL-001",
-            "requirement": "Shall identify payload placeholders (e.g., `@@content`) within a command's parameters."
+            "id": "PHX-CTH-001",
+            "requirement": "The function shall attempt to connect to the Haven service at the address and with the authkey specified in the application's configuration."
           },
           {
-            "id": "RSP-HPL-002",
-            "requirement": "Shall replace the identified placeholders with the corresponding content defined in `START @@... END @@...` blocks found in the prose."
+            "id": "PHX-CTH-002",
+            "requirement": "If a connection attempt fails, the function shall retry up to a maximum of 5 times with an increasing delay between each attempt."
           },
           {
-            "id": "RSP-HPL-003",
-            "requirement": "Shall remove the `START @@... END @@...` blocks from the prose after successfully processing them."
+            "id": "PHX-CTH-003",
+            "requirement": "The function shall log a warning message to the console for each failed connection attempt."
+          },
+          {
+            "id": "PHX-CTH-004",
+            "requirement": "Upon a successful connection, the function shall return the Haven proxy object."
+          },
+          {
+            "id": "PHX-CTH-005",
+            "requirement": "If all connection attempts fail, the function shall log a critical error message and return `None`."
           }
         ],
-        "_repair_json": [
+        "server_routes": [
           {
-            "id": "RSP-RPJ-001",
-            "requirement": "Shall fix common JSON errors, including unescaped newline characters and unescaped double quotes within string values."
-          }
-        ],
-        "is_prose_effectively_empty": [
-          {
-            "id": "RSP-IPE-001",
-            "requirement": "Shall return `True` for `None`, an empty string, or a string containing only a timestamp and whitespace."
+            "id": "PHX-RTE-001",
+            "requirement": "The application shall serve the `index.html` file from the root URL (`/`)."
           },
           {
-            "id": "RSP-IPE-002",
-            "requirement": "Shall return `False` for any string containing other meaningful characters, even if a timestamp is present."
+            "id": "PHX-RTE-002",
+            "requirement": "The application shall serve static files (e.g., CSS, JS) from the root directory via the `/<path:filename>` route."
+          },
+          {
+            "id": "PHX-RTE-003",
+            "requirement": "The application shall serve the `audit_visualizer.html` file from the `/audit_visualizer` route."
+          },
+          {
+            "id": "PHX-RTE-004",
+            "requirement": "The application shall serve the `database_viewer.html` file from the `/database_viewer` route."
+          },
+          {
+            "id": "PHX-RTE-005",
+            "requirement": "The application shall serve the `documentation_viewer.html` file from the `/docs` route."
+          },
+          {
+            "id": "PHX-RTE-006",
+            "requirement": "The application shall serve the `workshop.html` file from the `/workshop` route."
+          }
+        ],
+        "main_execution": [
+          {
+            "id": "PHX-EXE-001",
+            "requirement": "When executed as the main script, the application shall check if the Haven proxy was successfully initialized. If not, it shall log a critical error and prevent the server from starting."
+          },
+          {
+            "id": "PHX-EXE-002",
+            "requirement": "If the `DEBUG_MODE` configuration flag is set to `True`, the application shall start and wait for a `debugpy` client to attach before launching the web server."
+          },
+          {
+            "id": "PHX-EXE-003",
+            "requirement": "The application shall launch the SocketIO web server on the port specified in the application's configuration."
           }
         ]
       }
     },
     "haven.py": {
-      "description": "Requirements for the persistent, stateful service that manages AI model chat sessions.",
+      "description": "Requirements for the persistent, stateful service that manages AI model chat sessions and holds the generative model in memory.",
       "functions": {
+        "general": [
+          {
+            "id": "HAV-GEN-001",
+            "requirement": "The `haven.py` module shall run as a separate, persistent Python process, independent of the main web application."
+          },
+          {
+            "id": "HAV-GEN-002",
+            "requirement": "On startup, the module shall initialize the Vertex AI `GenerativeModel` using configurations from `config.py` and definition files."
+          },
+          {
+            "id": "HAV-GEN-003",
+            "requirement": "The module shall log a critical error and exit if the `GenerativeModel` fails to initialize."
+          }
+        ],
         "load_system_prompt": [
           {
             "id": "HAV-LSP-001",
-            "requirement": "Shall load and return the content of the 'system_prompt.txt' file."
+            "requirement": "The function shall load and return the content of the 'system_prompt.txt' file."
           },
           {
             "id": "HAV-LSP-002",
-            "requirement": "Shall return a default error message if the 'system_prompt.txt' file is not found."
+            "requirement": "The function shall return a default error message if the 'system_prompt.txt' file is not found."
           }
         ],
         "Haven.get_or_create_session": [
           {
             "id": "HAV-GCS-001",
-            "requirement": "Shall create a new in-memory session history if the provided session_name does not exist."
+            "requirement": "The method shall create a new in-memory session history if the provided session_name does not exist."
           },
           {
             "id": "HAV-GCS-002",
-            "requirement": "Shall use an existing in-memory session history if the provided session_name already exists."
+            "requirement": "The method shall use an existing in-memory session history if the provided session_name already exists, without overwriting it."
           }
         ],
         "Haven.send_message": [
           {
             "id": "HAV-SND-001",
-            "requirement": "Shall append the user's prompt to the correct session history."
+            "requirement": "The method shall append the user's prompt as a `Content` object to the correct session history."
           },
           {
             "id": "HAV-SND-002",
-            "requirement": "Shall call the generative model with the complete, updated session history."
+            "requirement": "The method shall call the generative model with the complete, updated session history."
           },
           {
             "id": "HAV-SND-003",
-            "requirement": "Shall append the model's response to the session history to maintain state."
+            "requirement": "The method shall append the model's response as a `Content` object to the session history to maintain state."
           },
           {
             "id": "HAV-SND-004",
-            "requirement": "Shall return a dictionary containing the status and the model's response text."
+            "requirement": "The method shall return a dictionary containing the status and the model's new response text."
+          },
+          {
+            "id": "HAV-SND-005",
+            "requirement": "The method shall return an error dictionary if the specified session does not exist."
           }
         ],
         "Haven.delete_session": [
           {
             "id": "HAV-DEL-001",
-            "requirement": "Shall remove the specified session history from its in-memory dictionary."
+            "requirement": "The method shall remove the specified session history from its in-memory dictionary."
+          }
+        ],
+        "start_haven": [
+          {
+            "id": "HAV-STH-001",
+            "requirement": "The function shall register the `Haven` class with a `BaseManager` to allow remote access."
+          },
+          {
+            "id": "HAV-STH-002",
+            "requirement": "The function shall start the manager's server to listen indefinitely for connections on the configured port and authkey."
           }
         ]
       }
-    }
-  },
-  "qualitative_requirements": {
-    "description": "General requirements related to code style, legibility, and architecture that apply project-wide.",
-    "categories": {
-      "Style and Code Legibility": [
-        {
-          "id": "QLT-SCL-001",
-          "requirement": "All code will be written in a way that minimizes redundancy, maximizes agent legibility, avoids circular imports, and prioritizes declarative code."
-        }
-      ]
+    },
+    "events.py": {
+      "description": "Requirements for the module that serves as the exclusive real-time communication bridge between the client UI and the backend application logic. It defines the API surface that a user can interact with.",
+      "functions": {
+        "general": [
+          {
+            "id": "EVT-GEN-001",
+            "requirement": "The `events.py` module shall define all SocketIO event handlers and act as the sole interface for real-time client-server communication, creating a clear architectural boundary between the user interface and the core application."
+          }
+        ],
+        "handle_connect": [
+          {
+            "id": "EVT-CON-001",
+            "requirement": "Upon a new client connection, the handler shall create a new, unique user session by calling `_create_new_session`."
+          },
+          {
+            "id": "EVT-CON-002",
+            "requirement": "The handler shall store the newly created `ActiveSession` object in the module-level `chat_sessions` dictionary, keyed by the client's session ID."
+          },
+          {
+            "id": "EVT-CON-003",
+            "requirement": "The handler shall emit `session_name_update` and `session_config_update` events to the client to provide initial state."
+          }
+        ],
+        "handle_disconnect": [
+          {
+            "id": "EVT-DIS-001",
+            "requirement": "Upon client disconnection, the handler shall remove the corresponding session data from the `chat_sessions` dictionary to prevent memory leaks."
+          }
+        ],
+        "handle_start_task": [
+          {
+            "id": "EVT-STT-001",
+            "requirement": "The handler shall receive a prompt from the user and initiate the main agent workflow by starting `orchestrator.execute_reasoning_loop` as a background task."
+          }
+        ],
+        "handle_user_confirmation": [
+          {
+            "id": "EVT-UNC-001",
+            "requirement": "The handler shall receive a 'yes' or 'no' response from the client and signal the corresponding `Event` object in the `orchestrator.confirmation_events` dictionary to resume a paused reasoning loop."
+          }
+        ],
+        "replay_history_for_client": [
+          {
+            "id": "EVT-RHF-001",
+            "requirement": "The function shall correctly parse a list of historical chat turns and emit a sequence of `log_message` and `tool_log` events to reconstruct the conversation history on the client UI."
+          }
+        ],
+        "testing_and_diagnostics": [
+          {
+            "id": "EVT-TAD-001",
+            "requirement": "The module shall provide a `reset_tracer` event handler that calls `global_tracer.reset()` to support the dynamic trace map generation process."
+          },
+          {
+            "id": "EVT-TAD-002",
+            "requirement": "The module shall provide a `get_trace_log` event handler that retrieves the current trace from the `global_tracer` and emits it back to the requesting client."
+          }
+        ]
+      }
+    },
+    "proxies.py": {
+      "description": "Requirements for the module that provides a client-side abstraction for interacting with the remote Haven service. It ensures safe, session-aware communication between the main application and the Haven.",
+      "functions": {
+        "general": [
+          {
+            "id": "PRX-GEN-001",
+            "requirement": "The `HavenProxyWrapper` class shall encapsulate a direct reference to the main Haven service proxy and a specific session name, abstracting away the need for the caller to manage session context."
+          }
+        ],
+        "HavenProxyWrapper.__init__": [
+          {
+            "id": "PRX-INI-001",
+            "requirement": "The constructor shall accept and store a Haven service proxy object and a session name string."
+          }
+        ],
+        "HavenProxyWrapper.send_message": [
+          {
+            "id": "PRX-SND-001",
+            "requirement": "The method shall call the `send_message` method on the remote Haven service, passing along both the stored session name and the user's prompt."
+          },
+          {
+            "id": "PRX-SND-002",
+            "requirement": "Upon a successful remote call, the method shall return a mock response object that exposes a `.text` attribute, mimicking the behavior of a local `GenerativeModel` response."
+          },
+          {
+            "id": "PRX-SND-003",
+            "requirement": "If the remote call returns a status of 'error', the method shall raise a `RuntimeError` containing the specific error message from the Haven service."
+          }
+        ]
+      }
+    },
+    "orchestrator.py": {
+      "description": "Requirements for the core cognitive engine of the agent, responsible for the primary reasoning and task execution loop.",
+      "functions": {
+        "general": [
+          {
+            "id": "ORC-GEN-001",
+            "requirement": "The orchestrator shall function as the central cognitive engine of the agent, responsible for executing a stateful, iterative reasoning loop. Upon receiving an initial prompt, it must manage a cycle of (a) augmenting the prompt with context from the memory manager, (b) calling the generative model via the Haven proxy, (c) parsing the model's response into prose and a structured command, (d) executing the command via the tool agent, and (e) using the tool's result as the input for the subsequent iteration, until a terminal command is issued or a safety limit is reached."
+          }
+        ]
+      }
+    },
+    "tool_agent.py": {
+      "description": "Requirements for the agent's action execution module, which provides a secure interface for the agent to interact with the local system.",
+      "functions": {
+        "general": [
+          {
+            "id": "TLA-GEN-001",
+            "requirement": "The tool agent shall function as the exclusive and secure execution layer for all actions performed by the agent. It must provide a single entry point that accepts a `ToolCommand` object and dispatches it to the appropriate handler function based on the command's `action` name. All file system operations must be strictly confined to a sandboxed directory, and every tool execution, regardless of success or failure, must return a standardized `ToolResult` object."
+          }
+        ]
+      }
     }
   }
 }

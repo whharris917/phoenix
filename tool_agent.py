@@ -1,3 +1,16 @@
+"""
+Provides the secure action execution layer for the AI agent.
+
+This module acts as the "hands" of the agent, providing the exclusive and
+secure interface through which the agent can interact with the local system.
+It is designed around a declarative, strategy-based pattern: the orchestrator
+issues a command, and this module dispatches it to the appropriate handler
+via the TOOL_REGISTRY.
+
+All file system operations are strictly confined to a sandboxed directory to
+ensure safety. Every tool execution returns a standardized ToolResult object,
+providing a consistent data contract for the orchestrator.
+"""
 import os
 import io
 import logging
@@ -20,6 +33,7 @@ from tracer import trace
 # A data class to neatly pass context-dependent objects to tool handlers.
 @dataclass
 class ToolContext:
+    """A container for passing stateful objects to tool handlers."""
     socketio: Any
     session_id: str
     chat_sessions: dict[str, ActiveSession]
@@ -177,7 +191,8 @@ def _handle_list_allowed_project_files(params: dict, context: ToolContext) -> To
 @trace
 def _handle_list_directory(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'list_directory' action."""
-    sandbox_dir = os.path.dirname(get_safe_path(""))
+    # The path should be the sandbox directory itself.
+    sandbox_dir = get_safe_path("")
     return tpool.execute(_list_directory, sandbox_dir)
 
 @trace
@@ -342,8 +357,8 @@ def _handle_delete_session(params: dict, context: ToolContext) -> ToolResult:
         return ToolResult(status="error", message=f"Could not delete session: {e}")
 
 # --- Tool Registry (Strategy Pattern) ---
-
-# A dictionary mapping action names to their handler functions.
+# A dictionary mapping action names to their handler functions. This is the core
+# of the declarative, strategy-based design of the tool agent.
 TOOL_REGISTRY: Dict[str, Callable[[Dict, ToolContext], ToolResult]] = {
     "create_file": _handle_create_file,
     "read_file": _handle_read_file,

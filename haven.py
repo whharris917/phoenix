@@ -2,21 +2,27 @@
 The Haven: A persistent, stateful service for managing AI model chat sessions.
 
 This script runs as a separate, dedicated process. Its sole purpose is to hold the
-expensive GenerativeModel object and the long chat histories in memory, safe
-from the restarts and stateless nature of the main web application. The main app
-connects to this service to send prompts and receive responses.
+expensive GenerativeModel object and all live chat histories in memory, safe
+from the restarts and stateless nature of the main web application.
+
+The core state is managed in the module-level 'live_chat_sessions' dictionary.
+The main app connects to this service to send prompts and receive responses.
 """
 from multiprocessing.managers import BaseManager
 import logging
 import os
-from typing import Any, List
+from typing import Any, List, Optional
 import vertexai
 from vertexai.generative_models import GenerativeModel, Content, Part
 from config import PROJECT_ID, LOCATION, SAFETY_SETTINGS
-from tracer import trace
+from tracer import trace, global_tracer
 
-# --- Setup Logging ---
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - Haven - %(levelname)s - %(message)s")
+@trace
+def configure_logging() -> None:
+    """
+    Configures the global logging settings for the Haven service.
+    """
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - Haven - %(levelname)s - %(message)s")
 
 @trace
 def load_system_prompt() -> str:
@@ -38,21 +44,32 @@ def load_model_definition() -> str:
     except FileNotFoundError:
         return "gemini-1.5-pro-001"
 
-# --- Global Model Initialization ---
-# This block configures the connection to Google's Vertex AI and loads the
-# generative model. It runs only once when the Haven service starts.
-try:
-    vertexai.init(project=PROJECT_ID, location=LOCATION)
-    model = GenerativeModel(
-        model_name=load_model_definition(),
-        system_instruction=[load_system_prompt()],
-        safety_settings=SAFETY_SETTINGS,
-    )
-    logging.info(f"Haven: Vertex AI configured successfully for project '{PROJECT_ID}'.")
-except Exception as e:
-    logging.critical(f"Haven: FATAL: Failed to configure Vertex AI. Error: {e}")
-    # We exit if the model fails to load, as the Haven is useless without it.
-    exit(1)
+@trace
+def initialize_model() -> Optional[GenerativeModel]:
+    """
+    Initializes the connection to Vertex AI and loads the generative model.
+
+    This is a critical, one-time setup step for the Haven service.
+
+    Returns:
+        The initialized GenerativeModel object on success, otherwise None.
+    """
+    try:
+        vertexai.init(project=PROJECT_ID, location=LOCATION)
+        model = GenerativeModel(
+            model_name=load_model_definition(),
+            system_instruction=[load_system_prompt()],
+            safety_settings=SAFETY_SETTINGS,
+        )
+        logging.info(f"Haven: Vertex AI configured successfully for project '{PROJECT_ID}'.")
+        return model
+    except Exception as e:
+        logging.critical(f"Haven: FATAL: Failed to configure Vertex AI. Error: {e}")
+        return None
+
+# --- Bootstrap Sequence ---
+configure_logging()
+model = initialize_model()
 
 # This dictionary is the core state managed by Haven. It holds the complete,
 # ordered list of Content objects (user and model turns) for each session.
@@ -154,6 +171,11 @@ class Haven:
         """Checks if a session exists in the Haven."""
         return session_name in live_chat_sessions
 
+    @trace
+    def get_trace_log(self):
+        """Returns the trace log from this Haven process."""
+        return global_tracer.get_trace()
+
 
 # --- Manager Setup ---
 class HavenManager(BaseManager):
@@ -173,5 +195,8 @@ def start_haven() -> None:
     server.serve_forever()
 
 if __name__ == "__main__":
-    logging.info("Initializing Haven...")
-    start_haven()
+    if not model:
+        logging.critical("Haven startup failed: GenerativeModel could not be initialized.")
+    else:
+        logging.info("Initializing Haven...")
+        start_haven()

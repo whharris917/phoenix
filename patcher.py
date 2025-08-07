@@ -1,17 +1,38 @@
+"""
+Provides a robust utility for applying agent-generated diff patches.
+
+This module is designed to handle the complexities and common failure modes of
+applying '.diff' files created by a generative model. Its primary function,
+`apply_patch`, is a resilient wrapper that performs several crucial steps:
+1. Normalizes text to prevent issues with line endings and special characters.
+2. Intelligently corrects incorrect line numbers in hunk headers, which is a
+   frequent error in agent-generated patches.
+3. Applies the patch in a safe, temporary file system to prevent corrupting
+   the original source files on failure.
+4. Provides detailed error messages if a patch cannot be applied.
+"""
 import patch
 import os
 import tempfile
 import shutil
 import logging
 import re
+from typing import Tuple, Optional
 
-
-def _normalize_text(text):
+def _normalize_text(text: Optional[str]) -> str:
     """
-    Normalizes text to prevent common patch failures:
-    1. Replaces non-breaking spaces with regular spaces.
-    2. Normalizes all line endings (CRLF, CR) to a single LF.
-    3. Ensures the text ends with exactly one newline character.
+    Normalizes text to prevent common patch failures.
+
+    This function standardizes text by:
+    1. Replacing non-breaking spaces with regular spaces.
+    2. Normalizing all line endings (CRLF, CR) to a single LF.
+    3. Ensuring the text ends with exactly one newline character.
+
+    Args:
+        text: The input string to normalize, or None.
+
+    Returns:
+        The normalized string. Returns an empty string if the input is None or empty.
     """
     if not text:
         # An empty file is represented by an empty string.
@@ -25,7 +46,7 @@ def _normalize_text(text):
     return text
 
 
-def _correct_hunk_line_numbers(diff_content, original_content):
+def _correct_hunk_line_numbers(diff_content: str, original_content: str) -> str:
     """
     Scans a diff and corrects both the start line and line counts in hunk headers.
 
@@ -61,13 +82,9 @@ def _correct_hunk_line_numbers(diff_content, original_content):
             continue
 
         original_start_from_hunk = int(hunk_header_match.group(1))
-
-        hunk_body_lines = []
-        hunk_search_pattern = []
+        hunk_body_lines, hunk_search_pattern = [], []
+        source_line_count, target_line_count = 0, 0
         hunk_body_idx = line_idx + 1
-
-        source_line_count = 0
-        target_line_count = 0
 
         while hunk_body_idx < len(diff_lines) and not diff_lines[hunk_body_idx].startswith("@@ "):
             hunk_line = diff_lines[hunk_body_idx]
@@ -123,10 +140,21 @@ def _correct_hunk_line_numbers(diff_content, original_content):
     return "".join(corrected_diff_lines)
 
 
-def apply_patch(diff_content, original_content, original_filename):
+def apply_patch(diff_content: str, original_content: str, original_filename: str) -> Tuple[Optional[str], Optional[str]]:
     """
     Applies a diff by creating a temporary file structure. It normalizes
     text and robustly corrects hunk headers before applying the patch.
+
+    Args:
+        diff_content: The string content of the .diff file.
+        original_content: The string content of the original source file.
+        original_filename: The name of the original file, used for creating
+                           the temporary file structure.
+
+    Returns:
+        A tuple containing (new_content, error_message). On success, new_content
+        is the patched string and error_message is None. On failure, new_content
+        is None and error_message is a descriptive string.
     """
     # Create a unique temporary directory within the sandbox
     temp_dir = tempfile.mkdtemp(dir="./.sandbox")
@@ -170,7 +198,6 @@ def apply_patch(diff_content, original_content, original_filename):
                 return new_content.rstrip("\n"), None
             return new_content, None
         else:
-            # --- Provide a much more detailed error message ---
             error_details = "Patch set could not be applied. This is often due to a mismatch between the file content and the patch."
             if hasattr(patch_set, "rejections") and patch_set.rejections:
                 rejected_hunks = []

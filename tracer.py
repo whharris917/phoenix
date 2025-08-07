@@ -8,46 +8,85 @@ def _sanitize_repr(value):
     Cleans the string representation of an object by removing memory addresses
     and other volatile information.
     """
-    # Get the initial representation
     rep = repr(value)
-    # Remove memory addresses (e.g., ' at 0x...')
     rep = re.sub(r'\s+at\s+0x[0-9a-fA-F]+', '', rep)
     return rep
 
+def _clean_trace_log(log):
+    """
+    Recursively removes entries with empty 'nested_calls' lists from a trace log.
+    """
+    if isinstance(log, list):
+        # Process a list of calls
+        new_log = []
+        for entry in log:
+            cleaned_entry = _clean_trace_log(entry)
+            if cleaned_entry: # Only append if it's not empty after cleaning
+                new_log.append(cleaned_entry)
+        return new_log
+    elif isinstance(log, dict):
+        # Process a single call entry
+        if "nested_calls" in log:
+            # Recursively clean the nested calls
+            log["nested_calls"] = _clean_trace_log(log["nested_calls"])
+            # If the list is now empty, remove the key
+            if not log["nested_calls"]:
+                del log["nested_calls"]
+        return log
+    return log
+
+
 class Tracer:
     """
-    A simple tracer to log the execution flow of decorated functions.
+    A tracer that logs the execution flow of decorated functions into a
+    hierarchical, nested structure that mirrors the call stack.
     """
     def __init__(self):
         self.reset()
 
     def reset(self):
-        """Clears the current trace log."""
-        self.log = []
-        self.call_id = 0
+        """Clears the current trace log and resets the call stack."""
+        self.trace_log = []
+        self.call_stack = [] # A stack to keep track of the current execution depth
 
-    def add_record(self, record_type, module, func_name, bound_args, return_value=None):
-        """Adds a record to the trace log."""
-        self.call_id += 1
-        
-        # Sanitize args and kwargs to be clean and JSON serializable
-        sanitized_args = {name: _sanitize_repr(val) for name, val in bound_args.items()}
-        
-        record = {
-            "id": self.call_id,
-            "module": module,
-            "type": record_type,
-            "function": func_name,
-            "args": sanitized_args,
+    def start_trace(self, module, func_name):
+        """Starts a new trace for a function call."""
+        trace_entry = {
+            "function": f"{module}.{func_name}",
+            "nested_calls": []
         }
-        if return_value:
-            record["return_value"] = _sanitize_repr(return_value)
-            
-        self.log.append(record)
+
+        if self.call_stack:
+            parent_entry = self.call_stack[-1]
+            parent_entry["nested_calls"].append(trace_entry)
+        else:
+            self.trace_log.append(trace_entry)
+        
+        self.call_stack.append(trace_entry)
+
+    def end_trace(self, return_value, is_exception=False):
+        """Ends the trace for the current function, adding its return value."""
+        if not self.call_stack:
+            return
+
+        last_entry = self.call_stack.pop()
+        
+        if "nested_calls" in last_entry and not last_entry["nested_calls"]:
+            del last_entry["nested_calls"]
+
+        if is_exception:
+            last_entry["exception"] = _sanitize_repr(return_value)
+        elif return_value is not None:
+            is_empty_container = isinstance(return_value, (list, dict, tuple, str)) and not return_value
+            if not is_empty_container:
+                last_entry["return_value"] = _sanitize_repr(return_value)
 
     def get_trace(self):
-        """Returns the current trace log."""
-        return self.log
+        """
+        Returns the completed trace log after performing a final cleanup pass
+        to remove empty 'nested_calls' lists.
+        """
+        return _clean_trace_log(self.trace_log)
 
 # Global instance of the tracer
 global_tracer = Tracer()
@@ -55,54 +94,43 @@ global_tracer = Tracer()
 def log_event(event_name: str, details: dict):
     """
     Manually logs a custom event to the global tracer.
-    This is used for tracing things other than function calls.
     """
-    # Get the module where this function was called from
     caller_frame = inspect.stack()[1]
-    module_name = os.path.basename(caller_frame.filename)
+    # Remove the '.py' extension from the module name.
+    module_name = os.path.basename(caller_frame.filename).replace(".py", "")
     
-    # The 'function' will be the custom event name.
-    global_tracer.add_record(
-        record_type='EVENT',
-        module=module_name,
-        func_name=event_name,
-        bound_args=details
-    )
+    event_entry = {
+        "type": "EVENT",
+        "event_name": f"{module_name}.{event_name}"
+    }
 
+    if global_tracer.call_stack:
+        global_tracer.call_stack[-1]["nested_calls"].append(event_entry)
+    else:
+        global_tracer.trace_log.append(event_entry)
 
 def trace(func):
     """
     A decorator that logs the entry and exit of a function call
-    to the global_tracer, including named arguments and module info.
+    to the global_tracer in a nested format.
     """
-    # --- Refinement 4: Exclude the tracer's own functions ---
     if func.__module__ == 'tracer':
         return func
-
-    func_sig = inspect.signature(func)
     
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         func_name = func.__qualname__
-        module_name = os.path.basename(inspect.getfile(func))
-
-        # --- Refinement 3: Bind args and kwargs to their names ---
-        bound_args = func_sig.bind(*args, **kwargs).arguments
+        # Remove the '.py' extension from the module name.
+        module_name = os.path.basename(inspect.getfile(func)).replace(".py", "")
         
-        # Log the function entry
-        global_tracer.add_record('CALL', module_name, func_name, bound_args)
+        global_tracer.start_trace(module_name, func_name)
         
         try:
-            # Execute the actual function
             result = func(*args, **kwargs)
-            
-            # Log the function exit
-            global_tracer.add_record('RETURN', module_name, func_name, bound_args, return_value=result)
-            
+            global_tracer.end_trace(result)
             return result
         except Exception as e:
-            # Log any exceptions that occur
-            global_tracer.add_record('EXCEPTION', module_name, func_name, bound_args, return_value=e)
-            raise # Re-raise the exception
+            global_tracer.end_trace(e, is_exception=True)
+            raise
             
     return wrapper

@@ -13,17 +13,23 @@ from flask_socketio import SocketIO
 from flask_cors import CORS
 from multiprocessing.managers import BaseManager
 import debugpy
-from typing import Optional
+from typing import Optional, Tuple
 
 from config import DEBUG_MODE, SERVER_PORT, HAVEN_ADDRESS, HAVEN_AUTH_KEY
 import events
 from tracer import trace
 
-# --- CONFIGURATION ---
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-app = Flask(__name__)
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+@trace
+def configure_servers() -> Tuple[Flask, SocketIO]:
+    """
+    Initializes and configures the Flask and SocketIO servers and returns them
+    for assignment at the module level for global accessibility.
+    """
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    app = Flask(__name__)
+    CORS(app)
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+    return app, socketio
 
 @trace
 def connect_to_haven() -> Optional[BaseManager]:
@@ -57,10 +63,29 @@ def connect_to_haven() -> Optional[BaseManager]:
     logging.critical("FATAL: Could not connect to Haven. The application cannot function without it.")
     return None
 
-# --- GLOBAL INITIALIZATION ---
-haven_proxy = connect_to_haven()
-# Register all event handlers from the events module.
-events.register_events(socketio, haven_proxy)
+@trace
+def initialize_services(socketio: SocketIO) -> Optional[BaseManager]:
+    """
+    Connects to the Haven service and registers all event handlers.
+
+    This function performs the critical initialization steps that bridge the
+    web server with the backend services.
+
+    Args:
+        socketio: The initialized SocketIO server instance.
+
+    Returns:
+        The Haven proxy object if the connection was successful, otherwise None.
+    """
+    haven_proxy = connect_to_haven()
+    if haven_proxy:
+        events.register_events(socketio, haven_proxy)
+    return haven_proxy
+
+
+# --- Bootstrap Sequence ---
+app, socketio = configure_servers()
+haven_proxy = initialize_services(socketio)
 
 
 # --- SERVER ROUTES ---
