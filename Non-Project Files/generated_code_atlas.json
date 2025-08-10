@@ -1,0 +1,441 @@
+{
+  "modules": [
+    {
+      "name": "orchestrator",
+      "file_path": "orchestrator.py",
+      "functions": {
+        "_emit_agent_message": {
+          "calls": [
+            "socketio.emit",
+            "content.strip"
+          ],
+          "creates": [
+            "str"
+          ],
+          "returns": "None",
+          "line_number": 30
+        },
+        "_process_model_response": {
+          "calls": [
+            "ToolCommand",
+            "parse_agent_response",
+            "_handle_payloads"
+          ],
+          "creates": [],
+          "returns": "ParsedAgentResponse",
+          "line_number": 47
+        },
+        "_render_agent_turn": {
+          "calls": [
+            "command.parameters.get",
+            "_emit_agent_message",
+            "len",
+            "socketio.emit",
+            "is_prose_effectively_empty"
+          ],
+          "creates": [],
+          "returns": "None",
+          "line_number": 88
+        },
+        "execute_reasoning_loop": {
+          "calls": [
+            "logging.warning",
+            "logging.exception",
+            "Event",
+            "tool_result.model_dump_json",
+            "confirmation_events.pop",
+            "logging.info",
+            "uuid.uuid4",
+            "str",
+            "socketio.sleep",
+            "get_timestamp",
+            "json.dumps",
+            "execute_tool_command",
+            "_render_agent_turn",
+            "memory.add_turn",
+            "_process_model_response",
+            "socketio.emit",
+            "range",
+            "memory.prepare_augmented_prompt",
+            "tpool.execute",
+            "re.match",
+            "confirmation_event.wait"
+          ],
+          "creates": [
+            "uuid.uuid4",
+            "str"
+          ],
+          "returns": "None",
+          "line_number": 137
+        }
+      },
+      "classes": {},
+      "imports": [
+        "tracer.trace",
+        "response_parser._handle_payloads",
+        "session_models.ActiveSession",
+        "response_parser.is_prose_effectively_empty",
+        "eventlet.event.Event",
+        "eventlet.tpool",
+        "utils.get_timestamp",
+        "re",
+        "config.NOMINAL_MAX_ITERATIONS_REASONING_LOOP",
+        "tool_agent.execute_tool_command",
+        "logging",
+        "data_models.ParsedAgentResponse",
+        "response_parser.parse_agent_response",
+        "uuid",
+        "json",
+        "config.ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP",
+        "data_models.ToolCommand"
+      ],
+      "module_variables": []
+    },
+    {
+      "name": "tool_agent",
+      "file_path": "tool_agent.py",
+      "functions": {
+        "_execute_script": {
+          "calls": [
+            "io.StringIO",
+            "exec",
+            "ToolResult",
+            "str",
+            "string_io.getvalue",
+            "redirect_stdout"
+          ],
+          "creates": [
+            "str"
+          ],
+          "returns": "ToolResult",
+          "line_number": 45
+        },
+        "_write_file": {
+          "calls": [
+            "ToolResult",
+            "os.path.basename",
+            "str",
+            "open",
+            "os.path.dirname",
+            "os.makedirs",
+            "f.write"
+          ],
+          "creates": [
+            "str"
+          ],
+          "returns": "ToolResult",
+          "line_number": 64
+        },
+        "_read_file": {
+          "calls": [
+            "os.path.basename",
+            "ToolResult",
+            "str",
+            "os.path.exists",
+            "open",
+            "f.read"
+          ],
+          "creates": [
+            "str"
+          ],
+          "returns": "ToolResult",
+          "line_number": 75
+        },
+        "_delete_file": {
+          "calls": [
+            "os.path.basename",
+            "str",
+            "ToolResult",
+            "os.path.exists",
+            "os.remove"
+          ],
+          "creates": [
+            "str"
+          ],
+          "returns": "ToolResult",
+          "line_number": 87
+        },
+        "_list_directory": {
+          "calls": [
+            "ToolResult",
+            "str",
+            "os.walk",
+            "os.path.join",
+            "os.path.relpath",
+            "file_list.append",
+            "relative_path.replace"
+          ],
+          "creates": [
+            "list",
+            "str"
+          ],
+          "returns": "ToolResult",
+          "line_number": 98
+        },
+        "get_safe_path": {
+          "calls": [
+            "os.path.abspath",
+            "requested_path.startswith",
+            "os.path.join",
+            "os.path.dirname",
+            "os.makedirs",
+            "ValueError"
+          ],
+          "creates": [],
+          "returns": "str",
+          "line_number": 113
+        },
+        "_extract_patch_paths": {
+          "calls": [
+            "Subscript.strip",
+            "diff_content.splitlines",
+            "line.startswith",
+            "line.split"
+          ],
+          "creates": [
+            "str"
+          ],
+          "returns": "Subscript",
+          "line_number": 127
+        },
+        "_validate_patch_paths": {
+          "calls": [
+            "target_filename.startswith",
+            "source_filename.startswith",
+            "ToolResult"
+          ],
+          "creates": [],
+          "returns": "BinOp",
+          "line_number": 140
+        },
+        "_get_source_read_path": {
+          "calls": [
+            "source_filename.startswith",
+            "os.path.join",
+            "len",
+            "get_safe_path",
+            "os.path.dirname"
+          ],
+          "creates": [],
+          "returns": "str",
+          "line_number": 149
+        },
+        "_handle_create_file": {
+          "calls": [
+            "params.get",
+            "get_safe_path",
+            "tpool.execute"
+          ],
+          "creates": [],
+          "returns": "ToolResult",
+          "line_number": 159
+        },
+        "_handle_read_file": {
+          "calls": [
+            "params.get",
+            "get_safe_path",
+            "ToolResult",
+            "tpool.execute"
+          ],
+          "creates": [],
+          "returns": "ToolResult",
+          "line_number": 167
+        },
+        "_handle_read_project_file": {
+          "calls": [
+            "params.get",
+            "ToolResult",
+            "tpool.execute",
+            "os.path.join",
+            "os.path.dirname"
+          ],
+          "creates": [],
+          "returns": "ToolResult",
+          "line_number": 176
+        },
+        "_handle_list_allowed_project_files": {
+          "calls": [
+            "ToolResult"
+          ],
+          "creates": [],
+          "returns": "ToolResult",
+          "line_number": 187
+        },
+        "_handle_list_directory": {
+          "calls": [
+            "get_safe_path",
+            "tpool.execute"
+          ],
+          "creates": [],
+          "returns": "ToolResult",
+          "line_number": 192
+        },
+        "_handle_delete_file": {
+          "calls": [
+            "params.get",
+            "get_safe_path",
+            "ToolResult",
+            "tpool.execute"
+          ],
+          "creates": [],
+          "returns": "ToolResult",
+          "line_number": 199
+        },
+        "_handle_execute_python_script": {
+          "calls": [
+            "params.get",
+            "tpool.execute"
+          ],
+          "creates": [],
+          "returns": "ToolResult",
+          "line_number": 208
+        },
+        "_handle_apply_patch": {
+          "calls": [
+            "params.get",
+            "ToolResult",
+            "tpool.execute",
+            "os.path.exists",
+            "_get_source_read_path",
+            "diff_content.replace",
+            "_extract_patch_paths",
+            "get_safe_path",
+            "_validate_patch_paths",
+            "len",
+            "patcher.apply_patch"
+          ],
+          "creates": [],
+          "returns": "ToolResult",
+          "line_number": 214
+        },
+        "_handle_list_sessions": {
+          "calls": [
+            "col.name.startswith",
+            "name.replace",
+            "context.haven_proxy.list_sessions",
+            "ToolResult",
+            "chroma_client.list_collections",
+            "session_list.sort",
+            "chromadb.PersistentClient",
+            "db_sessions.items"
+          ],
+          "creates": [
+            "list"
+          ],
+          "returns": "ToolResult",
+          "line_number": 258
+        },
+        "_handle_load_session": {
+          "calls": [
+            "params.get",
+            "context.haven_proxy.get_or_create_session",
+            "HavenProxyWrapper",
+            "ToolResult",
+            "context.socketio.emit",
+            "ChromaDBStore",
+            "ActiveSession",
+            "turn_store.get_all_records",
+            "replay_history_for_client",
+            "MemoryManager"
+          ],
+          "creates": [
+            "ActiveSession",
+            "HavenProxyWrapper",
+            "MemoryManager"
+          ],
+          "returns": "ToolResult",
+          "line_number": 280
+        },
+        "_handle_save_session": {
+          "calls": [
+            "params.get",
+            "context.chat_sessions.get",
+            "source_code_store.get_all_records",
+            "source_turn_store.get_all_records",
+            "context.haven_proxy.get_or_create_session",
+            "HavenProxyWrapper",
+            "ToolResult",
+            "str",
+            "context.socketio.emit",
+            "ChromaDBStore",
+            "target_turn_store.add_record",
+            "target_code_store.add_record"
+          ],
+          "creates": [
+            "HavenProxyWrapper",
+            "str"
+          ],
+          "returns": "ToolResult",
+          "line_number": 304
+        },
+        "_handle_delete_session": {
+          "calls": [
+            "params.get",
+            "ToolResult",
+            "context.socketio.emit",
+            "updated_list_result.model_dump",
+            "ChromaDBStore",
+            "logging.error",
+            "code_store.delete_collection",
+            "turn_store.delete_collection",
+            "_handle_list_sessions",
+            "context.haven_proxy.delete_session"
+          ],
+          "creates": [
+            "list"
+          ],
+          "returns": "ToolResult",
+          "line_number": 340
+        },
+        "execute_tool_command": {
+          "calls": [
+            "handler",
+            "logging.error",
+            "ToolResult",
+            "TOOL_REGISTRY.get",
+            "ToolContext"
+          ],
+          "creates": [],
+          "returns": "ToolResult",
+          "line_number": 379
+        }
+      },
+      "classes": {
+        "ToolContext": {
+          "methods": {},
+          "bases": [],
+          "line_number": 35
+        }
+      },
+      "imports": [
+        "typing.Callable",
+        "session_models.ActiveSession",
+        "memory_manager.MemoryManager",
+        "dataclasses.dataclass",
+        "tracer.trace",
+        "data_models.ToolResult",
+        "eventlet.tpool",
+        "typing.Optional",
+        "proxies.HavenProxyWrapper",
+        "response_parser.replay_history_for_client",
+        "config.ALLOWED_PROJECT_FILES",
+        "config.CHROMA_DB_PATH",
+        "memory_manager.ChromaDBStore",
+        "typing.Any",
+        "os",
+        "typing.Dict",
+        "data_models.ToolCommand",
+        "patcher",
+        "contextlib.redirect_stdout",
+        "chromadb",
+        "io",
+        "logging"
+      ],
+      "module_variables": []
+    }
+  ],
+  "interactions": {
+    "orchestrator": [],
+    "tool_agent": []
+  }
+}

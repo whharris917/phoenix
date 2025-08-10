@@ -1,0 +1,2456 @@
+{
+  "audit_logger.py": {
+    "file_path": "audit_logger.py",
+    "module_docstring": null,
+    "imports": {
+      "csv": "csv",
+      "os": "os",
+      "datetime": "datetime.datetime",
+      "threading": "threading",
+      "json": "json"
+    },
+    "classes": [
+      {
+        "name": "AuditLogger",
+        "docstring": null,
+        "methods": [
+          {
+            "name": "__init__",
+            "args": [
+              "self",
+              "filename"
+            ],
+            "docstring": null,
+            "calls": [
+              "audit_logger.AuditLogger._initialize_file"
+            ],
+            "instantiations": [
+              "threading.Lock"
+            ],
+            "accessed_state": []
+          },
+          {
+            "name": "register_socketio",
+            "args": [
+              "self",
+              "sio"
+            ],
+            "docstring": "Allows the main app to register the Socket.IO instance.",
+            "calls": [],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "_initialize_file",
+            "args": [
+              "self"
+            ],
+            "docstring": "Creates the CSV file and writes the header if it doesn't exist.",
+            "calls": [
+              "writer.writerow"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "log_event",
+            "args": [
+              "self",
+              "event",
+              "session_id",
+              "session_name",
+              "loop_id",
+              "source",
+              "destination",
+              "observers",
+              "details",
+              "control_flow"
+            ],
+            "docstring": "Logs a new event to the CSV file and broadcasts it over Socket.IO.",
+            "calls": [
+              "audit_logger.AuditLogger.socketio.start_background_task",
+              "audit_logger.serialize",
+              "writer.writerow"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          }
+        ]
+      }
+    ],
+    "functions": [],
+    "module_state": [
+      {
+        "name": "audit_log",
+        "value": "AuditLogger()"
+      }
+    ]
+  },
+  "config.py": {
+    "file_path": "config.py",
+    "module_docstring": null,
+    "imports": {
+      "os": "os",
+      "HarmCategory": "vertexai.generative_models.HarmCategory",
+      "HarmBlockThreshold": "vertexai.generative_models.HarmBlockThreshold"
+    },
+    "classes": [],
+    "functions": [],
+    "module_state": [
+      {
+        "name": "PROJECT_ID",
+        "value": "'long-ratio-463815-n7'"
+      },
+      {
+        "name": "LOCATION",
+        "value": "'us-east1'"
+      },
+      {
+        "name": "SUMMARIZER_MODEL_NAME",
+        "value": "'gemini-2.0-flash-lite-001'"
+      },
+      {
+        "name": "SEGMENT_THRESHOLD",
+        "value": "20"
+      },
+      {
+        "name": "ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP",
+        "value": "10"
+      },
+      {
+        "name": "NOMINAL_MAX_ITERATIONS_REASONING_LOOP",
+        "value": "3"
+      },
+      {
+        "name": "ALLOWED_PROJECT_FILES",
+        "value": "[...]"
+      },
+      {
+        "name": "DEBUG_MODE",
+        "value": "False"
+      },
+      {
+        "name": "SAFETY_SETTINGS",
+        "value": "{...}"
+      },
+      {
+        "name": "CHROMA_DB_PATH",
+        "value": "os.path.join()"
+      },
+      {
+        "name": "SERVER_PORT",
+        "value": "5001"
+      },
+      {
+        "name": "HAVEN_ADDRESS",
+        "value": "<complex_value>"
+      },
+      {
+        "name": "HAVEN_AUTH_KEY",
+        "value": "b'phoenixhaven'"
+      }
+    ]
+  },
+  "data_models.py": {
+    "file_path": "data_models.py",
+    "module_docstring": "Defines the core data structures for the application using Pydantic.\n\nThis module provides centralized, validated models that ensure data consistency\nacross different components like the orchestrator, memory manager, tool agent,\nand response parser. Using these models prevents common data-related errors\nand makes the application's data flow explicit and self-documenting.",
+    "imports": {
+      "uuid": "uuid",
+      "BaseModel": "pydantic.BaseModel",
+      "Field": "pydantic.Field",
+      "Any": "typing.Any",
+      "Literal": "typing.Literal",
+      "Optional": "typing.Optional",
+      "Union": "typing.Union"
+    },
+    "classes": [
+      {
+        "name": "ParsedAgentResponse",
+        "docstring": "A structured representation of the parsed agent response.\n\nThis model is the output of the response_parser and the primary input for\nthe orchestrator's rendering and execution logic. It cleanly separates\nthe natural language part of a model's output from its machine-readable command.",
+        "methods": []
+      },
+      {
+        "name": "ToolCommand",
+        "docstring": "Represents a command issued by the agent to be executed by the tool agent.\nThis model validates the structure of the agent's JSON output.",
+        "methods": []
+      },
+      {
+        "name": "ToolResult",
+        "docstring": "Represents a standardized result returned after a tool is executed.\nThis ensures that the orchestrator receives a predictable data structure\nfrom the tool_agent, regardless of which tool was run.",
+        "methods": []
+      },
+      {
+        "name": "MemoryRecord",
+        "docstring": "Represents a single record stored in the ChromaDB vector store.\nThis standardizes data across the memory manager, summarizer, and database\ninspector, ensuring all components work with the same data schema.",
+        "methods": []
+      }
+    ],
+    "functions": [],
+    "module_state": []
+  },
+  "distill_atlas.py": {
+    "file_path": "distill_atlas.py",
+    "module_docstring": null,
+    "imports": {
+      "json": "json",
+      "Any": "typing.Any",
+      "Dict": "typing.Dict",
+      "Set": "typing.Set",
+      "List": "typing.List",
+      "os": "os"
+    },
+    "classes": [],
+    "functions": [
+      {
+        "name": "generate_structural_map",
+        "args": [
+          "atlas_data"
+        ],
+        "docstring": null,
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "build_tree_recursive",
+        "args": [
+          "func_name",
+          "all_funcs_map",
+          "prefix",
+          "is_last",
+          "visited"
+        ],
+        "docstring": null,
+        "calls": [
+          "distill_atlas.build_tree_recursive",
+          "lines.extend",
+          "visited.add",
+          "visited.copy"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "generate_call_trees",
+        "args": [
+          "atlas_data"
+        ],
+        "docstring": null,
+        "calls": [
+          "all_called_funcs.add",
+          "distill_atlas.build_tree_recursive",
+          "markdown_lines.extend"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "distill_atlas",
+        "args": [
+          "report_path",
+          "output_path"
+        ],
+        "docstring": null,
+        "calls": [
+          "distill_atlas.generate_call_trees",
+          "distill_atlas.generate_structural_map",
+          "f.write"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      }
+    ],
+    "module_state": []
+  },
+  "events.py": {
+    "file_path": "events.py",
+    "module_docstring": "Defines the exclusive real-time communication bridge for the application.\n\nThis module serves as the secure \"airlock\" between the client-side user\ninterface and the backend application logic. It defines all SocketIO event\nhandlers, which are the only \"levers\" a user can pull to interact with the\nsystem. It is responsible for session initialization, task delegation, and\nforwarding all user requests to the appropriate backend components.\n\nThe core state is managed in the module-level 'chat_sessions' dictionary,\nwhich maps client session IDs to their corresponding ActiveSession objects.",
+    "imports": {
+      "logging": "logging",
+      "request": "flask.request",
+      "SocketIO": "flask_socketio.SocketIO",
+      "json": "json",
+      "Dict": "typing.Dict",
+      "Any": "typing.Any",
+      "List": "typing.List",
+      "audit_log": "audit_logger.audit_log",
+      "db_inspector": "inspect_db",
+      "ToolCommand": "data_models.ToolCommand",
+      "ToolResult": "data_models.ToolResult",
+      "ActiveSession": "session_models.ActiveSession",
+      "MemoryManager": "memory_manager.MemoryManager",
+      "execute_reasoning_loop": "orchestrator.execute_reasoning_loop",
+      "confirmation_events": "orchestrator.confirmation_events",
+      "HavenProxyWrapper": "proxies.HavenProxyWrapper",
+      "execute_tool_command": "tool_agent.execute_tool_command",
+      "get_timestamp": "utils.get_timestamp",
+      "parse_agent_response": "response_parser.parse_agent_response",
+      "_handle_payloads": "response_parser._handle_payloads",
+      "trace": "tracer.trace",
+      "global_tracer": "tracer.global_tracer"
+    },
+    "classes": [],
+    "functions": [
+      {
+        "name": "replay_history_for_client",
+        "args": [
+          "socketio",
+          "session_id",
+          "session_name",
+          "history"
+        ],
+        "docstring": "Parses raw chat history and emits granular rendering events to the client.\nThis allows a saved session to be loaded and displayed correctly.",
+        "calls": [
+          "data_models.ToolResult.model_validate",
+          "flask_socketio.SocketIO.emit",
+          "response_parser._handle_payloads",
+          "response_parser.parse_agent_response"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_create_new_session",
+        "args": [
+          "session_id",
+          "proxy"
+        ],
+        "docstring": "Creates a new user session and initializes all necessary components.\n\nThis involves creating a session in the Haven service, initializing the\nmemory manager, and wrapping them in a structured ActiveSession object.\n\nArgs:\n    session_id: The unique SocketIO session identifier.\n    proxy: The proxy object for the Haven service.\n\nReturns:\n    An initialized ActiveSession object.",
+        "calls": [
+          "object.get_or_create_session",
+          "utils.get_timestamp"
+        ],
+        "instantiations": [
+          "memory_manager.MemoryManager",
+          "proxies.HavenProxyWrapper",
+          "session_models.ActiveSession"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "register_events",
+        "args": [
+          "socketio",
+          "haven_proxy"
+        ],
+        "docstring": "Registers all SocketIO event handlers with the main application.\n\nThis function acts as the entry point for this module, setting up the\nglobal haven_proxy reference and connecting the event handlers.",
+        "calls": [
+          "_haven_proxy.get_trace_log",
+          "audit_logger.audit_log.log_event",
+          "event.send",
+          "events._create_new_session",
+          "flask_socketio.SocketIO.emit",
+          "flask_socketio.SocketIO.on",
+          "flask_socketio.SocketIO.start_background_task",
+          "inspect_db.get_collection_data_as_json",
+          "inspect_db.list_collections_as_json",
+          "orchestrator.execute_reasoning_loop",
+          "tool_agent.execute_tool_command",
+          "tool_result.model_dump",
+          "tracer.global_tracer.get_trace",
+          "utils.get_timestamp"
+        ],
+        "instantiations": [
+          "data_models.ToolCommand"
+        ],
+        "accessed_state": [
+          "_haven_proxy",
+          "chat_sessions"
+        ]
+      },
+      {
+        "name": "handle_connect",
+        "args": [
+          "auth"
+        ],
+        "docstring": "Handles a new client connection by creating and initializing a new session.",
+        "calls": [
+          "events._create_new_session",
+          "socketio.emit('log_message')",
+          "socketio.emit('session_config_update')",
+          "socketio.emit('session_name_update')"
+        ],
+        "instantiations": [],
+        "accessed_state": [
+          "_haven_proxy",
+          "chat_sessions"
+        ]
+      },
+      {
+        "name": "handle_disconnect",
+        "args": [
+          "auth"
+        ],
+        "docstring": "Handles client disconnection by cleaning up session data.",
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": [
+          "chat_sessions"
+        ]
+      },
+      {
+        "name": "handle_start_task",
+        "args": [
+          "data"
+        ],
+        "docstring": "Receives a task from the client and starts the agent's reasoning loop.\n\nArgs:\n    data: A dictionary of the form {\"prompt\": \"This is the content of the prompt.\"}   ",
+        "calls": [
+          "orchestrator.execute_reasoning_loop",
+          "socketio.emit('display_user_prompt')",
+          "socketio.emit('log_message')",
+          "socketio.start_background_task",
+          "utils.get_timestamp"
+        ],
+        "instantiations": [],
+        "accessed_state": [
+          "_haven_proxy",
+          "chat_sessions"
+        ]
+      },
+      {
+        "name": "handle_session_list_request",
+        "args": [
+          "auth"
+        ],
+        "docstring": "Handles a client's request for the list of available sessions.",
+        "calls": [
+          "socketio.emit('session_list_update')",
+          "tool_agent.execute_tool_command",
+          "tool_result.model_dump"
+        ],
+        "instantiations": [
+          "data_models.ToolCommand"
+        ],
+        "accessed_state": [
+          "_haven_proxy",
+          "chat_sessions"
+        ]
+      },
+      {
+        "name": "handle_session_name_request",
+        "args": [
+          "auth"
+        ],
+        "docstring": "Handles a client's request for its current session name.",
+        "calls": [
+          "socketio.emit('session_name_update')"
+        ],
+        "instantiations": [],
+        "accessed_state": [
+          "chat_sessions"
+        ]
+      },
+      {
+        "name": "handle_db_collections_request",
+        "args": [
+          "auth"
+        ],
+        "docstring": "Forwards a request for DB collections to the db_inspector.",
+        "calls": [
+          "inspect_db.list_collections_as_json",
+          "socketio.emit('db_collections_list')"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "handle_db_collection_data_request",
+        "args": [
+          "data"
+        ],
+        "docstring": "Forwards a request for specific collection data to the db_inspector.",
+        "calls": [
+          "inspect_db.get_collection_data_as_json",
+          "socketio.emit('db_collection_data')"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "handle_user_confirmation",
+        "args": [
+          "data"
+        ],
+        "docstring": "Receives a 'yes' or 'no' from the user and forwards it to a waiting event.",
+        "calls": [
+          "event.send"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "handle_audit_log",
+        "args": [
+          "data"
+        ],
+        "docstring": "Receives an audit log event from the client.",
+        "calls": [
+          "audit_logger.audit_log.log_event"
+        ],
+        "instantiations": [],
+        "accessed_state": [
+          "chat_sessions"
+        ]
+      },
+      {
+        "name": "handle_get_trace_log",
+        "args": [
+          "data"
+        ],
+        "docstring": "Handles a request from the scenario runner to get the trace log\nand sends it back.",
+        "calls": [
+          "socketio.emit('trace_log_response')",
+          "tracer.global_tracer.get_trace"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "handle_get_haven_trace_log",
+        "args": [
+          "data"
+        ],
+        "docstring": "Handles a request for the Haven service's trace log.",
+        "calls": [
+          "_haven_proxy.get_trace_log",
+          "socketio.emit('haven_trace_log_response')"
+        ],
+        "instantiations": [],
+        "accessed_state": [
+          "_haven_proxy"
+        ]
+      }
+    ],
+    "module_state": [
+      {
+        "name": "chat_sessions",
+        "value": "{...}"
+      },
+      {
+        "name": "_haven_proxy",
+        "value": "None"
+      }
+    ]
+  },
+  "generate_code_atlas.py": {
+    "file_path": "generate_code_atlas.py",
+    "module_docstring": null,
+    "imports": {
+      "ast": "ast",
+      "json": "json",
+      "os": "os",
+      "Any": "typing.Any",
+      "Dict": "typing.Dict",
+      "List": "typing.List",
+      "Set": "typing.Set"
+    },
+    "classes": [
+      {
+        "name": "CodeAnalyzer",
+        "docstring": null,
+        "methods": [
+          {
+            "name": "__init__",
+            "args": [
+              "self",
+              "filepath"
+            ],
+            "docstring": null,
+            "calls": [],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "_get_value_repr",
+            "args": [
+              "self",
+              "node"
+            ],
+            "docstring": null,
+            "calls": [
+              "generate_code_atlas._get_node_id"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "_get_function_details",
+            "args": [
+              "self",
+              "node",
+              "class_name"
+            ],
+            "docstring": null,
+            "calls": [
+              "ast.get_docstring",
+              "ast.walk",
+              "call_finder.visit",
+              "call_name_parts.insert",
+              "full_call_name.endswith",
+              "generate_code_atlas.CodeAnalyzer.accessed_state.add",
+              "generate_code_atlas.CodeAnalyzer.calls.add",
+              "generate_code_atlas.CodeAnalyzer.generic_visit",
+              "generate_code_atlas.CodeAnalyzer.instantiations.add",
+              "generate_code_atlas.CodeAnalyzer.passed_args.add",
+              "generate_code_atlas._get_node_id"
+            ],
+            "instantiations": [
+              "generate_code_atlas.CallVisitor"
+            ],
+            "accessed_state": [
+              "IGNORED_NAMES",
+              "IGNORED_PREFIXES"
+            ]
+          },
+          {
+            "name": "analyze",
+            "args": [
+              "self"
+            ],
+            "docstring": null,
+            "calls": [
+              "ast.iter_child_nodes",
+              "ast.parse",
+              "ast.walk",
+              "generate_code_atlas.CodeAnalyzer.local_definitions.add",
+              "generate_code_atlas.CodeAnalyzer.local_definitions.clear",
+              "generate_code_atlas.CodeAnalyzer.module_state_names.add",
+              "generate_code_atlas.CodeAnalyzer.module_state_names.clear",
+              "generate_code_atlas.CodeAnalyzer.visit",
+              "getattr",
+              "source.read"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "visit_Import",
+            "args": [
+              "self",
+              "node"
+            ],
+            "docstring": null,
+            "calls": [],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "visit_ImportFrom",
+            "args": [
+              "self",
+              "node"
+            ],
+            "docstring": null,
+            "calls": [],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "visit_Module",
+            "args": [
+              "self",
+              "node"
+            ],
+            "docstring": null,
+            "calls": [
+              "ast.get_docstring",
+              "generate_code_atlas.CodeAnalyzer.generic_visit"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "visit_FunctionDef",
+            "args": [
+              "self",
+              "node"
+            ],
+            "docstring": null,
+            "calls": [
+              "generate_code_atlas.CodeAnalyzer._get_function_details",
+              "generate_code_atlas.CodeAnalyzer.generic_visit",
+              "getattr"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "visit_ClassDef",
+            "args": [
+              "self",
+              "node"
+            ],
+            "docstring": null,
+            "calls": [
+              "ast.get_docstring",
+              "generate_code_atlas.CodeAnalyzer._get_function_details"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "visit_Assign",
+            "args": [
+              "self",
+              "node"
+            ],
+            "docstring": null,
+            "calls": [
+              "generate_code_atlas.CodeAnalyzer._get_value_repr",
+              "generate_code_atlas.CodeAnalyzer.generic_visit"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "visit_AnnAssign",
+            "args": [
+              "self",
+              "node"
+            ],
+            "docstring": null,
+            "calls": [
+              "generate_code_atlas.CodeAnalyzer._get_value_repr",
+              "generate_code_atlas.CodeAnalyzer.generic_visit"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          }
+        ]
+      }
+    ],
+    "functions": [
+      {
+        "name": "_get_node_id",
+        "args": [
+          "node"
+        ],
+        "docstring": null,
+        "calls": [
+          "generate_code_atlas._get_node_id"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "refine_atlas_with_passed_args",
+        "args": [
+          "atlas"
+        ],
+        "docstring": null,
+        "calls": [
+          "all_defined_funcs.add",
+          "generate_code_atlas.process_func_list"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "process_func_list",
+        "args": [
+          "func_list"
+        ],
+        "docstring": null,
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "generate_atlas",
+        "args": [
+          "project_dir"
+        ],
+        "docstring": null,
+        "calls": [
+          "analyzer.analyze",
+          "filename.endswith",
+          "generate_code_atlas.refine_atlas_with_passed_args"
+        ],
+        "instantiations": [
+          "generate_code_atlas.CodeAnalyzer"
+        ],
+        "accessed_state": []
+      }
+    ],
+    "module_state": [
+      {
+        "name": "IGNORED_PREFIXES",
+        "value": "[...]"
+      },
+      {
+        "name": "IGNORED_NAMES",
+        "value": "[...]"
+      }
+    ]
+  },
+  "haven.py": {
+    "file_path": "haven.py",
+    "module_docstring": "The Haven: A persistent, stateful service for managing AI model chat sessions.\n\nThis script runs as a separate, dedicated process. Its sole purpose is to hold the\nexpensive GenerativeModel object and all live chat histories in memory, safe\nfrom the restarts and stateless nature of the main web application.\n\nThe core state is managed in the module-level 'live_chat_sessions' dictionary.\nThe main app connects to this service to send prompts and receive responses.",
+    "imports": {
+      "BaseManager": "multiprocessing.managers.BaseManager",
+      "logging": "logging",
+      "os": "os",
+      "Any": "typing.Any",
+      "List": "typing.List",
+      "Optional": "typing.Optional",
+      "vertexai": "vertexai",
+      "GenerativeModel": "vertexai.generative_models.GenerativeModel",
+      "Content": "vertexai.generative_models.Content",
+      "Part": "vertexai.generative_models.Part",
+      "PROJECT_ID": "config.PROJECT_ID",
+      "LOCATION": "config.LOCATION",
+      "SAFETY_SETTINGS": "config.SAFETY_SETTINGS",
+      "trace": "tracer.trace",
+      "global_tracer": "tracer.global_tracer"
+    },
+    "classes": [
+      {
+        "name": "Haven",
+        "docstring": "The Haven class manages the live GenerativeModel chat histories.\nAn instance of this class is served by the BaseManager to act as a\npersistent, stateful service for the main application.",
+        "methods": [
+          {
+            "name": "get_or_create_session",
+            "args": [
+              "self",
+              "session_name",
+              "history_dicts"
+            ],
+            "docstring": "Gets a session history if it exists, otherwise creates a new one.\n\nThis ensures that if the main app restarts, it can reconnect to the\nhistories that have been preserved in this Haven process.\n\nArgs:\n    session_name: The unique identifier for the session.\n    history_dicts: A list of dictionaries representing conversation turns,\n                   used to hydrate a new session's history if it's the first time\n                   it's being loaded in this Haven instance.\n\nReturns:\n    True, indicating the session history is ready.",
+            "calls": [
+              "vertexai.generative_models.Part.from_text"
+            ],
+            "instantiations": [
+              "vertexai.generative_models.Content"
+            ],
+            "accessed_state": [
+              "live_chat_sessions"
+            ]
+          },
+          {
+            "name": "send_message",
+            "args": [
+              "self",
+              "session_name",
+              "prompt"
+            ],
+            "docstring": "Sends a message by appending to the history and making a stateless\ncall to model.generate_content().\n\nArgs:\n    session_name: The session to send the message to.\n    prompt: The user's prompt text.\n\nReturns:\n    A dictionary with 'status' and either 'text' on success or 'message' on error.",
+            "calls": [
+              "model.generate_content",
+              "vertexai.generative_models.Part.from_text"
+            ],
+            "instantiations": [
+              "vertexai.generative_models.Content"
+            ],
+            "accessed_state": [
+              "live_chat_sessions",
+              "model"
+            ]
+          },
+          {
+            "name": "list_sessions",
+            "args": [
+              "self"
+            ],
+            "docstring": "Returns a list of the names of all currently live sessions.",
+            "calls": [],
+            "instantiations": [],
+            "accessed_state": [
+              "live_chat_sessions"
+            ]
+          },
+          {
+            "name": "delete_session",
+            "args": [
+              "self",
+              "session_name"
+            ],
+            "docstring": "Deletes a session from the live dictionary to free up memory.",
+            "calls": [],
+            "instantiations": [],
+            "accessed_state": [
+              "live_chat_sessions"
+            ]
+          },
+          {
+            "name": "has_session",
+            "args": [
+              "self",
+              "session_name"
+            ],
+            "docstring": "Checks if a session exists in the Haven.",
+            "calls": [],
+            "instantiations": [],
+            "accessed_state": [
+              "live_chat_sessions"
+            ]
+          },
+          {
+            "name": "get_trace_log",
+            "args": [
+              "self"
+            ],
+            "docstring": "Returns the trace log from this Haven process.",
+            "calls": [
+              "tracer.global_tracer.get_trace"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          }
+        ]
+      },
+      {
+        "name": "HavenManager",
+        "docstring": "A multiprocessing manager for serving the Haven instance.",
+        "methods": []
+      }
+    ],
+    "functions": [
+      {
+        "name": "configure_logging",
+        "args": [],
+        "docstring": "Configures the global logging settings for the Haven service.",
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "load_system_prompt",
+        "args": [],
+        "docstring": "Loads the system prompt text from the 'system_prompt.txt' file.",
+        "calls": [
+          "f.read"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "load_model_definition",
+        "args": [],
+        "docstring": "Loads the model name from the 'model_definition.txt' file.",
+        "calls": [
+          "f.read"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "initialize_model",
+        "args": [],
+        "docstring": "Initializes the connection to Vertex AI and loads the generative model.\n\nThis is a critical, one-time setup step for the Haven service.\n\nReturns:\n    The initialized GenerativeModel object on success, otherwise None.",
+        "calls": [
+          "haven.load_model_definition",
+          "haven.load_system_prompt",
+          "vertexai.init"
+        ],
+        "instantiations": [
+          "vertexai.generative_models.GenerativeModel"
+        ],
+        "accessed_state": [
+          "model"
+        ]
+      },
+      {
+        "name": "start_haven",
+        "args": [],
+        "docstring": "Initializes and starts the Haven server process.",
+        "calls": [
+          "haven.HavenManager.register",
+          "manager.get_server",
+          "server.serve_forever"
+        ],
+        "instantiations": [
+          "haven.Haven",
+          "haven.HavenManager"
+        ],
+        "accessed_state": []
+      }
+    ],
+    "module_state": [
+      {
+        "name": "model",
+        "value": "initialize_model()"
+      },
+      {
+        "name": "live_chat_sessions",
+        "value": "{...}"
+      }
+    ]
+  },
+  "inspect_db.py": {
+    "file_path": "inspect_db.py",
+    "module_docstring": "Provides direct database inspection and command-line interface (CLI) tools.\n\nThis module serves as a diagnostic and administrative utility for viewing the\ncontents of the ChromaDB vector store. It allows developers or advanced users\nto directly query the database to list all collections (sessions) and view the\ndetailed memory records within them, bypassing the main application logic.\n\nThe functions in this module are primarily used by the 'Database Visualizer'\nweb page and the standalone CLI tool.",
+    "imports": {
+      "chromadb": "chromadb",
+      "os": "os",
+      "pd": "pandas",
+      "json": "json",
+      "datetime": "datetime.datetime",
+      "trace": "tracer.trace",
+      "Any": "typing.Any",
+      "ChromaDBStore": "memory_manager.ChromaDBStore",
+      "CHROMA_DB_PATH": "config.CHROMA_DB_PATH",
+      "traceback": "traceback"
+    },
+    "classes": [],
+    "functions": [
+      {
+        "name": "get_db_client",
+        "args": [],
+        "docstring": "Initializes and returns a persistent ChromaDB client.\n\nReturns:\n    An instance of the ChromaDB PersistentClient.\n\nRaises:\n    FileNotFoundError: If the ChromaDB directory specified in the config\n                       does not exist.",
+        "calls": [],
+        "instantiations": [
+          "FileNotFoundError",
+          "chromadb.PersistentClient"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "list_collections_as_json",
+        "args": [],
+        "docstring": "Lists all collections, finds their last modified time, sorts them,\nand returns them as a JSON string.\n\nReturns:\n    A JSON string representing a dictionary with a 'status' key and either\n    a 'collections' list on success or a 'message' string on error.",
+        "calls": [
+          "client.list_collections",
+          "col.count",
+          "collection_list.sort",
+          "inspect_db.get_db_client"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "get_collection_data_as_json",
+        "args": [
+          "collection_name"
+        ],
+        "docstring": "Retrieves all data from a specific collection, formats it for display,\nand returns it as a JSON string.\n\nArgs:\n    collection_name: The name of the ChromaDB collection to inspect.\n\nReturns:\n    A JSON string representing a dictionary with a 'status' key and either\n    'collection_name' and 'data' on success, or a 'message' on error.",
+        "calls": [
+          "db_store.get_all_records",
+          "formatted_data.sort"
+        ],
+        "instantiations": [
+          "memory_manager.ChromaDBStore"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "inspect_database_cli",
+        "args": [],
+        "docstring": "Provides a command-line interface for interactively inspecting the database.\nThis function is intended for direct execution by a developer for debugging.",
+        "calls": [
+          "input",
+          "inspect_db.get_collection_data_as_json",
+          "inspect_db.list_collections_as_json",
+          "pandas.set_option",
+          "traceback.print_exc"
+        ],
+        "instantiations": [
+          "pandas.DataFrame"
+        ],
+        "accessed_state": []
+      }
+    ],
+    "module_state": []
+  },
+  "memory_manager.py": {
+    "file_path": "memory_manager.py",
+    "module_docstring": "Manages the agent's memory, including conversational history and long-term\nvector storage using ChromaDB.\n\nThis module implements a Tiered Memory Architecture:\n- Tier 1: A short-term \"working memory\" in the form of a conversational buffer.\n- Tier 2: A long-term, searchable \"reference memory\" in a ChromaDB vector store.\n\nIt encapsulates the logic for Retrieval-Augmented Generation (RAG) and provides\nthe main interface (MemoryManager) for the application to interact with memory.\nThe core state is the global 'embedding_function' used for all DB operations.",
+    "imports": {
+      "chromadb": "chromadb",
+      "logging": "logging",
+      "uuid": "uuid",
+      "time": "time",
+      "Content": "vertexai.generative_models.Content",
+      "Part": "vertexai.generative_models.Part",
+      "embedding_functions": "chromadb.utils.embedding_functions",
+      "CHROMA_DB_PATH": "config.CHROMA_DB_PATH",
+      "MemoryRecord": "data_models.MemoryRecord",
+      "List": "typing.List",
+      "Any": "typing.Any",
+      "Optional": "typing.Optional",
+      "trace": "tracer.trace"
+    },
+    "classes": [
+      {
+        "name": "ChromaDBStore",
+        "docstring": "Handles all direct read/write interactions with a specific ChromaDB collection.\nThis class acts as a Data Access Layer (DAL), abstracting away the specifics\nof the ChromaDB library from the main memory management logic.",
+        "methods": [
+          {
+            "name": "__init__",
+            "args": [
+              "self",
+              "collection_name"
+            ],
+            "docstring": "Initializes the data store and connects to a ChromaDB collection.\n\nArgs:\n    collection_name: The name of the collection to connect to.",
+            "calls": [
+              "c.isalnum",
+              "chroma_client.get_or_create_collection"
+            ],
+            "instantiations": [
+              "chromadb.PersistentClient"
+            ],
+            "accessed_state": [
+              "embedding_function"
+            ]
+          },
+          {
+            "name": "add_record",
+            "args": [
+              "self",
+              "record",
+              "record_id"
+            ],
+            "docstring": "Adds a single MemoryRecord to the collection.",
+            "calls": [
+              "data_models.MemoryRecord.model_dump",
+              "memory_manager.ChromaDBStore.collection.add"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "get_all_records",
+            "args": [
+              "self"
+            ],
+            "docstring": "Retrieves and validates all records from the collection, sorted by time.",
+            "calls": [
+              "all_records.sort",
+              "data_models.MemoryRecord.model_validate",
+              "memory_manager.ChromaDBStore.collection.count"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "query",
+            "args": [
+              "self",
+              "query_text",
+              "n_results"
+            ],
+            "docstring": "Queries the collection for similar documents and returns validated records.",
+            "calls": [
+              "data_models.MemoryRecord.model_validate",
+              "memory_manager.ChromaDBStore.collection.count",
+              "memory_manager.ChromaDBStore.collection.query",
+              "results_with_meta.sort"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "update_records_metadata",
+            "args": [
+              "self",
+              "ids",
+              "metadatas"
+            ],
+            "docstring": "Updates metadata for existing records in the collection.",
+            "calls": [
+              "memory_manager.ChromaDBStore.collection.update"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "delete_collection",
+            "args": [
+              "self"
+            ],
+            "docstring": "Deletes the entire collection from the database.",
+            "calls": [
+              "chroma_client.delete_collection"
+            ],
+            "instantiations": [
+              "chromadb.PersistentClient"
+            ],
+            "accessed_state": []
+          }
+        ]
+      },
+      {
+        "name": "MemoryManager",
+        "docstring": "Manages the Tiered Memory Architecture for the AI agent by orchestrating\nthe conversational buffer and the long-term vector store. This is the main\nhigh-level interface for the rest of the application to interact with memory.",
+        "methods": [
+          {
+            "name": "__init__",
+            "args": [
+              "self",
+              "session_name"
+            ],
+            "docstring": "Initializes the memory manager for a specific session.\n\nArgs:\n    session_name: The unique name of the session to manage.",
+            "calls": [
+              "memory_manager.MemoryManager._repopulate_buffer_from_db"
+            ],
+            "instantiations": [
+              "memory_manager.ChromaDBStore"
+            ],
+            "accessed_state": []
+          },
+          {
+            "name": "_repopulate_buffer_from_db",
+            "args": [
+              "self"
+            ],
+            "docstring": "Loads the most recent history from the DB into the conversational buffer.",
+            "calls": [
+              "memory_manager.MemoryManager.turn_store.get_all_records",
+              "vertexai.generative_models.Part.from_text"
+            ],
+            "instantiations": [
+              "vertexai.generative_models.Content"
+            ],
+            "accessed_state": []
+          },
+          {
+            "name": "add_turn",
+            "args": [
+              "self",
+              "role",
+              "content",
+              "metadata",
+              "augmented_prompt"
+            ],
+            "docstring": "Adds a new turn to both the buffer (Tier 1) and vector store (Tier 2).",
+            "calls": [
+              "memory_manager.MemoryManager.turn_store.add_record",
+              "setattr",
+              "time.time",
+              "vertexai.generative_models.Part.from_text"
+            ],
+            "instantiations": [
+              "data_models.MemoryRecord",
+              "vertexai.generative_models.Content"
+            ],
+            "accessed_state": []
+          },
+          {
+            "name": "get_all_turns",
+            "args": [
+              "self"
+            ],
+            "docstring": "Delegates retrieval of all turns to the data store.",
+            "calls": [
+              "memory_manager.MemoryManager.turn_store.get_all_records"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "get_context_for_prompt",
+            "args": [
+              "self",
+              "prompt",
+              "n_results"
+            ],
+            "docstring": "Delegates context retrieval (vector search) to the data store.",
+            "calls": [
+              "memory_manager.MemoryManager.turn_store.query"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "get_conversational_buffer",
+            "args": [
+              "self"
+            ],
+            "docstring": "Returns the short-term conversational buffer for the chat history.",
+            "calls": [],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "prepare_augmented_prompt",
+            "args": [
+              "self",
+              "prompt"
+            ],
+            "docstring": "Retrieves relevant context from memory and constructs an augmented prompt.\n\nThis method encapsulates the RAG (Retrieval-Augmented Generation) logic.\nIt finds relevant past conversations and injects them as context into the\ncurrent prompt for the model.\n\nArgs:\n    prompt: The user's current prompt.\n\nReturns:\n    The final prompt string, augmented with context if any was found.",
+            "calls": [
+              "memory_manager.MemoryManager.get_context_for_prompt"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "delete_memory_collection",
+            "args": [
+              "self"
+            ],
+            "docstring": "Deletes the entire memory for the session from all data stores.",
+            "calls": [
+              "memory_manager.MemoryManager.code_store.delete_collection",
+              "memory_manager.MemoryManager.turn_store.delete_collection"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "add_code_artifact",
+            "args": [
+              "self",
+              "filename",
+              "content"
+            ],
+            "docstring": "Saves a code artifact to a dedicated vector store and returns a pointer ID.",
+            "calls": [
+              "memory_manager.MemoryManager.code_store.add_record",
+              "time.time"
+            ],
+            "instantiations": [
+              "data_models.MemoryRecord"
+            ],
+            "accessed_state": []
+          }
+        ]
+      }
+    ],
+    "functions": [
+      {
+        "name": "initialize_embedding_function",
+        "args": [],
+        "docstring": "Initializes the default sentence-transformer embedding model.\n\nThis is a critical, one-time setup step for the memory system.\n\nReturns:\n    An initialized embedding function object on success, otherwise None.",
+        "calls": [],
+        "instantiations": [
+          "chromadb.utils.embedding_functions.DefaultEmbeddingFunction"
+        ],
+        "accessed_state": [
+          "embedding_function"
+        ]
+      }
+    ],
+    "module_state": [
+      {
+        "name": "embedding_function",
+        "value": "initialize_embedding_function()"
+      }
+    ]
+  },
+  "orchestrator.py": {
+    "file_path": "orchestrator.py",
+    "module_docstring": "Core cognitive engine for the AI agent.\n\nThis module contains the primary reasoning loop that drives the agent's behavior.\nIt orchestrates the interaction between the agent's memory, the generative model,\nand the tool execution system, forming the \"brain\" of the application.\n\nThe core state is managed in the module-level 'confirmation_events' dictionary,\nwhich allows the reasoning loop to pause and wait for user input.",
+    "imports": {
+      "tpool": "eventlet.tpool",
+      "Event": "eventlet.event.Event",
+      "get_timestamp": "utils.get_timestamp",
+      "json": "json",
+      "logging": "logging",
+      "uuid": "uuid",
+      "re": "re",
+      "execute_tool_command": "tool_agent.execute_tool_command",
+      "ToolCommand": "data_models.ToolCommand",
+      "ParsedAgentResponse": "data_models.ParsedAgentResponse",
+      "ActiveSession": "session_models.ActiveSession",
+      "parse_agent_response": "response_parser.parse_agent_response",
+      "_handle_payloads": "response_parser._handle_payloads",
+      "is_prose_effectively_empty": "response_parser.is_prose_effectively_empty",
+      "ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP": "config.ABSOLUTE_MAX_ITERATIONS_REASONING_LOOP",
+      "NOMINAL_MAX_ITERATIONS_REASONING_LOOP": "config.NOMINAL_MAX_ITERATIONS_REASONING_LOOP",
+      "trace": "tracer.trace"
+    },
+    "classes": [],
+    "functions": [
+      {
+        "name": "_emit_agent_message",
+        "args": [
+          "socketio",
+          "session_id",
+          "message_type",
+          "content"
+        ],
+        "docstring": "A small wrapper to emit a formatted message to the client.\n\nThis helper ensures that empty or whitespace-only messages are not sent,\nkeeping the client-side log clean.\n\nArgs:\n    socketio: The SocketIO server instance for communication.\n    session_id: The unique session ID of the target client.\n    message_type: The category of the message (e.g., 'final_answer', 'info').\n    content: The text content of the message.",
+        "calls": [
+          "socketio.emit('log_message')"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_process_model_response",
+        "args": [
+          "response_text"
+        ],
+        "docstring": "Parses raw model text into a structured ParsedAgentResponse object.\n\nThis function acts as a crucial translation layer between the raw output of\nthe generative model and the structured data the orchestrator works with.\nIt isolates parsing, handles payload extraction, attaches prose to the\ncommand for context, and creates a fallback command if necessary.\n\nArgs:\n    response_text: The raw, timestamped text from the generative model.\n\nReturns:\n    The fully processed ParsedAgentResponse object, ready for rendering\n    and execution.",
+        "calls": [
+          "response_parser._handle_payloads",
+          "response_parser.parse_agent_response"
+        ],
+        "instantiations": [
+          "data_models.ToolCommand"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_render_agent_turn",
+        "args": [
+          "socketio",
+          "session_id",
+          "parsed_response",
+          "is_live"
+        ],
+        "docstring": "Renders the agent's turn to the client from a ParsedAgentResponse object.\n\nThis function translates the agent's internal command into a user-facing\nmessage, confirmation prompt, or informational text.\n\nArgs:\n    socketio: The SocketIO server instance.\n    session_id: The client's unique session ID.\n    parsed_response: The structured response object from _process_model_response.\n    is_live: A flag indicating if this is a live turn (requiring a real\n             confirmation prompt) or a replayed one from history.",
+        "calls": [
+          "orchestrator._emit_agent_message",
+          "response_parser.is_prose_effectively_empty",
+          "socketio.emit('request_user_confirmation')"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "execute_reasoning_loop",
+        "args": [
+          "socketio",
+          "session_data",
+          "initial_prompt",
+          "session_id",
+          "chat_sessions",
+          "haven_proxy"
+        ],
+        "docstring": "Executes the main cognitive loop for the agent.\n\nThis loop is the heart of the agent, driving a cycle of thought and action:\n1. Augment a prompt with context from memory (RAG).\n2. Call the generative model.\n3. Process the model's response into a command.\n4. Render the agent's \"thought\" or action to the user.\n5. Execute the command.\n6. Use the tool result as the prompt for the next cycle.\nThis continues until the task is complete or a limit is reached.\n\nArgs:\n    socketio: The SocketIO server instance for real-time client communication.\n    session_data: The active session object containing memory and chat proxies.\n    initial_prompt: The user's initial prompt that kicks off the loop.\n    session_id: The client's unique session ID.\n    chat_sessions: A dictionary of all active sessions, necessary for the\n                   agent to perform session management tools (load, save, etc.).\n    haven_proxy: The proxy object for the Haven service, which hosts the model.",
+        "calls": [
+          "confirmation_event.wait",
+          "eventlet.tpool.execute",
+          "memory.add_turn",
+          "memory.prepare_augmented_prompt",
+          "orchestrator._process_model_response",
+          "orchestrator._render_agent_turn",
+          "socketio.emit('log_message')",
+          "socketio.emit('tool_log')",
+          "tool_agent.execute_tool_command",
+          "tool_result.model_dump_json",
+          "utils.get_timestamp"
+        ],
+        "instantiations": [
+          "eventlet.event.Event"
+        ],
+        "accessed_state": [
+          "confirmation_events"
+        ]
+      }
+    ],
+    "module_state": [
+      {
+        "name": "confirmation_events",
+        "value": "{...}"
+      }
+    ]
+  },
+  "patcher.py": {
+    "file_path": "patcher.py",
+    "module_docstring": "Provides a robust utility for applying agent-generated diff patches.\n\nThis module is designed to handle the complexities and common failure modes of\napplying '.diff' files created by a generative model. Its primary function,\n`apply_patch`, is a resilient wrapper that performs several crucial steps:\n1. Normalizes text to prevent issues with line endings and special characters.\n2. Intelligently corrects incorrect line numbers in hunk headers, which is a\n   frequent error in agent-generated patches.\n3. Applies the patch in a safe, temporary file system to prevent corrupting\n   the original source files on failure.\n4. Provides detailed error messages if a patch cannot be applied.",
+    "imports": {
+      "patch": "patch",
+      "os": "os",
+      "tempfile": "tempfile",
+      "shutil": "shutil",
+      "logging": "logging",
+      "re": "re",
+      "Tuple": "typing.Tuple",
+      "Optional": "typing.Optional"
+    },
+    "classes": [],
+    "functions": [
+      {
+        "name": "_normalize_text",
+        "args": [
+          "text"
+        ],
+        "docstring": "Normalizes text to prevent common patch failures.\n\nThis function standardizes text by:\n1. Replacing non-breaking spaces with regular spaces.\n2. Normalizing all line endings (CRLF, CR) to a single LF.\n3. Ensuring the text ends with exactly one newline character.\n\nArgs:\n    text: The input string to normalize, or None.\n\nReturns:\n    The normalized string. Returns an empty string if the input is None or empty.",
+        "calls": [
+          "text.rstrip"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_correct_hunk_line_numbers",
+        "args": [
+          "diff_content",
+          "original_content"
+        ],
+        "docstring": "Scans a diff and corrects both the start line and line counts in hunk headers.\n\nThis function provides a robust correction for agent-generated patches with\nincorrect hunk headers. It works by:\n1. Finding the actual location of the hunk's context/removed lines in the original file.\n2. Recalculating the line counts for both the source and target file based on\n   the lines present in the hunk body.\n3. Reconstructing the hunk header with the corrected values.\n\nArgs:\n    diff_content (str): The normalized diff content.\n    original_content (str): The normalized original file content.\n\nReturns:\n    str: The diff content with fully corrected hunk headers.",
+        "calls": [
+          "corrected_diff_lines.extend"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "apply_patch",
+        "args": [
+          "diff_content",
+          "original_content",
+          "original_filename"
+        ],
+        "docstring": "Applies a diff by creating a temporary file structure. It normalizes\ntext and robustly corrects hunk headers before applying the patch.\n\nArgs:\n    diff_content: The string content of the .diff file.\n    original_content: The string content of the original source file.\n    original_filename: The name of the original file, used for creating\n                       the temporary file structure.\n\nReturns:\n    A tuple containing (new_content, error_message). On success, new_content\n    is the patched string and error_message is None. On failure, new_content\n    is None and error_message is a descriptive string.",
+        "calls": [
+          "corrected_diff.encode",
+          "corrected_diff.endswith",
+          "f.read",
+          "f.write",
+          "new_content.rstrip",
+          "patch.fromstring",
+          "patch_set.apply",
+          "patcher._correct_hunk_line_numbers",
+          "patcher._normalize_text",
+          "shutil.rmtree",
+          "tempfile.mkdtemp"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      }
+    ],
+    "module_state": []
+  },
+  "phoenix.py": {
+    "file_path": "phoenix.py",
+    "module_docstring": "Main application bootstrap file.\n\nThis script initializes the Flask application and the SocketIO server, connects\nto the persistent Haven service, and registers the web routes and SocketIO\nevent handlers. It is responsible for starting the server and bringing all\ncomponents of the application online.",
+    "imports": {
+      "time": "time",
+      "logging": "logging",
+      "Flask": "flask.Flask",
+      "send_from_directory": "flask.send_from_directory",
+      "SocketIO": "flask_socketio.SocketIO",
+      "CORS": "flask_cors.CORS",
+      "BaseManager": "multiprocessing.managers.BaseManager",
+      "debugpy": "debugpy",
+      "Optional": "typing.Optional",
+      "Tuple": "typing.Tuple",
+      "DEBUG_MODE": "config.DEBUG_MODE",
+      "SERVER_PORT": "config.SERVER_PORT",
+      "HAVEN_ADDRESS": "config.HAVEN_ADDRESS",
+      "HAVEN_AUTH_KEY": "config.HAVEN_AUTH_KEY",
+      "events": "events",
+      "trace": "tracer.trace"
+    },
+    "classes": [
+      {
+        "name": "HavenManager",
+        "docstring": null,
+        "methods": []
+      }
+    ],
+    "functions": [
+      {
+        "name": "configure_servers",
+        "args": [],
+        "docstring": "Initializes and configures the Flask and SocketIO servers and returns them\nfor assignment at the module level for global accessibility.",
+        "calls": [],
+        "instantiations": [
+          "flask.Flask",
+          "flask_cors.CORS",
+          "flask_socketio.SocketIO"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "connect_to_haven",
+        "args": [],
+        "docstring": "Establishes a connection to the Haven service with a retry loop.\n\nThis function is critical for the application's startup, ensuring a robust\nconnection to the stateful backend process that manages the AI models.\n\nReturns:\n    The Haven proxy object if connection is successful, otherwise None.",
+        "calls": [
+          "manager.connect",
+          "manager.get_haven",
+          "phoenix.HavenManager.register"
+        ],
+        "instantiations": [
+          "phoenix.HavenManager"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "initialize_services",
+        "args": [
+          "socketio"
+        ],
+        "docstring": "Connects to the Haven service and registers all event handlers.\n\nThis function performs the critical initialization steps that bridge the\nweb server with the backend services.\n\nArgs:\n    socketio: The initialized SocketIO server instance.\n\nReturns:\n    The Haven proxy object if the connection was successful, otherwise None.",
+        "calls": [
+          "events.register_events",
+          "phoenix.connect_to_haven"
+        ],
+        "instantiations": [],
+        "accessed_state": [
+          "haven_proxy"
+        ]
+      },
+      {
+        "name": "serve_index",
+        "args": [],
+        "docstring": "Serves the main chat interface.",
+        "calls": [
+          "flask.send_from_directory"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "serve_static_files",
+        "args": [
+          "filename"
+        ],
+        "docstring": "Serves static files like CSS and JS from the root directory.",
+        "calls": [
+          "flask.send_from_directory"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "serve_audit_visualizer",
+        "args": [],
+        "docstring": "Serves the audit log visualization tool.",
+        "calls": [
+          "flask.send_from_directory"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "serve_database_viewer",
+        "args": [],
+        "docstring": "Serves the ChromaDB inspection tool.",
+        "calls": [
+          "flask.send_from_directory"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "serve_docs",
+        "args": [],
+        "docstring": "Serves the documentation viewer.",
+        "calls": [
+          "flask.send_from_directory"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "serve_markdown",
+        "args": [],
+        "docstring": "Serves the raw markdown documentation file.",
+        "calls": [
+          "flask.send_from_directory"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "serve_workshop",
+        "args": [],
+        "docstring": "Serves the workshop/testing interface.",
+        "calls": [
+          "flask.send_from_directory"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      }
+    ],
+    "module_state": [
+      {
+        "name": "haven_proxy",
+        "value": "initialize_services()"
+      }
+    ]
+  },
+  "proxies.py": {
+    "file_path": "proxies.py",
+    "module_docstring": "Provides a client-side abstraction for interacting with the remote Haven service.\n\nThis module contains proxy wrappers that act as local stand-ins for remote\nobjects, simplifying the interaction between the main application and the\npersistent Haven service. It ensures safe, session-aware communication and\nabstracts away the details of the remote procedure calls.",
+    "imports": {
+      "logging": "logging",
+      "trace": "tracer.trace",
+      "Any": "typing.Any"
+    },
+    "classes": [
+      {
+        "name": "HavenProxyWrapper",
+        "docstring": "Acts as a near-perfect drop-in replacement for a local chat session object.\nIt holds a reference to the main Haven proxy and a specific session name,\nmaking remote calls appear as local method calls.",
+        "methods": [
+          {
+            "name": "__init__",
+            "args": [
+              "self",
+              "haven_service_proxy",
+              "session_name"
+            ],
+            "docstring": "Initializes the proxy wrapper.\n\nArgs:\n    haven_service_proxy: The main proxy object connected to the Haven service.\n    session_name: The specific session this wrapper will interact with.",
+            "calls": [],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "send_message",
+            "args": [
+              "self",
+              "prompt"
+            ],
+            "docstring": "Forwards a prompt to the remote Haven service for a specific session.\n\nThis method mimics the signature of the generative model's `send_message`\nbut handles the remote call, data marshalling, and error handling.\n\nArgs:\n    prompt: The user's prompt text to send to the model.\n\nReturns:\n    A mock response object with a `.text` attribute on success.\n\nRaises:\n    RuntimeError: If the remote call to the Haven service returns an error.",
+            "calls": [
+              "proxies.HavenProxyWrapper.haven.send_message"
+            ],
+            "instantiations": [
+              "RuntimeError",
+              "proxies.MockResponse"
+            ],
+            "accessed_state": []
+          }
+        ]
+      }
+    ],
+    "functions": [],
+    "module_state": []
+  },
+  "response_parser.py": {
+    "file_path": "response_parser.py",
+    "module_docstring": "Provides robust parsing capabilities for converting raw LLM outputs into\nstructured data.\n\nThis module acts as a resilient \"translation layer\" between the unpredictable,\noften messy, raw text generated by a large language model and the clean,\nstructured ParsedAgentResponse object that the rest of the application requires.\nIt is designed to handle common failure modes like mixed prose and JSON,\nmalformed JSON, and missing code fences.",
+    "imports": {
+      "re": "re",
+      "json": "json",
+      "ToolCommand": "data_models.ToolCommand",
+      "ParsedAgentResponse": "data_models.ParsedAgentResponse",
+      "trace": "tracer.trace"
+    },
+    "classes": [],
+    "functions": [
+      {
+        "name": "is_prose_effectively_empty",
+        "args": [
+          "prose_string"
+        ],
+        "docstring": "Checks if a string contains meaningful content beyond a potential timestamp.\n\nArgs:\n    prose_string: The string to check.\n\nReturns:\n    True if the string is None, empty, or contains only a timestamp and whitespace.",
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "parse_agent_response",
+        "args": [
+          "response_text"
+        ],
+        "docstring": "Parses a potentially messy agent response to separate prose from a valid command JSON.\n\nThis function is a critical component that acts as a robust translation layer\nbetween the often unpredictable raw text output of a large language model and\nthe clean, structured data the application needs to operate. It is designed\nto handle \"mixed messages\" containing both natural language text (prose) and\na command in a JSON block.\n\nIt addresses several common failure modes, including:\n- LLMs forgetting to use markdown fences (```json).\n- Malformed JSON strings with unescaped characters.\n- The presence of code or data payloads that should not be part of the command JSON.\n\nThe process involves masking payloads, attempting to extract JSON using two\ndifferent methods (fences and brace-counting), repairing the extracted JSON if\nnecessary, and finally constructing a structured ParsedAgentResponse object.\n\nArgs:\n    response_text: The raw string response from the agent.\n\nReturns:\n    A ParsedAgentResponse object containing:\n    - `prose`: The cleaned natural language string (or None).\n    - `command`: The parsed command as a ToolCommand object (or None).\n    - `is_prose_empty`: A boolean flag indicating if the prose is empty\n                      or contains only a timestamp.",
+        "calls": [
+          "data_models.ToolCommand.model_validate",
+          "response_parser._clean_prose",
+          "response_parser._extract_json_with_brace_counting",
+          "response_parser._extract_json_with_fences",
+          "response_parser._mask_payloads",
+          "response_parser._repair_json",
+          "response_parser.is_prose_effectively_empty"
+        ],
+        "instantiations": [
+          "data_models.ParsedAgentResponse"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_mask_payloads",
+        "args": [
+          "text"
+        ],
+        "docstring": "Finds and removes all payload blocks (e.g., START @@... END @@...).",
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_extract_json_with_fences",
+        "args": [
+          "text"
+        ],
+        "docstring": "Extracts the largest JSON block enclosed in ```json fences.",
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_extract_json_with_brace_counting",
+        "args": [
+          "text"
+        ],
+        "docstring": "Finds the largest valid JSON object in a string by counting braces.\nThis is a fallback for when the LLM forgets to use markdown fences.",
+        "calls": [
+          "m.start",
+          "response_parser._repair_json"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_repair_json",
+        "args": [
+          "s"
+        ],
+        "docstring": "Attempts to repair a malformed JSON string by iteratively fixing common errors.",
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_clean_prose",
+        "args": [
+          "prose"
+        ],
+        "docstring": "A simple utility to clean up the final prose string.",
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_payloads",
+        "args": [
+          "prose",
+          "command"
+        ],
+        "docstring": "Finds and replaces payload placeholders in a command's parameters\nwith content defined in START/END blocks within the prose.",
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": []
+      }
+    ],
+    "module_state": []
+  },
+  "session_models.py": {
+    "file_path": "session_models.py",
+    "module_docstring": "Defines the high-level data structures for managing a user's session.\n\nThis module contains the Pydantic models that encapsulate the complete state\nof a single, active user session, bundling together all the necessary service\nproxies and managers required for the application's logic to operate.",
+    "imports": {
+      "BaseModel": "pydantic.BaseModel",
+      "ConfigDict": "pydantic.ConfigDict",
+      "MemoryManager": "memory_manager.MemoryManager",
+      "HavenProxyWrapper": "proxies.HavenProxyWrapper"
+    },
+    "classes": [
+      {
+        "name": "ActiveSession",
+        "docstring": "Represents a live user session with all its associated stateful objects.\n\nThis model acts as a \"context object\" that is passed through the core\napplication logic, providing a clean and organized way to access all\nsession-specific components.",
+        "methods": []
+      }
+    ],
+    "functions": [],
+    "module_state": []
+  },
+  "summarizer.py": {
+    "file_path": "summarizer.py",
+    "module_docstring": null,
+    "imports": {
+      "chromadb": "chromadb",
+      "time": "time",
+      "logging": "logging",
+      "uuid": "uuid",
+      "datetime": "datetime.datetime",
+      "timezone": "datetime.timezone",
+      "GenerativeModel": "vertexai.generative_models.GenerativeModel",
+      "Part": "vertexai.generative_models.Part",
+      "vertexai": "vertexai",
+      "ChromaDBStore": "memory_manager.ChromaDBStore",
+      "SUMMARIZER_MODEL_NAME": "config.SUMMARIZER_MODEL_NAME",
+      "SEGMENT_THRESHOLD": "config.SEGMENT_THRESHOLD",
+      "PROJECT_ID": "config.PROJECT_ID",
+      "LOCATION": "config.LOCATION",
+      "CHROMA_DB_PATH": "config.CHROMA_DB_PATH",
+      "MemoryRecord": "data_models.MemoryRecord"
+    },
+    "classes": [],
+    "functions": [
+      {
+        "name": "main",
+        "args": [],
+        "docstring": "The main loop for the summarization background process.",
+        "calls": [
+          "chroma_client.list_collections",
+          "cutoff_date.timestamp",
+          "db_store.add_record",
+          "db_store.get_all_records",
+          "db_store.update_records_metadata",
+          "record.model_copy",
+          "summarizer_model.generate_content",
+          "time.time",
+          "updated_record.model_dump",
+          "vertexai.generative_models.Part.from_text",
+          "vertexai.init"
+        ],
+        "instantiations": [
+          "chromadb.PersistentClient",
+          "data_models.MemoryRecord",
+          "memory_manager.ChromaDBStore",
+          "vertexai.generative_models.GenerativeModel"
+        ],
+        "accessed_state": []
+      }
+    ],
+    "module_state": []
+  },
+  "tool_agent.py": {
+    "file_path": "tool_agent.py",
+    "module_docstring": "Provides the secure action execution layer for the AI agent.\n\nThis module acts as the \"hands\" of the agent, providing the exclusive and\nsecure interface through which the agent can interact with the local system.\nIt is designed around a declarative, strategy-based pattern: the orchestrator\nissues a command, and this module dispatches it to the appropriate handler\nvia the TOOL_REGISTRY.\n\nAll file system operations are strictly confined to a sandboxed directory to\nensure safety. Every tool execution returns a standardized ToolResult object,\nproviding a consistent data contract for the orchestrator.",
+    "imports": {
+      "os": "os",
+      "io": "io",
+      "logging": "logging",
+      "redirect_stdout": "contextlib.redirect_stdout",
+      "dataclass": "dataclasses.dataclass",
+      "Any": "typing.Any",
+      "Callable": "typing.Callable",
+      "Dict": "typing.Dict",
+      "Optional": "typing.Optional",
+      "BaseManager": "multiprocessing.managers.BaseManager",
+      "chromadb": "chromadb",
+      "tpool": "eventlet.tpool",
+      "patcher": "patcher",
+      "ALLOWED_PROJECT_FILES": "config.ALLOWED_PROJECT_FILES",
+      "CHROMA_DB_PATH": "config.CHROMA_DB_PATH",
+      "ToolCommand": "data_models.ToolCommand",
+      "ToolResult": "data_models.ToolResult",
+      "ChromaDBStore": "memory_manager.ChromaDBStore",
+      "MemoryManager": "memory_manager.MemoryManager",
+      "HavenProxyWrapper": "proxies.HavenProxyWrapper",
+      "ActiveSession": "session_models.ActiveSession",
+      "trace": "tracer.trace",
+      "replay_history_for_client": "events.replay_history_for_client"
+    },
+    "classes": [
+      {
+        "name": "ToolContext",
+        "docstring": "A container for passing stateful objects to tool handlers.",
+        "methods": []
+      }
+    ],
+    "functions": [
+      {
+        "name": "_execute_script",
+        "args": [
+          "script_content"
+        ],
+        "docstring": "Executes a Python script in a restricted environment and captures its output.",
+        "calls": [
+          "contextlib.redirect_stdout",
+          "exec",
+          "string_io.getvalue"
+        ],
+        "instantiations": [
+          "data_models.ToolResult",
+          "io.StringIO"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_write_file",
+        "args": [
+          "path",
+          "content"
+        ],
+        "docstring": "Writes content to a file, creating directories if necessary.",
+        "calls": [
+          "f.write"
+        ],
+        "instantiations": [
+          "data_models.ToolResult"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_read_file",
+        "args": [
+          "path"
+        ],
+        "docstring": "Reads the content of a file.",
+        "calls": [
+          "f.read"
+        ],
+        "instantiations": [
+          "data_models.ToolResult"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_delete_file",
+        "args": [
+          "path"
+        ],
+        "docstring": "Deletes a file from the filesystem.",
+        "calls": [],
+        "instantiations": [
+          "data_models.ToolResult"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_list_directory",
+        "args": [
+          "path"
+        ],
+        "docstring": "Lists all files in a directory recursively, ignoring certain subdirectories.",
+        "calls": [],
+        "instantiations": [
+          "data_models.ToolResult"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "get_safe_path",
+        "args": [
+          "filename",
+          "base_dir_name"
+        ],
+        "docstring": "Constructs a safe file path within a designated directory, preventing path traversal.",
+        "calls": [],
+        "instantiations": [
+          "ValueError"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_extract_patch_paths",
+        "args": [
+          "diff_content"
+        ],
+        "docstring": "Extracts source (a) and target (b) filenames from a diff header.",
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_validate_patch_paths",
+        "args": [
+          "source_filename",
+          "target_filename"
+        ],
+        "docstring": "Validates the source and target paths for the patch.",
+        "calls": [],
+        "instantiations": [
+          "data_models.ToolResult"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_get_source_read_path",
+        "args": [
+          "source_filename"
+        ],
+        "docstring": "Determines the absolute path from which to read the source file.",
+        "calls": [
+          "tool_agent.get_safe_path"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_create_file",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Handles the 'create_file' action.",
+        "calls": [
+          "eventlet.tpool.execute",
+          "tool_agent._write_file",
+          "tool_agent.get_safe_path"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_read_file",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Handles the 'read_file' action.",
+        "calls": [
+          "eventlet.tpool.execute",
+          "tool_agent._read_file",
+          "tool_agent.get_safe_path"
+        ],
+        "instantiations": [
+          "data_models.ToolResult"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_read_project_file",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Handles the 'read_project_file' action with validation.",
+        "calls": [
+          "eventlet.tpool.execute",
+          "tool_agent._read_file"
+        ],
+        "instantiations": [
+          "data_models.ToolResult"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_list_allowed_project_files",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Handles the 'list_allowed_project_files' action.",
+        "calls": [],
+        "instantiations": [
+          "data_models.ToolResult"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_list_directory",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Handles the 'list_directory' action.",
+        "calls": [
+          "eventlet.tpool.execute",
+          "tool_agent._list_directory",
+          "tool_agent.get_safe_path"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_delete_file",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Handles the 'delete_file' action.",
+        "calls": [
+          "eventlet.tpool.execute",
+          "tool_agent._delete_file",
+          "tool_agent.get_safe_path"
+        ],
+        "instantiations": [
+          "data_models.ToolResult"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_execute_python_script",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Handles the 'execute_python_script' action.",
+        "calls": [
+          "eventlet.tpool.execute",
+          "tool_agent._execute_script"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_apply_patch",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Orchestrates the 'apply_patch' action by calling decomposed helpers.",
+        "calls": [
+          "eventlet.tpool.execute",
+          "patcher.apply_patch",
+          "tool_agent._extract_patch_paths",
+          "tool_agent._get_source_read_path",
+          "tool_agent._read_file",
+          "tool_agent._validate_patch_paths",
+          "tool_agent._write_file",
+          "tool_agent.get_safe_path"
+        ],
+        "instantiations": [
+          "data_models.ToolResult"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_list_sessions",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Handles the 'list_sessions' action.",
+        "calls": [
+          "ToolContext.haven_proxy.list_sessions",
+          "chroma_client.list_collections",
+          "session_list.sort"
+        ],
+        "instantiations": [
+          "chromadb.PersistentClient",
+          "data_models.ToolResult"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_load_session",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Handles the 'load_session' action.",
+        "calls": [
+          "ToolContext.haven_proxy.get_or_create_session",
+          "ToolContext.socketio.emit('session_name_update')",
+          "memory_manager.ChromaDBStore.get_all_records",
+          "replay_history_for_client"
+        ],
+        "instantiations": [
+          "data_models.ToolResult",
+          "memory_manager.ChromaDBStore",
+          "memory_manager.MemoryManager",
+          "proxies.HavenProxyWrapper",
+          "session_models.ActiveSession"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_save_session",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Handles the 'save_session' action.",
+        "calls": [
+          "ToolContext.haven_proxy.get_or_create_session",
+          "ToolContext.socketio.emit('session_name_update')",
+          "memory_manager.ChromaDBStore.add_record",
+          "memory_manager.ChromaDBStore.get_all_records"
+        ],
+        "instantiations": [
+          "data_models.ToolResult",
+          "memory_manager.ChromaDBStore",
+          "proxies.HavenProxyWrapper"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "_handle_delete_session",
+        "args": [
+          "params",
+          "context"
+        ],
+        "docstring": "Handles the 'delete_session' action.",
+        "calls": [
+          "ToolContext.haven_proxy.delete_session",
+          "ToolContext.socketio.emit('session_list_update')",
+          "code_store.delete_collection",
+          "tool_agent._handle_list_sessions",
+          "turn_store.delete_collection",
+          "updated_list_result.model_dump"
+        ],
+        "instantiations": [
+          "data_models.ToolResult",
+          "memory_manager.ChromaDBStore"
+        ],
+        "accessed_state": []
+      },
+      {
+        "name": "execute_tool_command",
+        "args": [
+          "command",
+          "socketio",
+          "session_id",
+          "chat_sessions",
+          "haven_proxy",
+          "loop_id"
+        ],
+        "docstring": "Executes a tool command by dispatching to the appropriate handler.\nThis function is the single entry point for all tool executions. It uses a\nstrategy pattern (TOOL_REGISTRY) to delegate the work to modular handlers.",
+        "calls": [
+          "handler"
+        ],
+        "instantiations": [
+          "data_models.ToolResult",
+          "tool_agent.ToolContext"
+        ],
+        "accessed_state": [
+          "TOOL_REGISTRY"
+        ]
+      }
+    ],
+    "module_state": [
+      {
+        "name": "TOOL_REGISTRY",
+        "value": "{...}"
+      }
+    ]
+  },
+  "tracer.py": {
+    "file_path": "tracer.py",
+    "module_docstring": null,
+    "imports": {
+      "functools": "functools",
+      "inspect": "inspect",
+      "re": "re",
+      "os": "os"
+    },
+    "classes": [
+      {
+        "name": "Tracer",
+        "docstring": "A tracer that logs the execution flow of decorated functions into a\nhierarchical, nested structure that mirrors the call stack.",
+        "methods": [
+          {
+            "name": "__init__",
+            "args": [
+              "self"
+            ],
+            "docstring": null,
+            "calls": [
+              "tracer.Tracer.reset"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "reset",
+            "args": [
+              "self"
+            ],
+            "docstring": "Clears the current trace log and resets the call stack.",
+            "calls": [],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "start_trace",
+            "args": [
+              "self",
+              "module",
+              "func_name"
+            ],
+            "docstring": "Starts a new trace for a function call.",
+            "calls": [],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "end_trace",
+            "args": [
+              "self",
+              "return_value",
+              "is_exception"
+            ],
+            "docstring": "Ends the trace for the current function, adding its return value.",
+            "calls": [
+              "tracer._sanitize_repr"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          },
+          {
+            "name": "get_trace",
+            "args": [
+              "self"
+            ],
+            "docstring": "Returns the completed trace log after performing a final cleanup pass\nto remove empty 'nested_calls' lists.",
+            "calls": [
+              "tracer._clean_trace_log"
+            ],
+            "instantiations": [],
+            "accessed_state": []
+          }
+        ]
+      }
+    ],
+    "functions": [
+      {
+        "name": "_sanitize_repr",
+        "args": [
+          "value"
+        ],
+        "docstring": "Cleans the string representation of an object by removing memory addresses\nand other volatile information.",
+        "calls": [],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "_clean_trace_log",
+        "args": [
+          "log"
+        ],
+        "docstring": "Recursively removes entries with empty 'nested_calls' lists from a trace log.",
+        "calls": [
+          "tracer._clean_trace_log"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      },
+      {
+        "name": "log_event",
+        "args": [
+          "event_name",
+          "details"
+        ],
+        "docstring": "Manually logs a custom event to the global tracer.",
+        "calls": [
+          "inspect.stack"
+        ],
+        "instantiations": [],
+        "accessed_state": [
+          "global_tracer"
+        ]
+      },
+      {
+        "name": "trace",
+        "args": [
+          "func"
+        ],
+        "docstring": "A decorator that logs the entry and exit of a function call\nto the global_tracer in a nested format.",
+        "calls": [
+          "func",
+          "functools.wraps",
+          "global_tracer.end_trace",
+          "global_tracer.start_trace",
+          "inspect.getfile"
+        ],
+        "instantiations": [],
+        "accessed_state": [
+          "global_tracer"
+        ]
+      },
+      {
+        "name": "wrapper",
+        "args": [],
+        "docstring": null,
+        "calls": [
+          "func",
+          "global_tracer.end_trace",
+          "global_tracer.start_trace",
+          "inspect.getfile"
+        ],
+        "instantiations": [],
+        "accessed_state": [
+          "global_tracer"
+        ]
+      }
+    ],
+    "module_state": [
+      {
+        "name": "global_tracer",
+        "value": "Tracer()"
+      }
+    ]
+  },
+  "utils.py": {
+    "file_path": "utils.py",
+    "module_docstring": "Provides common, stateless utility functions used across the application.\n\nThis module is a collection of simple, reusable helper functions that do not\nfit into a more specific module and have no external dependencies other than\nstandard Python libraries.",
+    "imports": {
+      "datetime": "datetime.datetime",
+      "trace": "tracer.trace",
+      "Any": "typing.Any"
+    },
+    "classes": [],
+    "functions": [
+      {
+        "name": "get_timestamp",
+        "args": [],
+        "docstring": "Generates a formatted, uppercase timestamp string.\n\nReturns:\n    A string representing the current time in the format 'DDMMMYYYY_HHMMSSAM/PM',\n    e.g., '07AUG2025_014830PM'.",
+        "calls": [
+          "upper"
+        ],
+        "instantiations": [],
+        "accessed_state": []
+      }
+    ],
+    "module_state": []
+  }
+}

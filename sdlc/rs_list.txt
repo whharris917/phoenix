@@ -114,3 +114,38 @@ The Haven service SHALL NOT be restarted during normal Phoenix application lifec
 All session data MUST persist in memory for the duration of the Haven process lifetime
 The service SHALL maintain thread-safe operations for concurrent access
 Model responses MUST be captured and stored before being returned to prevent data loss
+
+
+
+
+
+
+
+
+
+
+
+
+The following sequence of events shall accurately trace the data flow of the agent's response upon initial receipt:
+1. The Haven shall receive a GenerationResponse object (response) from the agent within Haven.send_message:
+2. The Content object (response.candidates[0].content) shall be appended to the agent's session history list
+3. The str object (response.text) shall be returned to the orchestrator and stored as response_text
+4. A timestamp of the form [DDMMMYYYY_HHMMSSAM/PM] followed by a single space shall be prepended to the beginning of response_text if one does not already exist.
+4. The timestamped response text shall be added to the ChromaDB database via the session's MemoryManager 
+5. The timestamped response text shall be parsed to get a structured ParsedAgentResponse object containing the following:
+(a) prose - The natural language portion of the model's response, if any exists.
+(b) command - The structured command the agent wishes to execute.
+(c) is_prose_empty - A pre-calculated flag for rendering efficiency, indicating if the prose is empty or contains only a timestamp.
+6. The ParsedAgentResponse object shall be passed to the rendered to update the client UI
+7. The ParsedAgentResponse.command.action value shall determine how the agent's command is handled by the orchestrator's reasoning loop
+
+
+
+Response Acquisition: Haven service MUST receive GenerationResponse object from Vertex AI within send_message()
+History Persistence: Content object (response.candidates[0].content) SHALL be appended to session history
+Text Extraction: String representation (response.text) SHALL be returned to orchestrator
+Temporal Annotation: Response text SHALL receive timestamp prefix in format [DDMMMYYYY_HHMMSSAM/PM] if not already present
+Memory Storage: Timestamped response MUST be persisted to ChromaDB via MemoryManager
+Structural Parsing: Response SHALL be parsed into ParsedAgentResponse object containing prose, command, and metadata
+UI Rendering: ParsedAgentResponse SHALL be forwarded to client interface renderer
+Command Routing: ParsedAgentResponse.command.action SHALL determine orchestrator's subsequent execution path

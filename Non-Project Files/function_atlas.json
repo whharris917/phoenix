@@ -1,0 +1,2623 @@
+{
+  "functions": {
+    "phoenix.configure_servers": {
+      "full_name": "phoenix.configure_servers",
+      "file_path": "phoenix.py",
+      "line_number": 23,
+      "docstring": "Initializes and configures the Flask and SocketIO servers and returns them\nfor assignment at the module level for global accessibility.",
+      "type_hints": {},
+      "calls_made": [
+        "SocketIO",
+        "logging.basicConfig",
+        "Flask",
+        "CORS"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [],
+      "returns": "Tuple[Tuple]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "phoenix.connect_to_haven": {
+      "full_name": "phoenix.connect_to_haven",
+      "file_path": "phoenix.py",
+      "line_number": 35,
+      "docstring": "Establishes a connection to the Haven service with a retry loop.\n\nThis function is critical for the application's startup, ensuring a robust\nconnection to the stateful backend process that manages the AI models.\n\nReturns:\n    The Haven proxy object if connection is successful, otherwise None.",
+      "type_hints": {},
+      "calls_made": [
+        "logging.info",
+        "HavenManager",
+        "logging.critical",
+        "HavenManager.register",
+        "range",
+        "logging.warning",
+        "time.sleep",
+        "manager.connect",
+        "manager.get_haven"
+      ],
+      "called_by": [],
+      "complexity_score": 18,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [],
+      "returns": "Optional[BaseManager]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "phoenix.initialize_services": {
+      "full_name": "phoenix.initialize_services",
+      "file_path": "phoenix.py",
+      "line_number": 67,
+      "docstring": "Connects to the Haven service and registers all event handlers.\n\nThis function performs the critical initialization steps that bridge the\nweb server with the backend services.\n\nArgs:\n    socketio: The initialized SocketIO server instance.\n\nReturns:\n    The Haven proxy object if the connection was successful, otherwise None.",
+      "type_hints": {
+        "socketio": "SocketIO"
+      },
+      "calls_made": [
+        "events.register_events",
+        "connect_to_haven"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "socketio"
+      ],
+      "returns": "Optional[BaseManager]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "phoenix.serve_index": {
+      "full_name": "phoenix.serve_index",
+      "file_path": "phoenix.py",
+      "line_number": 94,
+      "docstring": "Serves the main chat interface.",
+      "type_hints": {},
+      "calls_made": [
+        "app.route",
+        "send_from_directory"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [],
+      "returns": null,
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "phoenix.serve_static_files": {
+      "full_name": "phoenix.serve_static_files",
+      "file_path": "phoenix.py",
+      "line_number": 100,
+      "docstring": "Serves static files like CSS and JS from the root directory.",
+      "type_hints": {
+        "filename": "str"
+      },
+      "calls_made": [
+        "app.route",
+        "send_from_directory"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "filename"
+      ],
+      "returns": null,
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "phoenix.serve_audit_visualizer": {
+      "full_name": "phoenix.serve_audit_visualizer",
+      "file_path": "phoenix.py",
+      "line_number": 106,
+      "docstring": "Serves the audit log visualization tool.",
+      "type_hints": {},
+      "calls_made": [
+        "app.route",
+        "send_from_directory"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [],
+      "returns": null,
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "phoenix.serve_database_viewer": {
+      "full_name": "phoenix.serve_database_viewer",
+      "file_path": "phoenix.py",
+      "line_number": 112,
+      "docstring": "Serves the ChromaDB inspection tool.",
+      "type_hints": {},
+      "calls_made": [
+        "app.route",
+        "send_from_directory"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [],
+      "returns": null,
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "phoenix.serve_docs": {
+      "full_name": "phoenix.serve_docs",
+      "file_path": "phoenix.py",
+      "line_number": 118,
+      "docstring": "Serves the documentation viewer.",
+      "type_hints": {},
+      "calls_made": [
+        "app.route",
+        "send_from_directory"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [],
+      "returns": null,
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "phoenix.serve_markdown": {
+      "full_name": "phoenix.serve_markdown",
+      "file_path": "phoenix.py",
+      "line_number": 124,
+      "docstring": "Serves the raw markdown documentation file.",
+      "type_hints": {},
+      "calls_made": [
+        "app.route",
+        "send_from_directory"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [],
+      "returns": null,
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "phoenix.serve_workshop": {
+      "full_name": "phoenix.serve_workshop",
+      "file_path": "phoenix.py",
+      "line_number": 130,
+      "docstring": "Serves the workshop/testing interface.",
+      "type_hints": {},
+      "calls_made": [
+        "app.route",
+        "send_from_directory"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [],
+      "returns": null,
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "haven.configure_logging": {
+      "full_name": "haven.configure_logging",
+      "file_path": "haven.py",
+      "line_number": 21,
+      "docstring": "Configures the global logging settings for the Haven service.",
+      "type_hints": {},
+      "calls_made": [
+        "logging.basicConfig"
+      ],
+      "called_by": [],
+      "complexity_score": 2,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [],
+      "returns": "None",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "haven.load_system_prompt": {
+      "full_name": "haven.load_system_prompt",
+      "file_path": "haven.py",
+      "line_number": 28,
+      "docstring": "Loads the system prompt text from the 'system_prompt.txt' file.",
+      "type_hints": {},
+      "calls_made": [
+        "f.read",
+        "open",
+        "os.path.dirname",
+        "os.path.join"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [],
+      "returns": "str",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "haven.load_model_definition": {
+      "full_name": "haven.load_model_definition",
+      "file_path": "haven.py",
+      "line_number": 38,
+      "docstring": "Loads the model name from the 'model_definition.txt' file.",
+      "type_hints": {},
+      "calls_made": [
+        "f.read",
+        "open",
+        "os.path.join",
+        "Call.strip",
+        "os.path.dirname"
+      ],
+      "called_by": [],
+      "complexity_score": 10,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [],
+      "returns": "str",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "haven.initialize_model": {
+      "full_name": "haven.initialize_model",
+      "file_path": "haven.py",
+      "line_number": 48,
+      "docstring": "Initializes the connection to Vertex AI and loads the generative model.\n\nThis is a critical, one-time setup step for the Haven service.\n\nReturns:\n    The initialized GenerativeModel object on success, otherwise None.",
+      "type_hints": {},
+      "calls_made": [
+        "logging.info",
+        "vertexai.init",
+        "load_system_prompt",
+        "GenerativeModel",
+        "logging.critical",
+        "load_model_definition"
+      ],
+      "called_by": [],
+      "complexity_score": 12,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [],
+      "returns": "Optional[GenerativeModel]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "haven.Haven.get_or_create_session": {
+      "full_name": "haven.Haven.get_or_create_session",
+      "file_path": "haven.py",
+      "line_number": 86,
+      "docstring": "Gets a session history if it exists, otherwise creates a new one.\n\nThis ensures that if the main app restarts, it can reconnect to the\nhistories that have been preserved in this Haven process.\n\nArgs:\n    session_name: The unique identifier for the session.\n    history_dicts: A list of dictionaries representing conversation turns,\n                   used to hydrate a new session's history if it's the first time\n                   it's being loaded in this Haven instance.\n\nReturns:\n    True, indicating the session history is ready.",
+      "type_hints": {
+        "session_name": "str",
+        "history_dicts": "list[dict]"
+      },
+      "calls_made": [
+        "Content",
+        "logging.info",
+        "BoolOp.get",
+        "turn.get",
+        "Part.from_text"
+      ],
+      "called_by": [],
+      "complexity_score": 10,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "self",
+        "session_name",
+        "history_dicts"
+      ],
+      "returns": "bool",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "haven.Haven.send_message": {
+      "full_name": "haven.Haven.send_message",
+      "file_path": "haven.py",
+      "line_number": 118,
+      "docstring": "Sends a message by appending to the history and making a stateless\ncall to model.generate_content().\n\nArgs:\n    session_name: The session to send the message to.\n    prompt: The user's prompt text.\n\nReturns:\n    A dictionary with 'status' and either 'text' on success or 'message' on error.",
+      "type_hints": {
+        "session_name": "str",
+        "prompt": "str"
+      },
+      "calls_made": [
+        "model.generate_content",
+        "Content",
+        "history.append",
+        "logging.error",
+        "str",
+        "Part.from_text"
+      ],
+      "called_by": [],
+      "complexity_score": 12,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "self",
+        "session_name",
+        "prompt"
+      ],
+      "returns": "dict[Tuple]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "haven.Haven.list_sessions": {
+      "full_name": "haven.Haven.list_sessions",
+      "file_path": "haven.py",
+      "line_number": 154,
+      "docstring": "Returns a list of the names of all currently live sessions.",
+      "type_hints": {},
+      "calls_made": [
+        "list",
+        "live_chat_sessions.keys"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "self"
+      ],
+      "returns": "list[str]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "haven.Haven.delete_session": {
+      "full_name": "haven.Haven.delete_session",
+      "file_path": "haven.py",
+      "line_number": 159,
+      "docstring": "Deletes a session from the live dictionary to free up memory.",
+      "type_hints": {
+        "session_name": "str"
+      },
+      "calls_made": [
+        "logging.info",
+        "logging.warning"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "self",
+        "session_name"
+      ],
+      "returns": "dict[Tuple]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "haven.Haven.has_session": {
+      "full_name": "haven.Haven.has_session",
+      "file_path": "haven.py",
+      "line_number": 170,
+      "docstring": "Checks if a session exists in the Haven.",
+      "type_hints": {
+        "session_name": "str"
+      },
+      "calls_made": [],
+      "called_by": [],
+      "complexity_score": 0,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "self",
+        "session_name"
+      ],
+      "returns": "bool",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "haven.Haven.get_trace_log": {
+      "full_name": "haven.Haven.get_trace_log",
+      "file_path": "haven.py",
+      "line_number": 175,
+      "docstring": "Returns the trace log from this Haven process.",
+      "type_hints": {},
+      "calls_made": [
+        "global_tracer.get_trace"
+      ],
+      "called_by": [],
+      "complexity_score": 2,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "self"
+      ],
+      "returns": null,
+      "decorators": [
+        "trace"
+      ]
+    },
+    "haven.start_haven": {
+      "full_name": "haven.start_haven",
+      "file_path": "haven.py",
+      "line_number": 186,
+      "docstring": "Initializes and starts the Haven server process.",
+      "type_hints": {},
+      "calls_made": [
+        "Haven",
+        "logging.info",
+        "HavenManager",
+        "HavenManager.register",
+        "server.serve_forever",
+        "manager.get_server"
+      ],
+      "called_by": [],
+      "complexity_score": 12,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [],
+      "returns": "None",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "events.replay_history_for_client": {
+      "full_name": "events.replay_history_for_client",
+      "file_path": "events.py",
+      "line_number": 40,
+      "docstring": "Parses raw chat history and emits granular rendering events to the client.\nThis allows a saved session to be loaded and displayed correctly.",
+      "type_hints": {
+        "socketio": "SocketIO",
+        "session_id": "str",
+        "session_name": "str",
+        "history": "List[Subscript]"
+      },
+      "calls_made": [
+        "item.get",
+        "BoolOp.get",
+        "parsed.command.parameters.get",
+        "logging.error",
+        "raw_text.strip",
+        "socketio.emit",
+        "raw_text.find",
+        "_handle_payloads",
+        "socketio.sleep",
+        "raw_text.startswith",
+        "json.loads",
+        "ToolResult.model_validate",
+        "isinstance",
+        "parse_agent_response",
+        "len"
+      ],
+      "called_by": [],
+      "complexity_score": 30,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "socketio",
+        "session_id",
+        "session_name",
+        "history"
+      ],
+      "returns": "None",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "events._create_new_session": {
+      "full_name": "events._create_new_session",
+      "file_path": "events.py",
+      "line_number": 104,
+      "docstring": "Creates a new user session and initializes all necessary components.\n\nThis involves creating a session in the Haven service, initializing the\nmemory manager, and wrapping them in a structured ActiveSession object.\n\nArgs:\n    session_id: The unique SocketIO session identifier.\n    proxy: The proxy object for the Haven service.\n\nReturns:\n    An initialized ActiveSession object.",
+      "type_hints": {
+        "session_id": "str",
+        "proxy": "object"
+      },
+      "calls_made": [
+        "logging.info",
+        "HavenProxyWrapper",
+        "proxy.get_or_create_session",
+        "ActiveSession",
+        "MemoryManager",
+        "get_timestamp"
+      ],
+      "called_by": [],
+      "complexity_score": 12,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "session_id",
+        "proxy"
+      ],
+      "returns": "ActiveSession",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "events.register_events": {
+      "full_name": "events.register_events",
+      "file_path": "events.py",
+      "line_number": 134,
+      "docstring": "Registers all SocketIO event handlers with the main application.\n\nThis function acts as the entry point for this module, setting up the\nglobal haven_proxy reference and connecting the event handlers.",
+      "type_hints": {
+        "socketio": "SocketIO",
+        "haven_proxy": "object"
+      },
+      "calls_made": [],
+      "called_by": [
+        "phoenix.initialize_services"
+      ],
+      "complexity_score": 1,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "socketio",
+        "haven_proxy"
+      ],
+      "returns": null,
+      "decorators": [
+        "trace"
+      ]
+    },
+    "events.handle_connect": {
+      "full_name": "events.handle_connect",
+      "file_path": "events.py",
+      "line_number": 146,
+      "docstring": "Handles a new client connection by creating and initializing a new session.",
+      "type_hints": {},
+      "calls_made": [
+        "_create_new_session",
+        "logging.info",
+        "auth.get",
+        "logging.exception",
+        "socketio.on",
+        "socketio.emit"
+      ],
+      "called_by": [],
+      "complexity_score": 12,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "auth"
+      ],
+      "returns": "None",
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "events.handle_disconnect": {
+      "full_name": "events.handle_disconnect",
+      "file_path": "events.py",
+      "line_number": 175,
+      "docstring": "Handles client disconnection by cleaning up session data.",
+      "type_hints": {},
+      "calls_made": [
+        "logging.info",
+        "confirmation_events.pop",
+        "chat_sessions.pop",
+        "socketio.on"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "auth"
+      ],
+      "returns": "None",
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "events.handle_start_task": {
+      "full_name": "events.handle_start_task",
+      "file_path": "events.py",
+      "line_number": 187,
+      "docstring": "Receives a task from the client and starts the agent's reasoning loop.\n\nArgs:\n    data: A dictionary of the form {\"prompt\": \"This is the content of the prompt.\"}   ",
+      "type_hints": {
+        "data": "dict"
+      },
+      "calls_made": [
+        "chat_sessions.get",
+        "socketio.on",
+        "socketio.start_background_task",
+        "get_timestamp",
+        "socketio.emit",
+        "data.get"
+      ],
+      "called_by": [],
+      "complexity_score": 12,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "data"
+      ],
+      "returns": "None",
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "events.handle_session_list_request": {
+      "full_name": "events.handle_session_list_request",
+      "file_path": "events.py",
+      "line_number": 213,
+      "docstring": "Handles a client's request for the list of available sessions.",
+      "type_hints": {},
+      "calls_made": [
+        "execute_tool_command",
+        "tool_result.model_dump",
+        "socketio.on",
+        "ToolCommand",
+        "socketio.emit"
+      ],
+      "called_by": [],
+      "complexity_score": 10,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "auth"
+      ],
+      "returns": "None",
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "events.handle_session_name_request": {
+      "full_name": "events.handle_session_name_request",
+      "file_path": "events.py",
+      "line_number": 225,
+      "docstring": "Handles a client's request for its current session name.",
+      "type_hints": {},
+      "calls_made": [
+        "chat_sessions.get",
+        "socketio.on",
+        "socketio.emit"
+      ],
+      "called_by": [],
+      "complexity_score": 6,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "auth"
+      ],
+      "returns": "None",
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "events.handle_db_collections_request": {
+      "full_name": "events.handle_db_collections_request",
+      "file_path": "events.py",
+      "line_number": 233,
+      "docstring": "Forwards a request for DB collections to the db_inspector.",
+      "type_hints": {},
+      "calls_made": [
+        "db_inspector.list_collections_as_json",
+        "socketio.on",
+        "socketio.emit"
+      ],
+      "called_by": [],
+      "complexity_score": 6,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "auth"
+      ],
+      "returns": "None",
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "events.handle_db_collection_data_request": {
+      "full_name": "events.handle_db_collection_data_request",
+      "file_path": "events.py",
+      "line_number": 241,
+      "docstring": "Forwards a request for specific collection data to the db_inspector.",
+      "type_hints": {
+        "data": "dict"
+      },
+      "calls_made": [
+        "db_inspector.get_collection_data_as_json",
+        "socketio.on",
+        "socketio.emit",
+        "data.get"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "data"
+      ],
+      "returns": "None",
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "events.handle_user_confirmation": {
+      "full_name": "events.handle_user_confirmation",
+      "file_path": "events.py",
+      "line_number": 250,
+      "docstring": "Receives a 'yes' or 'no' from the user and forwards it to a waiting event.",
+      "type_hints": {
+        "data": "dict"
+      },
+      "calls_made": [
+        "confirmation_events.get",
+        "socketio.on",
+        "event.send",
+        "data.get"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "data"
+      ],
+      "returns": "None",
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "events.handle_audit_log": {
+      "full_name": "events.handle_audit_log",
+      "file_path": "events.py",
+      "line_number": 258,
+      "docstring": "Receives an audit log event from the client.",
+      "type_hints": {
+        "data": "dict"
+      },
+      "calls_made": [
+        "chat_sessions.get",
+        "socketio.on",
+        "audit_log.log_event",
+        "data.get"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "data"
+      ],
+      "returns": "None",
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "events.handle_get_trace_log": {
+      "full_name": "events.handle_get_trace_log",
+      "file_path": "events.py",
+      "line_number": 277,
+      "docstring": "Handles a request from the scenario runner to get the trace log\nand sends it back.",
+      "type_hints": {},
+      "calls_made": [
+        "logging.info",
+        "socketio.on",
+        "socketio.emit",
+        "global_tracer.get_trace"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "data"
+      ],
+      "returns": null,
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "events.handle_get_haven_trace_log": {
+      "full_name": "events.handle_get_haven_trace_log",
+      "file_path": "events.py",
+      "line_number": 290,
+      "docstring": "Handles a request for the Haven service's trace log.",
+      "type_hints": {},
+      "calls_made": [
+        "_haven_proxy.get_trace_log",
+        "logging.info",
+        "socketio.emit",
+        "socketio.on"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "data"
+      ],
+      "returns": null,
+      "decorators": [
+        "Call",
+        "trace"
+      ]
+    },
+    "orchestrator._emit_agent_message": {
+      "full_name": "orchestrator._emit_agent_message",
+      "file_path": "orchestrator.py",
+      "line_number": 30,
+      "docstring": "A small wrapper to emit a formatted message to the client.\n\nThis helper ensures that empty or whitespace-only messages are not sent,\nkeeping the client-side log clean.\n\nArgs:\n    socketio: The SocketIO server instance for communication.\n    session_id: The unique session ID of the target client.\n    message_type: The category of the message (e.g., 'final_answer', 'info').\n    content: The text content of the message.",
+      "type_hints": {
+        "session_id": "str",
+        "message_type": "str",
+        "content": "str"
+      },
+      "calls_made": [
+        "content.strip",
+        "socketio.emit"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "socketio",
+        "session_id",
+        "message_type",
+        "content"
+      ],
+      "returns": "None",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "orchestrator._process_model_response": {
+      "full_name": "orchestrator._process_model_response",
+      "file_path": "orchestrator.py",
+      "line_number": 47,
+      "docstring": "Parses raw model text into a structured ParsedAgentResponse object.\n\nThis function acts as a crucial translation layer between the raw output of\nthe generative model and the structured data the orchestrator works with.\nIt isolates parsing, handles payload extraction, attaches prose to the\ncommand for context, and creates a fallback command if necessary.\n\nArgs:\n    response_text: The raw, timestamped text from the generative model.\n\nReturns:\n    The fully processed ParsedAgentResponse object, ready for rendering\n    and execution.",
+      "type_hints": {
+        "response_text": "str"
+      },
+      "calls_made": [
+        "_handle_payloads",
+        "parse_agent_response",
+        "ToolCommand"
+      ],
+      "called_by": [],
+      "complexity_score": 6,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "response_text"
+      ],
+      "returns": "ParsedAgentResponse",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "orchestrator._render_agent_turn": {
+      "full_name": "orchestrator._render_agent_turn",
+      "file_path": "orchestrator.py",
+      "line_number": 88,
+      "docstring": "Renders the agent's turn to the client from a ParsedAgentResponse object.\n\nThis function translates the agent's internal command into a user-facing\nmessage, confirmation prompt, or informational text.\n\nArgs:\n    socketio: The SocketIO server instance.\n    session_id: The client's unique session ID.\n    parsed_response: The structured response object from _process_model_response.\n    is_live: A flag indicating if this is a live turn (requiring a real\n             confirmation prompt) or a replayed one from history.",
+      "type_hints": {
+        "session_id": "str",
+        "parsed_response": "ParsedAgentResponse",
+        "is_live": "bool"
+      },
+      "calls_made": [
+        "is_prose_effectively_empty",
+        "_emit_agent_message",
+        "len",
+        "socketio.emit",
+        "command.parameters.get"
+      ],
+      "called_by": [],
+      "complexity_score": 10,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "socketio",
+        "session_id",
+        "parsed_response",
+        "is_live"
+      ],
+      "returns": "None",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "orchestrator.execute_reasoning_loop": {
+      "full_name": "orchestrator.execute_reasoning_loop",
+      "file_path": "orchestrator.py",
+      "line_number": 137,
+      "docstring": "Executes the main cognitive loop for the agent.\n\nThis loop is the heart of the agent, driving a cycle of thought and action:\n1. Augment a prompt with context from memory (RAG).\n2. Call the generative model.\n3. Process the model's response into a command.\n4. Render the agent's \"thought\" or action to the user.\n5. Execute the command.\n6. Use the tool result as the prompt for the next cycle.\nThis continues until the task is complete or a limit is reached.\n\nArgs:\n    socketio: The SocketIO server instance for real-time client communication.\n    session_data: The active session object containing memory and chat proxies.\n    initial_prompt: The user's initial prompt that kicks off the loop.\n    session_id: The client's unique session ID.\n    chat_sessions: A dictionary of all active sessions, necessary for the\n                   agent to perform session management tools (load, save, etc.).\n    haven_proxy: The proxy object for the Haven service, which hosts the model.",
+      "type_hints": {
+        "session_data": "ActiveSession",
+        "initial_prompt": "str",
+        "session_id": "str",
+        "chat_sessions": "dict[Tuple]",
+        "haven_proxy": "object"
+      },
+      "calls_made": [
+        "logging.info",
+        "_process_model_response",
+        "Event",
+        "range",
+        "uuid.uuid4",
+        "memory.add_turn",
+        "json.dumps",
+        "tool_result.model_dump_json",
+        "tpool.execute",
+        "execute_tool_command",
+        "re.match",
+        "logging.warning",
+        "str",
+        "get_timestamp",
+        "confirmation_events.pop",
+        "socketio.emit",
+        "memory.prepare_augmented_prompt",
+        "socketio.sleep",
+        "confirmation_event.wait",
+        "_render_agent_turn",
+        "logging.exception"
+      ],
+      "called_by": [],
+      "complexity_score": 42,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "socketio",
+        "session_data",
+        "initial_prompt",
+        "session_id",
+        "chat_sessions",
+        "haven_proxy"
+      ],
+      "returns": "None",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._execute_script": {
+      "full_name": "tool_agent._execute_script",
+      "file_path": "tool_agent.py",
+      "line_number": 45,
+      "docstring": "Executes a Python script in a restricted environment and captures its output.",
+      "type_hints": {
+        "script_content": "str"
+      },
+      "calls_made": [
+        "ToolResult",
+        "string_io.getvalue",
+        "exec",
+        "str",
+        "redirect_stdout",
+        "io.StringIO"
+      ],
+      "called_by": [],
+      "complexity_score": 12,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "script_content"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._write_file": {
+      "full_name": "tool_agent._write_file",
+      "file_path": "tool_agent.py",
+      "line_number": 64,
+      "docstring": "Writes content to a file, creating directories if necessary.",
+      "type_hints": {
+        "path": "str",
+        "content": "str"
+      },
+      "calls_made": [
+        "ToolResult",
+        "open",
+        "os.path.dirname",
+        "f.write",
+        "str",
+        "os.makedirs",
+        "os.path.basename"
+      ],
+      "called_by": [],
+      "complexity_score": 14,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "path",
+        "content"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._read_file": {
+      "full_name": "tool_agent._read_file",
+      "file_path": "tool_agent.py",
+      "line_number": 75,
+      "docstring": "Reads the content of a file.",
+      "type_hints": {
+        "path": "str"
+      },
+      "calls_made": [
+        "f.read",
+        "ToolResult",
+        "open",
+        "os.path.exists",
+        "str",
+        "os.path.basename"
+      ],
+      "called_by": [],
+      "complexity_score": 12,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "path"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._delete_file": {
+      "full_name": "tool_agent._delete_file",
+      "file_path": "tool_agent.py",
+      "line_number": 87,
+      "docstring": "Deletes a file from the filesystem.",
+      "type_hints": {
+        "path": "str"
+      },
+      "calls_made": [
+        "ToolResult",
+        "os.path.exists",
+        "os.remove",
+        "str",
+        "os.path.basename"
+      ],
+      "called_by": [],
+      "complexity_score": 10,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "path"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._list_directory": {
+      "full_name": "tool_agent._list_directory",
+      "file_path": "tool_agent.py",
+      "line_number": 98,
+      "docstring": "Lists all files in a directory recursively, ignoring certain subdirectories.",
+      "type_hints": {
+        "path": "str"
+      },
+      "calls_made": [
+        "file_list.append",
+        "ToolResult",
+        "os.path.relpath",
+        "relative_path.replace",
+        "os.path.join",
+        "str",
+        "os.walk"
+      ],
+      "called_by": [],
+      "complexity_score": 14,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "path"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent.get_safe_path": {
+      "full_name": "tool_agent.get_safe_path",
+      "file_path": "tool_agent.py",
+      "line_number": 113,
+      "docstring": "Constructs a safe file path within a designated directory, preventing path traversal.",
+      "type_hints": {
+        "filename": "str",
+        "base_dir_name": "str"
+      },
+      "calls_made": [
+        "ValueError",
+        "os.path.dirname",
+        "requested_path.startswith",
+        "os.path.join",
+        "os.path.abspath",
+        "os.makedirs"
+      ],
+      "called_by": [],
+      "complexity_score": 12,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "filename",
+        "base_dir_name"
+      ],
+      "returns": "str",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._extract_patch_paths": {
+      "full_name": "tool_agent._extract_patch_paths",
+      "file_path": "tool_agent.py",
+      "line_number": 127,
+      "docstring": "Extracts source (a) and target (b) filenames from a diff header.",
+      "type_hints": {
+        "diff_content": "str"
+      },
+      "calls_made": [
+        "diff_content.splitlines",
+        "Subscript.strip",
+        "line.startswith",
+        "line.split"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "diff_content"
+      ],
+      "returns": "tuple[Tuple]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._validate_patch_paths": {
+      "full_name": "tool_agent._validate_patch_paths",
+      "file_path": "tool_agent.py",
+      "line_number": 140,
+      "docstring": "Validates the source and target paths for the patch.",
+      "type_hints": {
+        "source_filename": "str",
+        "target_filename": "str"
+      },
+      "calls_made": [
+        "source_filename.startswith",
+        "ToolResult",
+        "target_filename.startswith"
+      ],
+      "called_by": [],
+      "complexity_score": 6,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "source_filename",
+        "target_filename"
+      ],
+      "returns": "ToolResult | None",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._get_source_read_path": {
+      "full_name": "tool_agent._get_source_read_path",
+      "file_path": "tool_agent.py",
+      "line_number": 149,
+      "docstring": "Determines the absolute path from which to read the source file.",
+      "type_hints": {
+        "source_filename": "str"
+      },
+      "calls_made": [
+        "get_safe_path",
+        "os.path.join",
+        "source_filename.startswith",
+        "len",
+        "os.path.dirname"
+      ],
+      "called_by": [],
+      "complexity_score": 10,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "source_filename"
+      ],
+      "returns": "str",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_create_file": {
+      "full_name": "tool_agent._handle_create_file",
+      "file_path": "tool_agent.py",
+      "line_number": 159,
+      "docstring": "Handles the 'create_file' action.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "params.get",
+        "get_safe_path",
+        "tpool.execute"
+      ],
+      "called_by": [],
+      "complexity_score": 6,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_read_file": {
+      "full_name": "tool_agent._handle_read_file",
+      "file_path": "tool_agent.py",
+      "line_number": 167,
+      "docstring": "Handles the 'read_file' action.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "params.get",
+        "get_safe_path",
+        "ToolResult",
+        "tpool.execute"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_read_project_file": {
+      "full_name": "tool_agent._handle_read_project_file",
+      "file_path": "tool_agent.py",
+      "line_number": 176,
+      "docstring": "Handles the 'read_project_file' action with validation.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "ToolResult",
+        "os.path.join",
+        "params.get",
+        "tpool.execute",
+        "os.path.dirname"
+      ],
+      "called_by": [],
+      "complexity_score": 10,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_list_allowed_project_files": {
+      "full_name": "tool_agent._handle_list_allowed_project_files",
+      "file_path": "tool_agent.py",
+      "line_number": 187,
+      "docstring": "Handles the 'list_allowed_project_files' action.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "ToolResult"
+      ],
+      "called_by": [],
+      "complexity_score": 2,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_list_directory": {
+      "full_name": "tool_agent._handle_list_directory",
+      "file_path": "tool_agent.py",
+      "line_number": 192,
+      "docstring": "Handles the 'list_directory' action.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "get_safe_path",
+        "tpool.execute"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_delete_file": {
+      "full_name": "tool_agent._handle_delete_file",
+      "file_path": "tool_agent.py",
+      "line_number": 199,
+      "docstring": "Handles the 'delete_file' action.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "params.get",
+        "get_safe_path",
+        "ToolResult",
+        "tpool.execute"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_execute_python_script": {
+      "full_name": "tool_agent._handle_execute_python_script",
+      "file_path": "tool_agent.py",
+      "line_number": 208,
+      "docstring": "Handles the 'execute_python_script' action.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "params.get",
+        "tpool.execute"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_apply_patch": {
+      "full_name": "tool_agent._handle_apply_patch",
+      "file_path": "tool_agent.py",
+      "line_number": 214,
+      "docstring": "Orchestrates the 'apply_patch' action by calling decomposed helpers.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "len",
+        "get_safe_path",
+        "ToolResult",
+        "patcher.apply_patch",
+        "params.get",
+        "_extract_patch_paths",
+        "_validate_patch_paths",
+        "diff_content.replace",
+        "os.path.exists",
+        "_get_source_read_path",
+        "tpool.execute"
+      ],
+      "called_by": [],
+      "complexity_score": 22,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_list_sessions": {
+      "full_name": "tool_agent._handle_list_sessions",
+      "file_path": "tool_agent.py",
+      "line_number": 258,
+      "docstring": "Handles the 'list_sessions' action.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "context.haven_proxy.list_sessions",
+        "ToolResult",
+        "session_list.sort",
+        "name.replace",
+        "db_sessions.items",
+        "col.name.startswith",
+        "chromadb.PersistentClient",
+        "chroma_client.list_collections"
+      ],
+      "called_by": [],
+      "complexity_score": 16,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_load_session": {
+      "full_name": "tool_agent._handle_load_session",
+      "file_path": "tool_agent.py",
+      "line_number": 280,
+      "docstring": "Handles the 'load_session' action.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "replay_history_for_client",
+        "ToolResult",
+        "HavenProxyWrapper",
+        "params.get",
+        "ActiveSession",
+        "MemoryManager",
+        "context.socketio.emit",
+        "context.haven_proxy.get_or_create_session",
+        "turn_store.get_all_records",
+        "ChromaDBStore"
+      ],
+      "called_by": [],
+      "complexity_score": 20,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_save_session": {
+      "full_name": "tool_agent._handle_save_session",
+      "file_path": "tool_agent.py",
+      "line_number": 304,
+      "docstring": "Handles the 'save_session' action.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "ToolResult",
+        "HavenProxyWrapper",
+        "params.get",
+        "target_code_store.add_record",
+        "str",
+        "source_turn_store.get_all_records",
+        "context.socketio.emit",
+        "target_turn_store.add_record",
+        "context.chat_sessions.get",
+        "context.haven_proxy.get_or_create_session",
+        "ChromaDBStore",
+        "source_code_store.get_all_records"
+      ],
+      "called_by": [],
+      "complexity_score": 24,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent._handle_delete_session": {
+      "full_name": "tool_agent._handle_delete_session",
+      "file_path": "tool_agent.py",
+      "line_number": 340,
+      "docstring": "Handles the 'delete_session' action.",
+      "type_hints": {
+        "params": "dict",
+        "context": "ToolContext"
+      },
+      "calls_made": [
+        "code_store.delete_collection",
+        "updated_list_result.model_dump",
+        "ToolResult",
+        "_handle_list_sessions",
+        "params.get",
+        "logging.error",
+        "context.haven_proxy.delete_session",
+        "context.socketio.emit",
+        "turn_store.delete_collection",
+        "ChromaDBStore"
+      ],
+      "called_by": [],
+      "complexity_score": 20,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "params",
+        "context"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "tool_agent.execute_tool_command": {
+      "full_name": "tool_agent.execute_tool_command",
+      "file_path": "tool_agent.py",
+      "line_number": 379,
+      "docstring": "Executes a tool command by dispatching to the appropriate handler.\nThis function is the single entry point for all tool executions. It uses a\nstrategy pattern (TOOL_REGISTRY) to delegate the work to modular handlers.",
+      "type_hints": {
+        "command": "ToolCommand",
+        "session_id": "str",
+        "chat_sessions": "dict[Tuple]",
+        "haven_proxy": "object",
+        "loop_id": "str | None"
+      },
+      "calls_made": [
+        "TOOL_REGISTRY.get",
+        "ToolResult",
+        "logging.error",
+        "handler",
+        "ToolContext"
+      ],
+      "called_by": [],
+      "complexity_score": 10,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "command",
+        "socketio",
+        "session_id",
+        "chat_sessions",
+        "haven_proxy",
+        "loop_id"
+      ],
+      "returns": "ToolResult",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.initialize_embedding_function": {
+      "full_name": "memory_manager.initialize_embedding_function",
+      "file_path": "memory_manager.py",
+      "line_number": 26,
+      "docstring": "Initializes the default sentence-transformer embedding model.\n\nThis is a critical, one-time setup step for the memory system.\n\nReturns:\n    An initialized embedding function object on success, otherwise None.",
+      "type_hints": {},
+      "calls_made": [
+        "logging.info",
+        "embedding_functions.DefaultEmbeddingFunction",
+        "logging.critical"
+      ],
+      "called_by": [],
+      "complexity_score": 6,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [],
+      "returns": "Optional[embedding_functions.EmbeddingFunction]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.ChromaDBStore.__init__": {
+      "full_name": "memory_manager.ChromaDBStore.__init__",
+      "file_path": "memory_manager.py",
+      "line_number": 53,
+      "docstring": "Initializes the data store and connects to a ChromaDB collection.\n\nArgs:\n    collection_name: The name of the collection to connect to.",
+      "type_hints": {
+        "collection_name": "str"
+      },
+      "calls_made": [
+        "logging.info",
+        "c.isalnum",
+        "logging.error",
+        "uuid.uuid4",
+        "Constant.join",
+        "chromadb.PersistentClient",
+        "len",
+        "Call.strip",
+        "chroma_client.get_or_create_collection"
+      ],
+      "called_by": [],
+      "complexity_score": 18,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "self",
+        "collection_name"
+      ],
+      "returns": null,
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.ChromaDBStore.add_record": {
+      "full_name": "memory_manager.ChromaDBStore.add_record",
+      "file_path": "memory_manager.py",
+      "line_number": 82,
+      "docstring": "Adds a single MemoryRecord to the collection.",
+      "type_hints": {
+        "record": "MemoryRecord",
+        "record_id": "str"
+      },
+      "calls_made": [
+        "logging.error",
+        "record.model_dump",
+        "self.collection.add"
+      ],
+      "called_by": [],
+      "complexity_score": 6,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "self",
+        "record",
+        "record_id"
+      ],
+      "returns": "None",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.ChromaDBStore.get_all_records": {
+      "full_name": "memory_manager.ChromaDBStore.get_all_records",
+      "file_path": "memory_manager.py",
+      "line_number": 94,
+      "docstring": "Retrieves and validates all records from the collection, sorted by time.",
+      "type_hints": {},
+      "calls_made": [
+        "all_records.append",
+        "logging.error",
+        "enumerate",
+        "logging.warning",
+        "self.collection.count",
+        "MemoryRecord.model_validate",
+        "history.get",
+        "all_records.sort",
+        "self.collection.get"
+      ],
+      "called_by": [],
+      "complexity_score": 18,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "self"
+      ],
+      "returns": "List[MemoryRecord]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.ChromaDBStore.query": {
+      "full_name": "memory_manager.ChromaDBStore.query",
+      "file_path": "memory_manager.py",
+      "line_number": 124,
+      "docstring": "Queries the collection for similar documents and returns validated records.",
+      "type_hints": {
+        "query_text": "str",
+        "n_results": "int"
+      },
+      "calls_made": [
+        "results_with_meta.append",
+        "logging.error",
+        "enumerate",
+        "logging.warning",
+        "self.collection.count",
+        "results_with_meta.sort",
+        "self.collection.query",
+        "min",
+        "MemoryRecord.model_validate",
+        "query_results.get"
+      ],
+      "called_by": [],
+      "complexity_score": 20,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "self",
+        "query_text",
+        "n_results"
+      ],
+      "returns": "List[MemoryRecord]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.ChromaDBStore.update_records_metadata": {
+      "full_name": "memory_manager.ChromaDBStore.update_records_metadata",
+      "file_path": "memory_manager.py",
+      "line_number": 156,
+      "docstring": "Updates metadata for existing records in the collection.",
+      "type_hints": {
+        "ids": "List[str]",
+        "metadatas": "List[dict]"
+      },
+      "calls_made": [
+        "logging.error",
+        "self.collection.update"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "self",
+        "ids",
+        "metadatas"
+      ],
+      "returns": null,
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.ChromaDBStore.delete_collection": {
+      "full_name": "memory_manager.ChromaDBStore.delete_collection",
+      "file_path": "memory_manager.py",
+      "line_number": 166,
+      "docstring": "Deletes the entire collection from the database.",
+      "type_hints": {},
+      "calls_made": [
+        "chroma_client.delete_collection",
+        "chromadb.PersistentClient",
+        "logging.error",
+        "logging.info"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "self"
+      ],
+      "returns": null,
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.MemoryManager.__init__": {
+      "full_name": "memory_manager.MemoryManager.__init__",
+      "file_path": "memory_manager.py",
+      "line_number": 185,
+      "docstring": "Initializes the memory manager for a specific session.\n\nArgs:\n    session_name: The unique name of the session to manage.",
+      "type_hints": {
+        "session_name": "str"
+      },
+      "calls_made": [
+        "self._repopulate_buffer_from_db",
+        "ChromaDBStore"
+      ],
+      "called_by": [],
+      "complexity_score": 4,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "self",
+        "session_name"
+      ],
+      "returns": null,
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.MemoryManager._repopulate_buffer_from_db": {
+      "full_name": "memory_manager.MemoryManager._repopulate_buffer_from_db",
+      "file_path": "memory_manager.py",
+      "line_number": 204,
+      "docstring": "Loads the most recent history from the DB into the conversational buffer.",
+      "type_hints": {},
+      "calls_made": [
+        "self.turn_store.get_all_records",
+        "Content",
+        "logging.info",
+        "logging.error",
+        "len",
+        "Part.from_text"
+      ],
+      "called_by": [],
+      "complexity_score": 12,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "self"
+      ],
+      "returns": null,
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.MemoryManager.add_turn": {
+      "full_name": "memory_manager.MemoryManager.add_turn",
+      "file_path": "memory_manager.py",
+      "line_number": 218,
+      "docstring": "Adds a new turn to both the buffer (Tier 1) and vector store (Tier 2).",
+      "type_hints": {
+        "role": "str",
+        "content": "str",
+        "metadata": "dict",
+        "augmented_prompt": "str"
+      },
+      "calls_made": [
+        "logging.info",
+        "hasattr",
+        "self.conversational_buffer.pop",
+        "str",
+        "Part.from_text",
+        "self.conversational_buffer.append",
+        "Content",
+        "time.time",
+        "setattr",
+        "MemoryRecord",
+        "self.turn_store.add_record",
+        "len",
+        "metadata.items"
+      ],
+      "called_by": [],
+      "complexity_score": 26,
+      "is_entry_point": true,
+      "is_critical": true,
+      "parameters": [
+        "self",
+        "role",
+        "content",
+        "metadata",
+        "augmented_prompt"
+      ],
+      "returns": null,
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.MemoryManager.get_all_turns": {
+      "full_name": "memory_manager.MemoryManager.get_all_turns",
+      "file_path": "memory_manager.py",
+      "line_number": 242,
+      "docstring": "Delegates retrieval of all turns to the data store.",
+      "type_hints": {},
+      "calls_made": [
+        "self.turn_store.get_all_records"
+      ],
+      "called_by": [],
+      "complexity_score": 2,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "self"
+      ],
+      "returns": "List[MemoryRecord]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.MemoryManager.get_context_for_prompt": {
+      "full_name": "memory_manager.MemoryManager.get_context_for_prompt",
+      "file_path": "memory_manager.py",
+      "line_number": 247,
+      "docstring": "Delegates context retrieval (vector search) to the data store.",
+      "type_hints": {
+        "prompt": "str",
+        "n_results": "int"
+      },
+      "calls_made": [
+        "self.turn_store.query"
+      ],
+      "called_by": [],
+      "complexity_score": 2,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "self",
+        "prompt",
+        "n_results"
+      ],
+      "returns": "List[MemoryRecord]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.MemoryManager.get_conversational_buffer": {
+      "full_name": "memory_manager.MemoryManager.get_conversational_buffer",
+      "file_path": "memory_manager.py",
+      "line_number": 252,
+      "docstring": "Returns the short-term conversational buffer for the chat history.",
+      "type_hints": {},
+      "calls_made": [],
+      "called_by": [],
+      "complexity_score": 0,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "self"
+      ],
+      "returns": "List[Content]",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.MemoryManager.prepare_augmented_prompt": {
+      "full_name": "memory_manager.MemoryManager.prepare_augmented_prompt",
+      "file_path": "memory_manager.py",
+      "line_number": 257,
+      "docstring": "Retrieves relevant context from memory and constructs an augmented prompt.\n\nThis method encapsulates the RAG (Retrieval-Augmented Generation) logic.\nIt finds relevant past conversations and injects them as context into the\ncurrent prompt for the model.\n\nArgs:\n    prompt: The user's current prompt.\n\nReturns:\n    The final prompt string, augmented with context if any was found.",
+      "type_hints": {
+        "prompt": "str"
+      },
+      "calls_made": [
+        "Constant.join",
+        "logging.info",
+        "self.get_context_for_prompt",
+        "len"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "self",
+        "prompt"
+      ],
+      "returns": "str",
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.MemoryManager.delete_memory_collection": {
+      "full_name": "memory_manager.MemoryManager.delete_memory_collection",
+      "file_path": "memory_manager.py",
+      "line_number": 291,
+      "docstring": "Deletes the entire memory for the session from all data stores.",
+      "type_hints": {},
+      "calls_made": [
+        "logging.info",
+        "self.code_store.delete_collection",
+        "self.turn_store.delete_collection"
+      ],
+      "called_by": [],
+      "complexity_score": 6,
+      "is_entry_point": false,
+      "is_critical": false,
+      "parameters": [
+        "self"
+      ],
+      "returns": null,
+      "decorators": [
+        "trace"
+      ]
+    },
+    "memory_manager.MemoryManager.add_code_artifact": {
+      "full_name": "memory_manager.MemoryManager.add_code_artifact",
+      "file_path": "memory_manager.py",
+      "line_number": 299,
+      "docstring": "Saves a code artifact to a dedicated vector store and returns a pointer ID.",
+      "type_hints": {
+        "filename": "str",
+        "content": "str"
+      },
+      "calls_made": [
+        "MemoryRecord",
+        "time.time",
+        "self.code_store.add_record",
+        "logging.info"
+      ],
+      "called_by": [],
+      "complexity_score": 8,
+      "is_entry_point": true,
+      "is_critical": false,
+      "parameters": [
+        "self",
+        "filename",
+        "content"
+      ],
+      "returns": "Optional[str]",
+      "decorators": [
+        "trace"
+      ]
+    }
+  },
+  "call_graph": {
+    "phoenix.configure_servers": [
+      "SocketIO",
+      "logging.basicConfig",
+      "Flask",
+      "CORS"
+    ],
+    "phoenix.connect_to_haven": [
+      "logging.info",
+      "HavenManager",
+      "logging.critical",
+      "HavenManager.register",
+      "range",
+      "logging.warning",
+      "time.sleep",
+      "manager.connect",
+      "manager.get_haven"
+    ],
+    "phoenix.initialize_services": [
+      "events.register_events",
+      "connect_to_haven"
+    ],
+    "phoenix.serve_index": [
+      "app.route",
+      "send_from_directory"
+    ],
+    "phoenix.serve_static_files": [
+      "app.route",
+      "send_from_directory"
+    ],
+    "phoenix.serve_audit_visualizer": [
+      "app.route",
+      "send_from_directory"
+    ],
+    "phoenix.serve_database_viewer": [
+      "app.route",
+      "send_from_directory"
+    ],
+    "phoenix.serve_docs": [
+      "app.route",
+      "send_from_directory"
+    ],
+    "phoenix.serve_markdown": [
+      "app.route",
+      "send_from_directory"
+    ],
+    "phoenix.serve_workshop": [
+      "app.route",
+      "send_from_directory"
+    ],
+    "haven.configure_logging": [
+      "logging.basicConfig"
+    ],
+    "haven.load_system_prompt": [
+      "f.read",
+      "open",
+      "os.path.dirname",
+      "os.path.join"
+    ],
+    "haven.load_model_definition": [
+      "f.read",
+      "os.path.join",
+      "open",
+      "os.path.dirname",
+      "Call.strip"
+    ],
+    "haven.initialize_model": [
+      "logging.info",
+      "GenerativeModel",
+      "logging.critical",
+      "load_model_definition",
+      "vertexai.init",
+      "load_system_prompt"
+    ],
+    "haven.Haven.get_or_create_session": [
+      "logging.info",
+      "BoolOp.get",
+      "turn.get",
+      "Part.from_text",
+      "Content"
+    ],
+    "haven.Haven.send_message": [
+      "model.generate_content",
+      "logging.error",
+      "str",
+      "Part.from_text",
+      "Content",
+      "history.append"
+    ],
+    "haven.Haven.list_sessions": [
+      "list",
+      "live_chat_sessions.keys"
+    ],
+    "haven.Haven.delete_session": [
+      "logging.info",
+      "logging.warning"
+    ],
+    "haven.Haven.has_session": [],
+    "haven.Haven.get_trace_log": [
+      "global_tracer.get_trace"
+    ],
+    "haven.start_haven": [
+      "logging.info",
+      "HavenManager",
+      "HavenManager.register",
+      "server.serve_forever",
+      "Haven",
+      "manager.get_server"
+    ],
+    "events.replay_history_for_client": [
+      "item.get",
+      "BoolOp.get",
+      "parsed.command.parameters.get",
+      "logging.error",
+      "raw_text.strip",
+      "socketio.emit",
+      "raw_text.find",
+      "_handle_payloads",
+      "socketio.sleep",
+      "raw_text.startswith",
+      "json.loads",
+      "ToolResult.model_validate",
+      "isinstance",
+      "parse_agent_response",
+      "len"
+    ],
+    "events._create_new_session": [
+      "logging.info",
+      "HavenProxyWrapper",
+      "proxy.get_or_create_session",
+      "ActiveSession",
+      "MemoryManager",
+      "get_timestamp"
+    ],
+    "events.register_events": [],
+    "events.handle_connect": [
+      "logging.info",
+      "socketio.on",
+      "socketio.emit",
+      "_create_new_session",
+      "auth.get",
+      "logging.exception"
+    ],
+    "events.handle_disconnect": [
+      "logging.info",
+      "confirmation_events.pop",
+      "chat_sessions.pop",
+      "socketio.on"
+    ],
+    "events.handle_start_task": [
+      "chat_sessions.get",
+      "socketio.on",
+      "get_timestamp",
+      "socketio.emit",
+      "data.get",
+      "socketio.start_background_task"
+    ],
+    "events.handle_session_list_request": [
+      "socketio.on",
+      "ToolCommand",
+      "socketio.emit",
+      "tool_result.model_dump",
+      "execute_tool_command"
+    ],
+    "events.handle_session_name_request": [
+      "chat_sessions.get",
+      "socketio.on",
+      "socketio.emit"
+    ],
+    "events.handle_db_collections_request": [
+      "db_inspector.list_collections_as_json",
+      "socketio.on",
+      "socketio.emit"
+    ],
+    "events.handle_db_collection_data_request": [
+      "db_inspector.get_collection_data_as_json",
+      "socketio.on",
+      "socketio.emit",
+      "data.get"
+    ],
+    "events.handle_user_confirmation": [
+      "confirmation_events.get",
+      "socketio.on",
+      "event.send",
+      "data.get"
+    ],
+    "events.handle_audit_log": [
+      "chat_sessions.get",
+      "socketio.on",
+      "audit_log.log_event",
+      "data.get"
+    ],
+    "events.handle_get_trace_log": [
+      "logging.info",
+      "socketio.on",
+      "socketio.emit",
+      "global_tracer.get_trace"
+    ],
+    "events.handle_get_haven_trace_log": [
+      "_haven_proxy.get_trace_log",
+      "logging.info",
+      "socketio.emit",
+      "socketio.on"
+    ],
+    "orchestrator._emit_agent_message": [
+      "content.strip",
+      "socketio.emit"
+    ],
+    "orchestrator._process_model_response": [
+      "_handle_payloads",
+      "parse_agent_response",
+      "ToolCommand"
+    ],
+    "orchestrator._render_agent_turn": [
+      "len",
+      "socketio.emit",
+      "command.parameters.get",
+      "_emit_agent_message",
+      "is_prose_effectively_empty"
+    ],
+    "orchestrator.execute_reasoning_loop": [
+      "Event",
+      "range",
+      "tpool.execute",
+      "execute_tool_command",
+      "confirmation_events.pop",
+      "socketio.emit",
+      "socketio.sleep",
+      "confirmation_event.wait",
+      "_render_agent_turn",
+      "logging.info",
+      "_process_model_response",
+      "uuid.uuid4",
+      "memory.add_turn",
+      "json.dumps",
+      "tool_result.model_dump_json",
+      "re.match",
+      "logging.warning",
+      "str",
+      "get_timestamp",
+      "memory.prepare_augmented_prompt",
+      "logging.exception"
+    ],
+    "tool_agent._execute_script": [
+      "ToolResult",
+      "str",
+      "redirect_stdout",
+      "io.StringIO",
+      "exec",
+      "string_io.getvalue"
+    ],
+    "tool_agent._write_file": [
+      "ToolResult",
+      "str",
+      "os.makedirs",
+      "os.path.basename",
+      "open",
+      "f.write",
+      "os.path.dirname"
+    ],
+    "tool_agent._read_file": [
+      "f.read",
+      "ToolResult",
+      "str",
+      "os.path.basename",
+      "open",
+      "os.path.exists"
+    ],
+    "tool_agent._delete_file": [
+      "ToolResult",
+      "os.remove",
+      "str",
+      "os.path.basename",
+      "os.path.exists"
+    ],
+    "tool_agent._list_directory": [
+      "file_list.append",
+      "ToolResult",
+      "os.path.relpath",
+      "relative_path.replace",
+      "os.path.join",
+      "str",
+      "os.walk"
+    ],
+    "tool_agent.get_safe_path": [
+      "requested_path.startswith",
+      "os.path.join",
+      "os.path.abspath",
+      "os.makedirs",
+      "ValueError",
+      "os.path.dirname"
+    ],
+    "tool_agent._extract_patch_paths": [
+      "diff_content.splitlines",
+      "Subscript.strip",
+      "line.startswith",
+      "line.split"
+    ],
+    "tool_agent._validate_patch_paths": [
+      "source_filename.startswith",
+      "ToolResult",
+      "target_filename.startswith"
+    ],
+    "tool_agent._get_source_read_path": [
+      "get_safe_path",
+      "os.path.join",
+      "source_filename.startswith",
+      "len",
+      "os.path.dirname"
+    ],
+    "tool_agent._handle_create_file": [
+      "params.get",
+      "get_safe_path",
+      "tpool.execute"
+    ],
+    "tool_agent._handle_read_file": [
+      "params.get",
+      "get_safe_path",
+      "ToolResult",
+      "tpool.execute"
+    ],
+    "tool_agent._handle_read_project_file": [
+      "ToolResult",
+      "os.path.join",
+      "params.get",
+      "tpool.execute",
+      "os.path.dirname"
+    ],
+    "tool_agent._handle_list_allowed_project_files": [
+      "ToolResult"
+    ],
+    "tool_agent._handle_list_directory": [
+      "get_safe_path",
+      "tpool.execute"
+    ],
+    "tool_agent._handle_delete_file": [
+      "params.get",
+      "get_safe_path",
+      "ToolResult",
+      "tpool.execute"
+    ],
+    "tool_agent._handle_execute_python_script": [
+      "params.get",
+      "tpool.execute"
+    ],
+    "tool_agent._handle_apply_patch": [
+      "len",
+      "get_safe_path",
+      "ToolResult",
+      "patcher.apply_patch",
+      "params.get",
+      "_extract_patch_paths",
+      "_validate_patch_paths",
+      "diff_content.replace",
+      "os.path.exists",
+      "_get_source_read_path",
+      "tpool.execute"
+    ],
+    "tool_agent._handle_list_sessions": [
+      "context.haven_proxy.list_sessions",
+      "ToolResult",
+      "session_list.sort",
+      "name.replace",
+      "db_sessions.items",
+      "col.name.startswith",
+      "chromadb.PersistentClient",
+      "chroma_client.list_collections"
+    ],
+    "tool_agent._handle_load_session": [
+      "replay_history_for_client",
+      "ToolResult",
+      "HavenProxyWrapper",
+      "params.get",
+      "ActiveSession",
+      "MemoryManager",
+      "context.socketio.emit",
+      "context.haven_proxy.get_or_create_session",
+      "turn_store.get_all_records",
+      "ChromaDBStore"
+    ],
+    "tool_agent._handle_save_session": [
+      "ToolResult",
+      "HavenProxyWrapper",
+      "params.get",
+      "target_code_store.add_record",
+      "str",
+      "source_turn_store.get_all_records",
+      "context.socketio.emit",
+      "target_turn_store.add_record",
+      "context.chat_sessions.get",
+      "context.haven_proxy.get_or_create_session",
+      "ChromaDBStore",
+      "source_code_store.get_all_records"
+    ],
+    "tool_agent._handle_delete_session": [
+      "code_store.delete_collection",
+      "updated_list_result.model_dump",
+      "ToolResult",
+      "_handle_list_sessions",
+      "params.get",
+      "logging.error",
+      "context.haven_proxy.delete_session",
+      "context.socketio.emit",
+      "turn_store.delete_collection",
+      "ChromaDBStore"
+    ],
+    "tool_agent.execute_tool_command": [
+      "ToolResult",
+      "logging.error",
+      "handler",
+      "ToolContext",
+      "TOOL_REGISTRY.get"
+    ],
+    "memory_manager.initialize_embedding_function": [
+      "logging.info",
+      "embedding_functions.DefaultEmbeddingFunction",
+      "logging.critical"
+    ],
+    "memory_manager.ChromaDBStore.__init__": [
+      "logging.info",
+      "c.isalnum",
+      "logging.error",
+      "uuid.uuid4",
+      "Constant.join",
+      "chromadb.PersistentClient",
+      "len",
+      "Call.strip",
+      "chroma_client.get_or_create_collection"
+    ],
+    "memory_manager.ChromaDBStore.add_record": [
+      "logging.error",
+      "record.model_dump",
+      "self.collection.add"
+    ],
+    "memory_manager.ChromaDBStore.get_all_records": [
+      "all_records.append",
+      "logging.error",
+      "enumerate",
+      "logging.warning",
+      "self.collection.count",
+      "MemoryRecord.model_validate",
+      "history.get",
+      "all_records.sort",
+      "self.collection.get"
+    ],
+    "memory_manager.ChromaDBStore.query": [
+      "results_with_meta.append",
+      "logging.error",
+      "enumerate",
+      "logging.warning",
+      "self.collection.count",
+      "results_with_meta.sort",
+      "self.collection.query",
+      "min",
+      "MemoryRecord.model_validate",
+      "query_results.get"
+    ],
+    "memory_manager.ChromaDBStore.update_records_metadata": [
+      "logging.error",
+      "self.collection.update"
+    ],
+    "memory_manager.ChromaDBStore.delete_collection": [
+      "chroma_client.delete_collection",
+      "chromadb.PersistentClient",
+      "logging.error",
+      "logging.info"
+    ],
+    "memory_manager.MemoryManager.__init__": [
+      "self._repopulate_buffer_from_db",
+      "ChromaDBStore"
+    ],
+    "memory_manager.MemoryManager._repopulate_buffer_from_db": [
+      "logging.info",
+      "logging.error",
+      "Part.from_text",
+      "self.turn_store.get_all_records",
+      "Content",
+      "len"
+    ],
+    "memory_manager.MemoryManager.add_turn": [
+      "logging.info",
+      "hasattr",
+      "self.conversational_buffer.pop",
+      "str",
+      "Part.from_text",
+      "self.conversational_buffer.append",
+      "Content",
+      "time.time",
+      "setattr",
+      "MemoryRecord",
+      "self.turn_store.add_record",
+      "len",
+      "metadata.items"
+    ],
+    "memory_manager.MemoryManager.get_all_turns": [
+      "self.turn_store.get_all_records"
+    ],
+    "memory_manager.MemoryManager.get_context_for_prompt": [
+      "self.turn_store.query"
+    ],
+    "memory_manager.MemoryManager.get_conversational_buffer": [],
+    "memory_manager.MemoryManager.prepare_augmented_prompt": [
+      "Constant.join",
+      "logging.info",
+      "self.get_context_for_prompt",
+      "len"
+    ],
+    "memory_manager.MemoryManager.delete_memory_collection": [
+      "logging.info",
+      "self.code_store.delete_collection",
+      "self.turn_store.delete_collection"
+    ],
+    "memory_manager.MemoryManager.add_code_artifact": [
+      "MemoryRecord",
+      "time.time",
+      "self.code_store.add_record",
+      "logging.info"
+    ]
+  },
+  "modules": {
+    "phoenix": "phoenix.py",
+    "haven": "haven.py",
+    "events": "events.py",
+    "orchestrator": "orchestrator.py",
+    "tool_agent": "tool_agent.py",
+    "memory_manager": "memory_manager.py"
+  }
+}

@@ -1,0 +1,40 @@
+{
+    "haven": {
+        "configure_logging": {
+            "@description": "Configures the global logging settings for the Haven service."
+        },
+        "load_system_prompt": {
+            "@description": "Loads the system prompt text from the 'system_prompt.txt' file."
+        },
+        "load_model_definition": {
+            "@description": "Loads the model name from the 'model_definition.txt' file."
+        },
+        "initialize_model": {
+            "@description": "Initializes the connection to Vertex AI and loads the generative model."
+        },
+        "Haven": {
+            "@description": "Manages the live GenerativeModel chat histories. An instance of this class is served by the BaseManager to act as a persistent, stateful service for the main application.",
+            "send_message": {
+                "@description": "Sends a message by appending to the history and making a stateless call to model.generate_content()."
+            },
+            "list_sessions": {
+                "@description": "Returns a list of the names of all currently live sessions."
+            },
+            "delete_session": {
+                "@description": "Deletes a session from the live dictionary to free up memory."
+            },
+            "has_session": {
+                "@description": "Checks if a session exists in the Haven."
+            },
+            "get_trace_log": {
+                "@description": "Returns the trace log from this Haven process."
+            }
+        },
+        "HavenManager": {
+            "@description": "A multiprocessing manager for serving the Haven instance."
+        },
+        "start_haven": {
+            "@description": "Initializes and starts the Haven server process."
+        }
+    }
+}

@@ -17,6 +17,7 @@ import logging
 from contextlib import redirect_stdout
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional
+from multiprocessing.managers import BaseManager
 
 import chromadb
 from eventlet import tpool
@@ -37,7 +38,7 @@ class ToolContext:
     socketio: Any
     session_id: str
     chat_sessions: dict[str, ActiveSession]
-    haven_proxy: object
+    haven_proxy: BaseManager
     loop_id: Optional[str]
 
 # --- Low-Level File System Helpers ---
@@ -279,12 +280,12 @@ def _handle_list_sessions(params: dict, context: ToolContext) -> ToolResult:
 @trace
 def _handle_load_session(params: dict, context: ToolContext) -> ToolResult:
     """Handles the 'load_session' action."""
-    from response_parser import replay_history_for_client
+    from events import replay_history_for_client
     session_name = params.get("session_name")
     if not session_name:
         return ToolResult(status="error", message="Session name not provided.")
     try:
-        turn_store = ChromaDBStore(collection_name=f"turns-{session_name}")
+        turn_store: ChromaDBStore = ChromaDBStore(collection_name=f"turns-{session_name}")
         history_records = turn_store.get_all_records()
         history_for_haven = [{"role": r.role, "parts": [{"text": r.document}]} for r in history_records if r.role]
 
@@ -310,14 +311,14 @@ def _handle_save_session(params: dict, context: ToolContext) -> ToolResult:
     if not session_data:
         return ToolResult(status="error", message="Active session not found.")
     try:
-        source_turn_store = session_data.memory.turn_store
-        target_turn_store = ChromaDBStore(collection_name=f"turns-{new_session_name}")
+        source_turn_store: ChromaDBStore = session_data.memory.turn_store
+        target_turn_store: ChromaDBStore = ChromaDBStore(collection_name=f"turns-{new_session_name}")
         records_to_copy = source_turn_store.get_all_records()
         for record in records_to_copy:
             target_turn_store.add_record(record, str(record.id))
 
-        source_code_store = session_data.memory.code_store
-        target_code_store = ChromaDBStore(collection_name=f"code-{new_session_name}")
+        source_code_store: ChromaDBStore = session_data.memory.code_store
+        target_code_store: ChromaDBStore = ChromaDBStore(collection_name=f"code-{new_session_name}")
         code_records_to_copy = source_code_store.get_all_records()
         for record in code_records_to_copy:
             pointer_id = f"[CODE-ARTIFACT-{record.id}:{record.filename}]"
@@ -381,7 +382,7 @@ def execute_tool_command(
     socketio,
     session_id: str,
     chat_sessions: dict[str, ActiveSession],
-    haven_proxy: object,
+    haven_proxy: BaseManager,
     loop_id: str | None = None,
 ) -> ToolResult:
     """
